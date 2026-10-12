@@ -527,3 +527,14 @@ html.hw-layout-laedt body > header.kopf, html.hw-layout-laedt body > main.seite 
 .knopf.leise { background: none; border-color: transparent; color: var(--tx2); }
 .knopf.leise:hover { background: var(--fl2); color: var(--tx); filter: none; }
 .marke.warn { color: var(--rot); border-color: var(--rot); }
+/* Klare Bau-Meldungen */
+.meldungen { list-style: none; margin: 8px 0 4px; padding: 0; display: grid; gap: 4px; font-size: 14px; }
+.meldungen li { display: grid; grid-template-columns: 20px 1fr; gap: 6px; align-items: start; color: var(--tx2); }
+.meldungen li::before { text-align: center; font-weight: 700; }
+.meldungen li.ok::before { content: "✓"; color: var(--gruen); }
+.meldungen li.laeuft { color: var(--tx); font-weight: 600; }
+.meldungen li.laeuft::before { content: ""; width: 12px; height: 12px; margin: 3px auto 0; border-radius: 50%; border: 2px solid var(--li2); border-top-color: var(--ak); animation: drehen .8s linear infinite; }
+.meldungen li.nein { color: var(--rot); }
+.meldungen li.nein::before { content: "✗"; }
+.meldungen li.aus::before { content: "–"; }
+@media (prefers-reduced-motion: reduce) { .meldungen li.laeuft::before { animation: none; } }

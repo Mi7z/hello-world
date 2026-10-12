@@ -129,9 +129,9 @@
       knoepfe = `<button type="button" class="klein" data-hw-oeffnen="${esc(a.ergebnis.kennung)}">Öffnen</button>`;
     }
     const status = { laeuft: 'Der PC arbeitet …', vorschau: neu ? 'Fertig – schau es dir an.' : 'Fertig – die Vorschau läuft in der App.', fertig: '✓ Übernommen', verworfen: 'Verworfen', fehler: 'Hat nicht geklappt', abgebrochen: 'Abgebrochen', abgelehnt: 'Abgelehnt', vorhanden: 'Gibt es schon' }[a.status] || a.status;
-    return `<div class="hw-auftrag ${a.status}"><div class="hw-auftrag-kopf"><b>${esc(a.titelAnzeige || 'Auftrag')}</b><span>${status}</span></div>
+    return `<div class="hw-auftrag ${a.status}"><div class="hw-auftrag-kopf"><b>${esc(a.titelAnzeige || 'Auftrag')}</b></div>
+      ${ablaufMeldungen(a)}
       ${ablaufHtml(a)}
-      ${a.meldung && a.status !== 'laeuft' ? `<p class="hinweis">${esc(a.meldung)}</p>` : ''}
       ${knoepfe ? `<div class="knoepfe links">${knoepfe}</div>` : ''}</div>`;
   }
   function zeigen() {

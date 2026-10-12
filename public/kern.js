@@ -411,3 +411,38 @@ document.addEventListener('click', (ev) => {
   if (ablaufWahl.get(id) === k) ablaufWahl.delete(id); else ablaufWahl.set(id, k);
   document.dispatchEvent(new CustomEvent('hw-ablauf', { detail: id }));
 });
+
+// ---------- Klare Meldungen zum Bau: was ist erledigt, was passiert gerade ----------
+function ablaufMeldungen(a) {
+  const st = a.schritte || {}, tx = a.schrittText || {};
+  const verbessern = Boolean(a.zielSlug);
+  const LAEUFT = {
+    pruefen: 'Ich prüfe, ob das möglich und sinnvoll ist …',
+    github: 'Ich suche freie Bausteine (Open Source), auf denen ich aufbauen kann …',
+    vorbilder: 'Ich schaue mir an, wie gute Apps das lösen – auch kostenpflichtige …',
+    bauen: a.versuche ? `Ich bessere nach (Versuch ${a.versuche + 1}) …` : verbessern ? 'Ich baue die Änderung jetzt ein …' : a.typ === 'design' ? 'Ich gestalte jetzt das Design …' : 'Ich baue jetzt den Prototyp …',
+    test: 'Ich teste auf Sicherheit, Handy und Desktop …',
+    fertig: 'Ich bereite die Vorschau vor …',
+  };
+  const ERLEDIGT = {
+    pruefen: `Geprüft: Das ist möglich${tx.pruefen ? ` – ${tx.pruefen.replace(/^neue App$/, 'ich baue eine neue App').replace(/^neues Design$/, 'ich gestalte ein neues Design')}` : ''}.`,
+    github: tx.github && !/nicht nötig|übersprungen/.test(tx.github) ? `Open Source: ${tx.github}` : null,
+    vorbilder: tx.vorbilder && !/nicht nötig/.test(tx.vorbilder) ? `Vorbilder angesehen${/inspiriert/.test(tx.vorbilder) ? ` – ${tx.vorbilder}` : ''}.` : null,
+    bauen: verbessern ? 'Änderung eingebaut.' : a.typ === 'design' ? 'Design gestaltet.' : 'Prototyp gebaut.',
+    test: 'Getestet: sicher und läuft auf Handy und Desktop.',
+    fertig: verbessern ? 'Fertig – die Vorschau läuft in der App. Übernehmen oder verwerfen?' : 'Fertig – schau dir die Vorschau an.',
+  };
+  const zeilen = [];
+  for (const [k] of ABLAUF) {
+    if (!(k in st)) continue;
+    if (st[k] === 'ok' && ERLEDIGT[k]) zeilen.push(`<li class="ok">${esc(ERLEDIGT[k])}</li>`);
+    else if (st[k] === 'laeuft') zeilen.push(`<li class="laeuft">${esc(LAEUFT[k])}</li>`);
+    else if (st[k] === 'nein') zeilen.push(`<li class="nein">${esc(tx[k] || 'Hier ist etwas schiefgegangen.')}</li>`);
+  }
+  if (['fehler', 'abgebrochen', 'abgelehnt'].includes(a.status) && a.meldung) zeilen.push(`<li class="nein">${esc(a.meldung)}</li>`);
+  if (a.status === 'vorhanden') zeilen.push(`<li class="ok">${esc(a.meldung || 'Das gibt es schon.')}</li>`);
+  if (a.status === 'fertig') zeilen.push(`<li class="ok">${esc(verbessern ? 'Übernommen – die neue Version ist gespeichert.' : 'Veröffentlicht – jetzt für alle da.')}</li>`);
+  if (a.status === 'verworfen') zeilen.push('<li class="aus">Verworfen – es wurde nichts geändert.</li>');
+  if (!zeilen.length && a.status === 'laeuft') zeilen.push(`<li class="laeuft">${esc(LAEUFT.pruefen)}</li>`);
+  return `<ul class="meldungen">${zeilen.join('')}</ul>`;
+}

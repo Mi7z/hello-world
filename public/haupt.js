@@ -191,7 +191,7 @@ window.HW_SEITE = {
 let aktuell = null; // laufender Auftrag (id)
 let letzterAuftrag = null;
 $('bauAnfrage').addEventListener('click', () => $('bauAnfrage').classList.toggle('ganz'));
-document.addEventListener('hw-ablauf', (ev) => { if (letzterAuftrag && ev.detail === letzterAuftrag.id) $('ablauf').innerHTML = ablaufHtml(letzterAuftrag); });
+document.addEventListener('hw-ablauf', (ev) => { if (letzterAuftrag && ev.detail === letzterAuftrag.id) $('ablauf').innerHTML = ablaufMeldungen(letzterAuftrag) + ablaufHtml(letzterAuftrag); });
 
 async function bauen(anfrage) {
   if (STATISCH) return nurImProgramm();
@@ -225,10 +225,11 @@ function darstellen(a) {
   $('bauAnfrage').textContent = a.anfrage ? `„${a.anfrage}"` : '';
   const design = a.typ === 'design';
   letzterAuftrag = a;
-  $('ablauf').innerHTML = ablaufHtml(a);
-  let html = esc(a.meldung || '');
+  $('ablauf').innerHTML = ablaufMeldungen(a) + ablaufHtml(a);
+  // Die Schritt-Meldungen stehen jetzt klar in der Liste; hier nur noch Knöpfe
+  let html = '';
   if (a.status === 'vorhanden' && a.ergebnis?.kennung) html += `<div class="knoepfe"><a class="knopf" href="/a/${a.ergebnis.kennung}">Öffnen</a></div>`;
-  if (a.status === 'fehler' || a.status === 'abgebrochen') html += `${a.probleme?.length ? `<ul>${a.probleme.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}<div class="knoepfe"><button type="button" id="neuStarten">Nochmal versuchen</button></div>`;
+  if (a.status === 'fehler' || a.status === 'abgebrochen') html += `<div class="knoepfe links"><button type="button" id="neuStarten">Nochmal versuchen</button></div>`;
   $('bauMeldung').hidden = !html;
   $('bauMeldung').className = `meldung ${a.meldungArt || ''}`;
   $('bauMeldung').innerHTML = html;
