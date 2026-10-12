@@ -51,9 +51,9 @@ export const ohneKopplung = (pfad) => OFFEN.some((m) => m.test(pfad));
 export function offen() { return AN && Boolean(laden().offen); }
 export function offenSetzen(an) { const d = laden(); d.offen = Boolean(an); speichern(d); }
 
-export function codeErstellen() {
+export function codeErstellen(minuten = 10) {
   const code = crypto.randomBytes(3).toString('hex').toUpperCase().replace(/(...)(...)/, '$1-$2');
-  codes.set(code, Date.now() + 10 * 60e3);
+  codes.set(code, Date.now() + Math.min(60, Math.max(1, Number(minuten) || 10)) * 60e3);
   return { code, gueltigBis: codes.get(code) };
 }
 export function koppeln(req, { code, name }) {
