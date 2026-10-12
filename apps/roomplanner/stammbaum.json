@@ -9,6 +9,26 @@
       },
       "zeit": "2026-10-12T16:51:11.022Z",
       "aenderung": "erste Version: Eine Raumplaner-App: Nutzer kann Räume skizzieren (Wände und Grundriss zeichnen, Maße festlegen) und Möbel per Drag & Drop aus einer Bibliot"
+    },
+    {
+      "id": "v2",
+      "eltern": "v1",
+      "autor": {
+        "login": "Mi7z",
+        "name": "Mi7z"
+      },
+      "zeit": "2026-10-12T17:54:30.852Z",
+      "aenderung": "Komplexe, nicht-rechteckige Grundrisse (z. B. L-Form, Erker, Nischen) zeichnen sowie Türen und Öffnungen an Wänden einfügen und positionieren"
+    },
+    {
+      "id": "v3",
+      "eltern": "v2",
+      "autor": {
+        "login": "Mi7z",
+        "name": "Mi7z"
+      },
+      "zeit": "2026-10-12T18:43:14.272Z",
+      "aenderung": "Handskizze als Bild hochladen und daraus Grundriss erkennen, Wände mit einstellbarem Winkelraster einrasten und Wandlängen präzise feinjustieren."
     }
   ]
 }

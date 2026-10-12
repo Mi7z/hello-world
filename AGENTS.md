@@ -97,6 +97,20 @@ Diese Apps laufen direkt im Katalog, abgeschottet in einer Sandbox.
 - Verständliche Fehlermeldungen.
 - Die Apps laufen mit dieser Sicherheitsregel (CSP): siehe `APP_CSP` in `pruefung.js`.
 
+### Gestaltung (Standard für jede App)
+
+Solange der Nutzer nicht ausdrücklich etwas anderes verlangt, wird jede App
+**intuitiv, logisch und übersichtlich** gebaut – nach denselben Grundsätzen wie Hello World:
+
+1. **Wo bin ich?** Klarer Titel, Reiter bzw. Schritt-Anzeige, aktiver Bereich markiert.
+2. **Wie komme ich raus?** Überall ein sichtbarer Weg zurück; Unumkehrbares nur mit Bestätigung oder Rückgängig.
+3. **Was ist der Stand?** Sofortige Rückmeldung zu jeder Aktion: lädt, ✓ fertig, verständlicher Fehler.
+4. **Wohin geht es?** Ein deutlicher Hauptknopf je Bildschirm, Nebenaktionen schlichter, Gleiches am gleichen Ort.
+5. **Logischer Aufbau:** oben Eingabe → Mitte Arbeitsfläche/Ergebnis → unten die Hauptaktion (Daumenbereich).
+6. **Für Laien:** Alltagssprache, beschriftete Felder, sinnvolle Vorgaben, freundlicher leerer Zustand.
+7. **Ruhig:** wenige Elemente gleichzeitig, große Ziele (≥ 44 px), Farben/Schriften nur aus den Design-Bausteinen.
+8. **Für alle bedienbar:** Finger, Maus, Tastatur (Enter = Hauptaktion, sichtbarer Fokus).
+
 ### Server-Apps (`"typ": "server"`)
 
 Server-Apps sind erlaubt. Hello World betreibt aber **keine** Server: Wer eine

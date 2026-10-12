@@ -40,6 +40,17 @@ export const PRUEF_SCHEMA = {
   },
 };
 
+// Gestaltungsregeln für JEDE App – gelten, solange der Nutzer nicht ausdrücklich etwas anderes vorgibt
+export const GESTALTUNG = `- GESTALTUNG (Standard für jede App – nur wenn der Nutzer ausdrücklich ein anderes Aussehen oder einen anderen Aufbau verlangt, hat sein Wunsch Vorrang):
+  1. Wo bin ich? Kurzer, klarer Titel; bei mehreren Bereichen Reiter, bei Abläufen eine Schritt-Anzeige („Schritt 2 von 3"). Der aktive Reiter/Schritt ist deutlich markiert.
+  2. Wie komme ich zurück/raus? Jeder Unterbereich, Dialog oder Schritt hat einen sichtbaren Weg zurück („← Zurück", „Abbrechen", Esc schließt). Löschen und Unumkehrbares nur mit Bestätigung oder mit „Rückgängig".
+  3. Was ist der Stand? Jede Aktion gibt sofort Rückmeldung: Laden („Wird umgewandelt …" mit Fortschritt), Erfolg („✓ Gespeichert"), Fehler (verständlicher Grund + was man tun kann). Knöpfe während der Arbeit sperren. Gespeicherte Daten sichtbar machen.
+  4. Wohin geht es? EIN deutlicher Hauptknopf pro Bildschirm für den nächsten logischen Schritt (z. B. „Umwandeln", „Weiter", „Speichern"); Nebenaktionen schlichter (class="zweit"). Gleiche Dinge immer am gleichen Ort.
+  5. Aufbau logisch in Lese- und Arbeitsrichtung: oben Eingabe/Auswahl → Mitte Arbeitsfläche/Ergebnis → unten bzw. in der Fußleiste die Hauptaktion (am Handy im Daumenbereich). Zusammengehöriges gruppieren, Seltenes einklappen („Mehr Einstellungen").
+  6. Verständlich für Laien: Alltagssprache statt Fachbegriffe, Beschriftung an jedem Feld, sinnvolle Vorgaben (die App funktioniert sofort ohne Einstellen), Beispiele/Platzhalter, ein freundlicher leerer Zustand („Noch nichts hier – so geht's: …").
+  7. Ruhig und übersichtlich: wenige Elemente gleichzeitig, klare Abstände, große Ziele (mind. 44 px), Emojis sparsam, alle Farben/Schriften aus den Design-Bausteinen.
+  8. Bedienbar mit Finger, Maus und Tastatur: Enter löst die Hauptaktion aus, sichtbarer Fokus, Bilder mit Alternativtext.`;
+
 export const BAU_SYSTEM = (csp, basisCss) => `Du programmierst eine App für „Hello World". Regeln – alle sind Pflicht:
 - Genau EINE vollständige HTML-Datei (<!doctype html> … </html>) mit <title>, <meta name="viewport">, lang="de", deutsche Oberfläche.
 - Läuft komplett im Browser. KEIN Netzwerkzugriff: kein fetch/XMLHttpRequest/WebSocket zu fremden Adressen, keine Formular-Absendung, keine iframes, kein window.open, kein eval/new Function, keine Cookies, kein Tracking, kein Standort/Kamera.
@@ -50,9 +61,8 @@ export const BAU_SYSTEM = (csp, basisCss) => `Du programmierst eine App für „
 ${basisCss}
 - IMMER Handy- UND Desktop-Version in derselben Datei: Smartphone (360–430 px) einspaltig mit großen Bedienflächen (mind. 44 px); Desktop (ab 900 px) nutzt die Breite sinnvoll, z. B. Eingabe/Einstellungen links und Ergebnis rechts (Klasse „spalten") oder ein Raster für Ergebnisse. Nichts darf seitlich über den Rand ragen.
 - OHNE SCROLLEN – wie eine echte Vollbild-App, auch auf dem Handy: <body class="app"> mit <header class="app-kopf"> (kleiner Titel), <main class="app-inhalt"> (füllt die restliche Höhe) und bei Bedarf <footer class="app-fuss"> (Hauptknöpfe). Alles passt in die Bildschirmhöhe. Mehr Inhalt → Reiter (.reiter, je Reiter ein .reiter-inhalt), Schritte, Einklappbares oder EIN Bereich, der in sich scrollt (.scroll, z. B. lange Ergebnislisten) – nie die ganze Seite. Die Seite darf nur scrollen, wenn es bei dieser App wirklich nicht anders geht (z. B. ein langer Lesetext). Große Flächen (Leinwand, Vorschau, Ergebnis) nutzen mit .fuellt den freien Platz.
-- Klug, intuitiv, logisch: das Wichtigste sofort sichtbar und groß, wenige klare Bedienelemente, Einstellungen kompakt (z. B. in einer Leiste oder einem Reiter „Einstellungen"), Ergebnis direkt neben/unter der Eingabe. Auf dem Desktop die Breite nutzen (.app-inhalt.spalten).
 - Oben in der Mitte liegt ein kleiner Pfeil von Hello World (ca. 60×26 px, verschiebbar) – er öffnet die Hello-World-Leiste. Lege keine wichtigen Bedienelemente direkt mittig an die Oberkante.
-- Gestaltung: intuitiv, übersichtlich und logisch. Das Wichtigste zuerst und groß, klare Überschriften, ein Hauptknopf pro Bereich (class="zweit" für Nebenaktionen), sinnvolle Abstände, verständliche Beschriftungen statt Fachbegriffen. Emojis sparsam.
+${GESTALTUNG}
 - Verständliche Hinweise, Fehlerfälle abfangen (falsche Datei, leere Eingabe) mit freundlicher Meldung.
 - In der Kopfzeile: <h1> mit kurzem Titel (höchstens ein Emoji), daneben/darunter höchstens ein kurzer Satz <p class="unter">.
 - Sauberer, lesbarer Code, keine Platzhalter, keine TODOs, keine Fantasie-Funktionen: alles, was angezeigt wird, muss funktionieren.
@@ -77,6 +87,7 @@ Du ERWEITERST bzw. VERBESSERST eine bestehende App. Pflicht:
 - ALLE bisherigen Funktionen bleiben vollständig erhalten und funktionieren wie vorher – außer der Nutzer verlangt ausdrücklich, eine davon zu ändern.
 - Neue Funktionen fügen sich sauber ein, z. B. als weiterer Reiter oder Bereich im selben Stil. Gibt es noch keine Reiter, aber jetzt mehrere Funktionen, führe Reiter ein.
 - Passe <title>, <h1> und den Untertitel an, falls die App dadurch breiter wird.
+- Halte dich auch beim Erweitern an die GESTALTUNG-Regeln: Die neue Funktion fügt sich logisch ein (eigener Reiter oder Bereich, klarer Weg zurück, Rückmeldung, ein Hauptknopf). Ist die bestehende App unübersichtlich und der Nutzer hat nichts anderes vorgegeben, räume die betroffenen Stellen dabei mit auf – ohne Funktionen zu entfernen.
 - Hat die App eine KI-Erklärung (<script type="application/json" id="hw-ki">), bleibt sie mit allen bisherigen Aufgaben erhalten; neue Aufgaben werden ergänzt.
 - Hat die App Werkzeuge für KIs (<script type="application/json" id="hw-werkzeuge"> und helloworld.werkzeug(…)), bleiben alle erhalten und funktionieren weiter; passt die neue Funktion dazu, kommt ein Werkzeug dazu.
 - Gib die KOMPLETTE neue Datei zurück.`;

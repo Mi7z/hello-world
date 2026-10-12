@@ -1,9 +1,11 @@
 {
   "titel": "Raumplaner – Grundriss & Möbel in 2D",
-  "beschreibung": "Du zeichnest einen maßstabsgetreuen 2D-Grundriss deines Raums, stellst Möbel aus einer Bibliothek per Drag & Drop hinein, drehst und skalierst sie – und bekommst KI-Tipps zur Anordnung und Platznutzung. Pläne lassen sich speichern und als Bild exportieren.",
+  "beschreibung": "Du zeichnest einen maßstabsgetreuen 2D-Grundriss deines Zimmers oder deiner Wohnung, platzierst Möbel per Drag & Drop und probierst verschiedene Einrichtungen aus. Du kannst sogar eine Handskizze als Foto hochladen, Türen und Fenster einfügen und den fertigen Plan als Bild speichern.",
   "kategorie": "werkzeug",
   "funktionen": [
-    "Räume als maßstabsgetreuen 2D-Grundriss zeichnen, Möbel per Drag & Drop platzieren/drehen/skalieren und als Bild exporti"
+    "Räume als maßstabsgetreuen 2D-Grundriss zeichnen, Möbel per Drag & Drop platzieren/drehen/skalieren und als Bild exporti",
+    "Komplexe, nicht-rechteckige Grundrisse (z. B. L-Form, Erker, Nischen) zeichnen sowie Türen und Öffnungen an Wänden einfü",
+    "Handskizze als Bild hochladen und daraus Grundriss erkennen, Wände mit einstellbarem Winkelraster einrasten und Wandläng"
   ],
   "tags": [
     "raumplaner",
@@ -15,82 +17,103 @@
   "anfrage": "Eine Raumplaner-App: Nutzer kann Räume skizzieren (Wände und Grundriss zeichnen, Maße festlegen) und Möbel per Drag & Drop aus einer Bibliothek hinzufügen, verschieben, drehen und skalieren – als 2D-Grundriss/Draufsicht. Zusätzlich ein KI-Konnektor, der bei der Planung hilft (Vorschläge zur Anordnun",
   "ki": "Claude",
   "erstellt": "2026-10-12T16:51:11.021Z",
-  "version": 1,
+  "version": 3,
   "typ": "browser",
   "hinweise": [],
   "autor": {
     "login": "Mi7z",
     "name": "Mi7z"
   },
-  "eigeneKi": {
-    "zweck": "Hilft bei der Raumplanung: Vorschläge zur Anordnung der Möbel, Platznutzung und Einrichtungstipps anhand von Raumgröße und Möbelliste.",
-    "aufgaben": [
-      "planen"
-    ]
-  },
   "werkzeuge": [
     {
-      "name": "plan_auswerten",
-      "beschreibung": "Berechnet Fläche und Abmessungen eines Raums sowie die belegte und freie Stellfläche aus einem Plan."
+      "name": "grundriss_bild",
+      "beschreibung": "Erzeugt ein PNG-Bild des aktuellen Grundrisses mit Wänden, Türen/Öffnungen und Möbeln."
     },
     {
-      "name": "plan_bild",
-      "beschreibung": "Erzeugt ein PNG-Bild (Draufsicht/Grundriss) des aktuellen oder übergebenen Plans."
+      "name": "grundriss_masse",
+      "beschreibung": "Liefert die Grundfläche und die Längen aller Wände des aktuellen Grundrisses in Metern."
+    },
+    {
+      "name": "skizze_erkennen",
+      "beschreibung": "Erkennt aus dem Bild einer handgezeichneten Grundriss-Skizze (geschlossener Umriss) die Raumform und liefert die Eckpunkte. Optional kann eine Gesamtbreite in Metern zum Skalieren angegeben werden."
     }
   ],
   "beispiele": [
-    "Ich möchte mein Wohnzimmer planen und Möbel anordnen",
-    "wie kann ich einen Grundriss von meiner Wohnung zeichnen",
-    "Raum ausmessen und maßstabsgetreu aufzeichnen",
-    "Möbel virtuell im Zimmer platzieren bevor ich sie kaufe",
-    "passt mein neues Sofa und der Esstisch ins Wohnzimmer",
-    "Schlafzimmer einrichten mit Bett, Schrank und Kommode",
-    "Küche planen mit Küchenzeile, Herd und Kühlschrank",
-    "Ideen zur Anordnung meiner Möbel bekommen",
-    "wie viel Platz bleibt zum Laufen zwischen den Möbeln",
-    "Grundriss erstellen und als Bild speichern",
-    "ich brauche einen Zimmerplaner mit Drag and Drop",
-    "Badezimmer mit Dusche, Wanne und WC einplanen",
-    "Büro einrichten mit Schreibtisch und Regal",
-    "plan my room layout with furniture",
-    "how can I create a floor plan of my apartment",
-    "drag and drop furniture into a room plan",
-    "export my room design as an image",
-    "Raumaufteilung optimieren und Platz besser nutzen",
-    "Möbel drehen und verschieben im Plan"
+    "Ich möchte einen Grundriss meiner Wohnung zeichnen",
+    "Wie kann ich mein Zimmer am Computer einrichten?",
+    "Möbel in einem Raumplan anordnen und verschieben",
+    "Raumplaner für die neue Wohnung",
+    "Ich will ausprobieren, ob mein Sofa in den Raum passt",
+    "Grundriss selbst erstellen und als Bild speichern",
+    "Wohnung einrichten planen vor dem Umzug",
+    "Zimmer ausmessen und maßstabsgetreu aufzeichnen",
+    "wie plane ich die Küche mit Herd, Spüle und Kühlschrank",
+    "L-förmigen Raum mit Erker zeichnen",
+    "Tür und Fenster in den Grundriss einfügen",
+    "Meine handgezeichnete Skizze in einen Grundriss umwandeln",
+    "Badezimmer planen mit Dusche und Badewanne",
+    "I need to draw a floor plan of my apartment",
+    "how can I arrange furniture in a room layout",
+    "room planner with drag and drop furniture",
+    "create a floor plan and export it as an image",
+    "Möbelstücke drehen und in der Größe anpassen",
+    "Grundfläche und Wandlängen in Metern berechnen",
+    "Einrichtungsideen am Plan ausprobieren"
   ],
   "stichworte": [
-    "raumplaner",
     "grundriss",
-    "floorplan",
+    "raumplaner",
     "zimmer",
-    "room",
     "wohnung",
     "einrichten",
     "möbel",
     "furniture",
-    "sofa",
-    "bett",
-    "schrank",
+    "floorplan",
+    "floor plan",
+    "roomplanner",
+    "raum",
+    "room",
+    "layout",
+    "einrichtung",
+    "umzug",
+    "wände",
+    "walls",
+    "tür",
+    "door",
+    "fenster",
+    "window",
+    "maßstab",
+    "2d",
+    "skizze",
+    "sketch",
+    "plan",
+    "zeichnen",
+    "draw",
     "küche",
     "badezimmer",
-    "wohnzimmer",
-    "schlafzimmer",
-    "büro",
-    "anordnung",
-    "layout",
-    "planen",
-    "drag and drop",
-    "maßstab",
-    "wände",
-    "raster",
-    "platzierung",
-    "einrichtungsplaner",
-    "2d",
-    "plan",
-    "skizze",
-    "interior"
+    "quadratmeter",
+    "flaeche",
+    "interior",
+    "möblieren",
+    "sofa",
+    "bett"
   ],
   "symbol": "📐",
-  "beschreibungStand": "2026-10-12T16:51:26.019Z"
+  "beschreibungStand": "2026-10-12T18:43:31.264Z",
+  "verlauf": [
+    {
+      "zeit": "2026-10-12T17:54:30.854Z",
+      "anfrage": "Den Raumplaner erweitern, sodass man auch komplexe, nicht-rechteckige Grundrisse erstellen kann: frei geformte und abstrakte Raumformen (z. B. L-förmig, Erker, Nischen), Aussparungen/Ausschnitte in Wänden, sowie Türen und Öffnungen an Wänden einfügen und positionieren.",
+      "ki": "Claude",
+      "version": "v2",
+      "autor": "Mi7z"
+    },
+    {
+      "zeit": "2026-10-12T18:43:14.273Z",
+      "anfrage": "Im Raumplaner folgende Funktionen ergänzen: 1) Hochladen einer handgemalten/handbemalten Skizze als Bild, aus der das Tool automatisch den Grundriss (Wände/Raumform) erkennt und baut. 2) Beim Erstellen eines neuen Raums rasten die Winkel der Wände automatisch ein, mit einstellbarer Rasterweite (Wink",
+      "ki": "Claude",
+      "version": "v3",
+      "autor": "Mi7z"
+    }
+  ]
 }
