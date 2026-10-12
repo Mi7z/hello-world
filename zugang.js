@@ -89,7 +89,9 @@ export async function adressen(port) {
   }
   const ts = await tailscaleName();
   // Mit Tailscale-Namen nur diesen zeigen (merkt sich leichter als die 100.x-Nummer)
-  return ts ? [...liste.filter((a) => a.art === 'wlan'), { art: 'tailscale', url: `http://${ts}:${port}` }] : liste;
+  const ergebnis = ts ? [...liste.filter((a) => a.art === 'wlan'), { art: 'tailscale', url: `http://${ts}:${port}` }] : liste;
+  // Sichere Adresse (https über „tailscale serve") zuerst – nur damit lässt sich die Web-App richtig installieren
+  return [...(await sichereAdressen(port)).map((url) => ({ art: 'sicher', url })), ...ergebnis];
 }
 let tsCache = { zeit: 0, name: null, installiert: false };
 export async function tailscaleName() {
@@ -101,3 +103,25 @@ export async function tailscaleName() {
   return name;
 }
 export const tailscaleInstalliert = () => tsCache.installiert;
+
+const tailscale = (args) => new Promise((resolve) => execFile('tailscale', args, { timeout: 15000 }, (err, aus, fehler) => resolve({ ok: !err, aus: String(aus || ''), fehler: String(fehler || err?.message || '') })));
+// https-Adressen, die „tailscale serve" auf diesen Hello-World-Port weiterleitet
+export async function sichereAdressen(port) {
+  const r = await tailscale(['serve', 'status', '--json']);
+  if (!r.ok) return [];
+  try {
+    const web = JSON.parse(r.aus || '{}').Web || {};
+    return Object.entries(web).filter(([, w]) => Object.values(w.Handlers || {}).some((h) => new RegExp(`(127\\.0\\.0\\.1|localhost):${port}/?$`).test(h.Proxy || ''))).map(([host]) => `https://${host.replace(/:443$/, '')}`);
+  } catch { return []; }
+}
+// Sichere Adresse einrichten: freien https-Port suchen und auf Hello World weiterleiten
+export async function sicherEinrichten(port) {
+  const st = await tailscale(['serve', 'status', '--json']);
+  let belegt = [];
+  try { belegt = Object.keys(JSON.parse(st.aus || '{}').TCP || {}); } catch { /* leer */ }
+  const frei = [8443, 8444, 8445, 10443].find((p) => !belegt.includes(String(p)));
+  const befehl = ['serve', '--bg', `--https=${frei}`, `http://127.0.0.1:${port}`];
+  const r = await tailscale(befehl);
+  if (!r.ok) throw Object.assign(new Error(`Tailscale hat das nicht erlaubt. Einmal im Terminal ausführen: sudo tailscale ${befehl.join(' ')} – oder: sudo tailscale set --operator=$USER`), { status: 500 });
+  return sichereAdressen(port);
+}

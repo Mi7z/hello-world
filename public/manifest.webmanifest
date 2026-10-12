@@ -1,8 +1,10 @@
 {
+  "id": "/",
   "name": "Hello World",
   "short_name": "Hello World",
   "description": "Die freie App-Wolke",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#f6f5f2",
   "theme_color": "#3b5bdb",

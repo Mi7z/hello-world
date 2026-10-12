@@ -6,6 +6,11 @@
 <meta name="theme-color" content="#f6f5f2">
 <title>Hello World – die freie App-Wolke</title>
 <link rel="icon" href="/icon.svg">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Hello World">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="/icon-512.png">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="stylesheet" href="/style.css">
 <script src="/design.js"></script>
@@ -28,6 +33,12 @@
 <main class="seite">
   <!-- ========== Entdecken ========== -->
   <div data-ansicht="entdecken">
+    <div class="flaeche install-banner" id="installBanner" hidden>
+      <span class="logo-zeichen" aria-hidden="true">hw</span>
+      <div><b>Hello World als App</b><span class="hinweis">Mit eigenem Symbol auf dem Startbildschirm</span></div>
+      <button type="button" class="klein" id="installBannerKnopf">Installieren</button>
+      <button type="button" class="leise klein" id="installBannerZu" aria-label="Ausblenden">✕</button>
+    </div>
     <section class="held">
       <h1 class="hw-titel">Was brauchst du?</h1>
       <p class="unterzeile">Apps, Designs und Werkzeuge für Menschen und KIs. Gibt es das schon, öffnet es sich. Wenn nicht, baut deine KI es – geprüft, kostenlos, für Handy und Desktop.</p>
@@ -144,6 +155,12 @@ Benachrichtigung zeigen.</pre></details>
   <div data-ansicht="mehr" hidden>
     <section class="held">
       <h1 class="hw-titel">Mehr</h1>
+    </section>
+
+    <section class="flaeche" id="installBereich" style="margin-bottom:14px" hidden>
+      <h3>Als App installieren</h3>
+      <p class="hinweis">Hello World aufs Handy oder den PC holen – mit eigenem Symbol und Vollbild, wie eine richtige App. Geht auf Android, iPhone und am PC.</p>
+      <div class="knoepfe links"><button type="button" id="installKnopf">Installieren</button></div>
     </section>
 
     <section class="flaeche" id="handyBereich" style="margin-bottom:14px" hidden>

@@ -228,6 +228,7 @@ const server = http.createServer(async (req, res) => {
       if (!zugang.istRechner(req)) return json(res, 403, { fehler: 'Das geht nur direkt am PC.' });
       if (url.pathname === '/api/zugang/offen') { zugang.offenSetzen(d.an); lauschen(); return json(res, 200, { offen: zugang.offen() }); }
       if (url.pathname === '/api/zugang/code') return json(res, 200, zugang.codeErstellen(d.minuten));
+      if (url.pathname === '/api/zugang/https') return json(res, 200, { adressen: await zugang.sicherEinrichten(PORT) });
     }
     if (url.pathname === '/api/apps' && req.method === 'GET') {
       return json(res, 200, {

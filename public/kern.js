@@ -359,3 +359,23 @@ function nurImProgramm(was = 'Neues bauen und verbessern') {
   dlg.querySelector('#hwNurZu').onclick = () => dlg.close();
   dlg.showModal();
 }
+
+// ---------- Als App installieren (Android, iPhone, Desktop) ----------
+// Mit Server: Service Worker nur an sicheren Adressen (https bzw. localhost)
+if (!STATISCH && 'serviceWorker' in navigator && window.isSecureContext) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+let installHinweis = null;
+addEventListener('beforeinstallprompt', (ev) => { ev.preventDefault(); installHinweis = ev; document.dispatchEvent(new CustomEvent('hw-installierbar')); });
+const istInstalliert = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const istIos = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+async function appInstallieren() {
+  if (installHinweis) { installHinweis.prompt(); await installHinweis.userChoice.catch(() => {}); installHinweis = null; return; }
+  let dlg = document.getElementById('hwInstallieren');
+  if (!dlg) { dlg = document.createElement('dialog'); dlg.id = 'hwInstallieren'; dlg.className = 'blatt'; document.body.appendChild(dlg); }
+  const sicher = window.isSecureContext;
+  const schritte = istIos()
+    ? '<ol><li>Unten (bzw. oben) auf <b>Teilen</b> <span aria-hidden="true">⬆️</span> tippen</li><li><b>„Zum Home-Bildschirm"</b> wählen</li><li><b>Hinzufügen</b> – fertig, Hello World startet wie eine App</li></ol>'
+    : '<ol><li>Oben rechts das Browser-Menü <b>⋮</b> öffnen</li><li><b>„App installieren"</b> bzw. <b>„Zum Startbildschirm hinzufügen"</b> wählen</li><li>Bestätigen – fertig</li></ol>';
+  dlg.innerHTML = `<div class="blatt-inhalt"><h2>Hello World als App</h2>${schritte}${!sicher && !istIos() ? '<p class="hinweis">Tipp: Über die sichere Adresse (https://…) installiert Android Hello World als echte App mit eigenem Fenster. Du findest sie unter Mehr → Vom Handy aus nutzen.</p>' : ''}<div class="knoepfe"><button type="button" id="hwInstZu">Verstanden</button></div></div>`;
+  dlg.querySelector('#hwInstZu').onclick = () => dlg.close();
+  dlg.showModal();
+}

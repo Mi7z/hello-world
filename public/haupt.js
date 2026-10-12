@@ -342,7 +342,12 @@ async function zeigeHandy() {
     <div class="knoepfe links"><button type="button" id="handyKoppeln">Handy verbinden</button><button type="button" class="leise" id="handyAus">Zugang ausschalten</button></div>
     <div id="handyCode"></div>
     ${!ts ? `<p class="hinweis">Für unterwegs: <a href="https://tailscale.com/download" target="_blank" rel="noopener">Tailscale</a> auf diesem Rechner und dem Handy installieren (gleiches Konto) – dann erscheint hier die Adresse für unterwegs.</p>` : ''}
+    ${ts && !z.adressen.some((x) => x.art === 'sicher') ? `<div class="knoepfe links"><button type="button" class="zweit" id="handySicher">🔒 Sichere Adresse einrichten</button></div><p class="hinweis">Damit lässt sich Hello World auf Android und iPhone als richtige App installieren (https über Tailscale).</p>` : ''}
     ${geraete ? `<h3 class="unter-titel">Gekoppelte Geräte</h3>${geraete}` : '<p class="hinweis">Noch kein Gerät gekoppelt.</p>'}`;
+  if ($('handySicher')) $('handySicher').onclick = async () => {
+    $('handySicher').disabled = true;
+    try { await api('/api/zugang/https', { method: 'POST' }); zeigeHandy(); } catch (err) { alert(err.message); $('handySicher').disabled = false; }
+  };
   $('handyAus').onclick = async () => { if (!confirm('Handy-Zugang ausschalten? Gekoppelte Geräte bleiben gespeichert, kommen aber nicht mehr hinein, bis du ihn wieder einschaltest.')) return; await api('/api/zugang/offen', { method: 'POST', body: JSON.stringify({ an: false }) }); setTimeout(zeigeHandy, 800); };
   $('handyKoppeln').onclick = async () => {
     const { code } = await api('/api/zugang/code', { method: 'POST' });
@@ -353,7 +358,7 @@ async function zeigeHandy() {
       $('handyLink').textContent = wahl(a);
     };
     $('handyCode').innerHTML = `<div class="flaeche" style="margin-top:14px;text-align:center;box-shadow:none">
-      <div class="umschalter" id="handyNetz">${z.adressen.map((a, i) => `<button type="button" data-i="${i}" aria-pressed="${i === 0}">${a.art === 'tailscale' ? '🌍 Unterwegs' : '🏠 Zu Hause'}</button>`).join('')}</div>
+      <div class="umschalter" id="handyNetz">${z.adressen.map((a, i) => `<button type="button" data-i="${i}" aria-pressed="${i === 0}">${a.art === 'sicher' ? '🔒 Überall · als App' : a.art === 'tailscale' ? '🌍 Unterwegs' : '🏠 Zu Hause'}</button>`).join('')}</div>
       <div id="handyQr" style="width:220px;max-width:100%;margin:8px auto;background:#fff;border-radius:12px;padding:6px"></div>
       <p>Mit der Handy-Kamera scannen – oder am Handy öffnen und Code <b style="font-family:var(--mono);letter-spacing:.1em">${code}</b> eingeben:</p>
       <p class="hinweis" id="handyLink" style="word-break:break-all"></p>
@@ -423,3 +428,16 @@ bereich(location.hash.slice(1), false);
   const q = new URLSearchParams(location.search).get('q');
   if (q) { $('anfrage').value = q; $('suche').requestSubmit(); }
 })();
+
+// ---------- Als App installieren ----------
+function installZeigen() {
+  const moeglich = !istInstalliert();
+  $('installBereich').hidden = !moeglich;
+  const handy = matchMedia('(pointer: coarse)').matches;
+  $('installBanner').hidden = !moeglich || !handy || localStorage.getItem('hw-install-weg') === '1';
+}
+$('installKnopf').onclick = appInstallieren;
+$('installBannerKnopf').onclick = appInstallieren;
+$('installBannerZu').onclick = () => { localStorage.setItem('hw-install-weg', '1'); installZeigen(); };
+document.addEventListener('hw-installierbar', installZeigen);
+installZeigen();

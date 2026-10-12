@@ -394,3 +394,8 @@ html:not(.hw-statisch) [data-nur-statisch] { display: none !important; }
 @media (min-width: 1100px) { body.hw-fenster-offen .hw-flaeche { right: 440px; } }
 /* Tastatur offen bzw. wenig Höhe: App-Bereich ausblenden, damit Chat und Eingabe Platz haben */
 @media (max-height: 560px) { .hw-app, .hw-fenster-kopf { display: none; } .hw-tabs { padding-top: max(8px, env(safe-area-inset-top)); } }
+
+.install-banner { display: flex; align-items: center; gap: 12px; margin-top: 16px; padding: 12px 14px; }
+.install-banner > div { flex: 1; min-width: 0; }
+.install-banner b { display: block; }
+.install-banner .hinweis { margin: 0; }
