@@ -22,6 +22,7 @@
     <a href="#entdecken" data-ziel="entdecken"><span class="nav-zeichen" aria-hidden="true">⌕</span>Entdecken</a>
     <a href="#auftraege" data-ziel="auftraege" data-nur-server><span class="nav-zeichen" aria-hidden="true">⚒</span>Aufträge<span class="zahl" id="auftragZahl" hidden></span></a>
     <a href="#geraete" data-ziel="geraete" data-nur-server><span class="nav-zeichen" aria-hidden="true">⌂</span>Geräte</a>
+    <a href="#pitches" data-ziel="pitches"><span class="nav-zeichen" aria-hidden="true">💡</span>Pitches</a>
     <a href="#mehr" data-ziel="mehr"><span class="nav-zeichen" aria-hidden="true">☰</span>Mehr</a>
     <a href="https://github.com/Mi7z/hello-world/releases/latest" target="_blank" rel="noopener" data-nur-statisch><span class="nav-zeichen" aria-hidden="true">⬇</span>Programm</a>
   </nav>
@@ -141,6 +142,32 @@ Er verbindet sich nur ausgehend und kann nur: herunterfahren,
 neu starten, Ruhezustand (mit Timer), abbrechen, Status,
 Benachrichtigung zeigen.</pre></details>
       </section>
+    </div>
+  </div>
+
+  <!-- ========== Pitches ========== -->
+  <div data-ansicht="pitches" hidden>
+    <section class="held">
+      <h1 class="hw-titel">Pitches</h1>
+      <p class="unterzeile">Vorschläge, Hello World selbst besser zu machen. Gib Sternen, was du willst – mit <b id="pitchSchwelle">3</b> Sternen wird es gebaut.</p>
+    </section>
+    <div data-baustein="pitches">
+      <section class="flaeche">
+        <h3>Neuer Pitch</h3>
+        <form id="pitchForm" autocomplete="off">
+          <textarea id="pitchIdee" rows="2" placeholder="Was soll Hello World besser können? z. B. „Aufträge sollen eine Benachrichtigung schicken, wenn sie fertig sind“"></textarea>
+          <div class="knoepfe"><button type="submit" id="pitchPlanKnopf">Plan schreiben lassen</button></div>
+        </form>
+        <div id="pitchEntwurf" hidden>
+          <label for="pitchTitel">Titel</label>
+          <input id="pitchTitel" maxlength="80">
+          <label for="pitchPlan">Plan <span class="leise-text">(du kannst ihn noch ändern)</span></label>
+          <textarea id="pitchPlan" rows="10"></textarea>
+          <div class="knoepfe"><button type="button" class="leise" id="pitchVerwerfen">Verwerfen</button><button type="button" id="pitchEinreichen">Einreichen</button></div>
+        </div>
+      </section>
+      <h2 class="hw-abschnitt">Alle Pitches <span class="anzahl" id="pitchAnzahl"></span></h2>
+      <div class="pitch-liste" id="pitchListe"><p class="lade">Lade Pitches von GitHub …</p></div>
     </div>
   </div>
 

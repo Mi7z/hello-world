@@ -499,3 +499,18 @@ input, select, textarea { min-height: 40px; padding: 9px 12px; font-size: 16px; 
 
 /* Layout-Designs: kurz verbergen, bis die Startseite umgebaut ist */
 html.hw-layout-laedt body > header.kopf, html.hw-layout-laedt body > main.seite { visibility: hidden; }
+
+/* ---------- Pitches ---------- */
+.pitch-liste { display: grid; gap: 8px; }
+.pitch { padding: 12px 14px; }
+.pitch.zu { opacity: .7; }
+.pitch-kopf { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; }
+.pitch-sterne { display: grid; grid-template-columns: auto auto; align-items: baseline; gap: 2px; min-width: 64px; position: relative; padding-bottom: 6px; }
+.pitch-sterne b { font: 700 18px/1 var(--mono); color: var(--gelb); }
+.pitch-sterne span { font-size: 12px; color: var(--tx3); }
+.pitch-sterne i { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; border-radius: 2px; background: linear-gradient(90deg, var(--gelb) var(--anteil), var(--li) var(--anteil)); }
+.pitch-titel { min-width: 0; }
+.pitch-titel b { display: block; overflow-wrap: anywhere; }
+.pitch-plan { margin-top: 10px; padding: 10px 12px; background: var(--fl2); border-radius: var(--r-klein); font-size: 14px; }
+.pitch .knoepfe { margin-top: 10px; }
+#pitchForm textarea { width: 100%; }

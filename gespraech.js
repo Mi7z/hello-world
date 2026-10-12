@@ -10,6 +10,7 @@ const SYSTEM = `Du bist der Assistent von „Hello World", einer Sammlung kleine
 - "neu": Er möchte etwas, das es noch nicht gibt und nicht in die offene App gehört – eine neue App, ein neues Design, oder z. B. zwei Apps verbinden/kombinieren (dann eine neue App, die beides zusammenführt, oder – wenn es klar zur offenen App gehört – "verbessern"). "wunsch" = vollständige Beschreibung, was gebaut werden soll (inkl. der beteiligten Apps).
 - "suchen": Er sucht ein Werkzeug/eine App oder fragt, ob es etwas gibt. Wähle aus dem Katalog die passenden Einträge (bis 5, beste zuerst) in "apps" – auch bei ganz anderem Wortlaut. Gibt es nichts Passendes, ist es "neu".
 - "oeffnen": Er möchte eine bestimmte vorhandene App öffnen/wechseln („öffne den Fileconverter", „zurück zum Paintboard") → "apps" = genau diese.
+- "pitch": Er möchte Hello World SELBST verändern (die Startseite, den Chat, das Hello-World-Fenster, den Bauablauf, das Programm, neue Funktionen von Hello World – nicht eine einzelne App), z. B. „Hello World sollte einen Dunkelmodus-Schalter haben", „der Chat soll Sprachnachrichten können". Solche Änderungen werden als Pitch vorgeschlagen; andere stimmen ab. "wunsch" = die Idee, klar formuliert.
 - "antwort": Eine Frage oder Plauderei, die mit Text beantwortet ist (Bedienung, was eine App kann, Hilfe).
 "antwort": immer 1–3 kurze, freundliche Sätze auf Deutsch, die sagen, was jetzt passiert bzw. die Antwort. Keine Fachbegriffe.
 Ist eine App offen, bezieht sich „diese/die App/hier/das" auf sie. Bevorzuge "verbessern", wenn sich der Wunsch sinnvoll auf die offene App bezieht.`;
@@ -17,7 +18,7 @@ Ist eine App offen, bezieht sich „diese/die App/hier/das" auf sie. Bevorzuge "
 const SCHEMA = {
   type: 'object', additionalProperties: false, required: ['aktion', 'antwort', 'apps', 'wunsch'],
   properties: {
-    aktion: { type: 'string', enum: ['verbessern', 'neu', 'suchen', 'oeffnen', 'antwort'] },
+    aktion: { type: 'string', enum: ['verbessern', 'neu', 'suchen', 'oeffnen', 'pitch', 'antwort'] },
     antwort: { type: 'string' },
     apps: { type: 'array', items: { type: 'string' } },
     wunsch: { type: 'string' },

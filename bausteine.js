@@ -24,12 +24,13 @@ export const BAUSTEINE = {
   'konto-ki': 'Konto und „Deine KI" (welche KI baut)',
   regeln: '„So funktioniert\'s" – die vier Grundregeln',
   'ki-holen': '„In deine KI holen" – Plugin-Anleitung',
+  pitches: 'Pitches: Vorschläge zur Weiterentwicklung von Hello World mit Sternen (neuer Pitch + Liste)',
   treffer: '(alt) Trefferliste der Suche – wird heute im Chat gezeigt',
 };
 
 // Aktionen für eigene Knöpfe: <button data-hw-aktion="name:wert">…</button>
 export const AKTIONEN = {
-  'bereich:<entdecken|auftraege|geraete|mehr>': 'zeigt diesen Bereich (eigene Bereiche: <section data-hw-ansicht="name">)',
+  'bereich:<entdecken|auftraege|geraete|pitches|mehr>': 'zeigt diesen Bereich (eigene Bereiche: <section data-hw-ansicht="name">)',
   chat: 'öffnet das Hello-World-Fenster (Chat, Tabs)',
   'chat:<text>': 'schickt diesen Text in den Chat (z. B. „chat:Ich brauche einen Timer")',
   'oeffnen:<kennung>': 'öffnet eine App, z. B. „oeffnen:app.paintboard"',

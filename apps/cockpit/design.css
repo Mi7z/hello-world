@@ -93,6 +93,7 @@
     </section>
     <section data-hw-ansicht="auftraege"><div class="cockpit-titel">Aufträge</div><hw-baustein name="bau"></hw-baustein><hw-baustein name="auftragsliste"></hw-baustein></section>
     <section data-hw-ansicht="geraete"><div class="cockpit-titel">Geräte</div><hw-baustein name="geraete"></hw-baustein></section>
+    <section data-hw-ansicht="pitches"><div class="cockpit-titel">Pitches – Hello World weiterentwickeln</div><hw-baustein name="pitches"></hw-baustein></section>
     <section data-hw-ansicht="mehr"><div class="cockpit-titel">Einstellungen</div><hw-baustein name="installieren"></hw-baustein><hw-baustein name="handy"></hw-baustein><hw-baustein name="aussehen"></hw-baustein><hw-baustein name="neues-bauen"></hw-baustein><hw-baustein name="konto-ki"></hw-baustein><hw-baustein name="regeln"></hw-baustein><hw-baustein name="ki-holen"></hw-baustein></section>
   </main>
 </div>

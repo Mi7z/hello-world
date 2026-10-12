@@ -14,6 +14,7 @@ import * as geraete from './geraete.js';
 import * as suchtexte from './beschreibung.js';
 import * as appki from './appki.js';
 import * as gespraech from './gespraech.js';
+import * as pitches from './pitches.js';
 import { BAUSTEINE, AKTIONEN, WERTE, TAGS } from './bausteine.js';
 import * as zugang from './zugang.js';
 import { ANBIETER } from './freiki.js';
@@ -391,6 +392,30 @@ const server = http.createServer(async (req, res) => {
       return { art: 'lokal', ...(KI_PROGRAMME[k?.programm] ? { programm: k.programm } : {}) };
     };
     const darf = (k) => k.art !== 'lokal' || ausHeimnetz(req);
+    // ---------- Pitches: Vorschläge zur Weiterentwicklung von Hello World (auf GitHub) ----------
+    if (url.pathname === '/api/pitches' && req.method === 'GET') {
+      const direkt = ausHeimnetz(req) && await pitches.ghBereit();
+      return json(res, 200, { pitches: await pitches.liste(url.searchParams.has('frisch')), schwelle: pitches.SCHWELLE, direkt, repo: pitches.REPO });
+    }
+    if (url.pathname === '/api/pitches/entwurf' && req.method === 'POST') {
+      const d = await body(req);
+      const ki = kiAusAnfrage(d.ki);
+      if (!darf(ki)) return json(res, 403, { fehler: 'Die KI auf diesem PC geht nur zu Hause bzw. mit gekoppeltem Gerät.' });
+      const e = await pitches.entwurf(ki, String(d.idee || '').slice(0, 2000));
+      return json(res, 200, { ...e, link: pitches.githubLink(e.titel, e.plan) });
+    }
+    if (url.pathname === '/api/pitches' && req.method === 'POST') {
+      const d = await body(req);
+      const titel = String(d.titel || '').trim().slice(0, 80), plan = String(d.plan || '').trim().slice(0, 6000);
+      if (titel.length < 5 || plan.length < 20) return json(res, 400, { fehler: 'Titel und Plan fehlen.' });
+      if (!ausHeimnetz(req) || !(await pitches.ghBereit())) return json(res, 403, { fehler: 'Bitte auf GitHub einreichen.', link: pitches.githubLink(titel, plan) });
+      return json(res, 200, await pitches.einreichen({ titel, plan, autor: anmeldung.person(req)?.login }));
+    }
+    const pitchStimme = url.pathname.match(/^\/api\/pitches\/(\d+)\/stimme$/);
+    if (pitchStimme && req.method === 'POST') {
+      if (!ausHeimnetz(req) || !(await pitches.ghBereit())) return json(res, 403, { fehler: 'Bitte auf GitHub mit 👍 abstimmen.', link: `https://github.com/${pitches.REPO}/issues/${pitchStimme[1]}` });
+      return json(res, 200, await pitches.abstimmen(pitchStimme[1]));
+    }
     // ---------- Chat: versteht den Wunsch (im Zusammenhang mit der offenen App) ----------
     if (url.pathname === '/api/chat' && req.method === 'POST') {
       const d = await body(req);

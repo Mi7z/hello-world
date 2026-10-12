@@ -158,6 +158,7 @@
         ${n.denkt ? '<div class="hw-blase"><span class="lade">Ich denke nach …</span></div>' : ''}
         ${(n.apps || []).map(karte).join('')}
         ${n.auftrag ? auftragKarte(n.auftrag, i) : ''}
+        ${n.pitch ? `<div class="hw-auftrag"><div class="hw-auftrag-kopf"><b>💡 Pitch: ${esc(n.pitch.slice(0, 80))}</b></div><p class="hinweis">Änderungen an Hello World selbst werden als Pitch vorgeschlagen – mit genug Sternen wird es gebaut.</p><div class="knoepfe links"><a class="knopf klein" href="/?pitch=${encodeURIComponent(n.pitch)}#pitches">Pitch erstellen</a></div></div>` : ''}
       </div>`).join('')
       : `<div class="hw-leer"><p><b>Hallo!</b> ${k ? `Schreib unten, was <b>${esc(k.kennung)}</b> zusätzlich können soll – oder frag nach einer anderen App.` : 'Schreib unten, was du brauchst. Gibt es das schon, schlage ich es vor; sonst baut deine KI es.'}</p></div>`;
     $h('hwVerlauf').scrollTop = $h('hwVerlauf').scrollHeight;
@@ -249,6 +250,7 @@
         const a = await auftragStarten({ ziel: k.slug, wunsch: e.wunsch, basis: k.version || null });
         aendern(i, { auftrag: a.id }); verfolgen(a.id);
       }
+      if (e.aktion === 'pitch') aendern(i, { pitch: e.wunsch });
       if (e.aktion === 'neu') {
         if (STATISCH) return;
         const a = await auftragStarten({ anfrage: e.wunsch });

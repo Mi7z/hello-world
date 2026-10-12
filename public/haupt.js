@@ -444,3 +444,89 @@ $('installBannerKnopf').onclick = appInstallieren;
 $('installBannerZu').onclick = () => { localStorage.setItem('hw-install-weg', '1'); installZeigen(); };
 document.addEventListener('hw-installierbar', installZeigen);
 installZeigen();
+
+// ---------- Pitches: Hello World weiterentwickeln (auf GitHub, Sterne = 👍) ----------
+let pitchStand = { pitches: [], schwelle: 3, direkt: false, repo: 'Mi7z/hello-world' };
+const pitchOffen = new Set();
+async function pitchesLaden(frisch = false) {
+  try {
+    if (STATISCH) {
+      // Ohne Server direkt bei GitHub lesen (öffentlich)
+      const roh = await (await fetch(`https://api.github.com/repos/${pitchStand.repo}/issues?labels=pitch&state=all&per_page=100`)).json();
+      pitchStand.pitches = roh.filter((i) => !i.pull_request).map((i) => ({ nummer: i.number, titel: i.title.replace(/^Pitch:\s*/i, ''), plan: String(i.body || '').replace(/^### Plan\s*/i, ''), von: i.user?.login, zeit: i.created_at, stimmen: i.reactions?.['+1'] || 0, url: i.html_url, status: i.state === 'closed' ? 'umgesetzt' : 'offen', geschlossen: i.state === 'closed' })).sort((a, b) => b.stimmen - a.stimmen);
+    } else pitchStand = await api(`/api/pitches${frisch ? '?frisch=1' : ''}`);
+  } catch (err) { $('pitchListe').innerHTML = `<p class="fehler-text">Pitches konnten nicht geladen werden (${esc(err.message)}).</p>`; return; }
+  pitchesZeigen();
+}
+function pitchesZeigen() {
+  const { pitches, schwelle, direkt } = pitchStand;
+  $('pitchSchwelle').textContent = schwelle;
+  $('pitchAnzahl').textContent = pitches.length || '';
+  $('pitchEinreichen').textContent = direkt ? 'Einreichen' : 'Auf GitHub einreichen ↗';
+  $('pitchListe').innerHTML = pitches.length ? pitches.map((p) => {
+    const anteil = Math.min(100, Math.round((p.stimmen / schwelle) * 100));
+    const offen = pitchOffen.has(p.nummer);
+    return `<article class="pitch flaeche${p.geschlossen ? ' zu' : ''}">
+      <div class="pitch-kopf">
+        <div class="pitch-sterne" title="${p.stimmen} von ${schwelle} Sternen"><b>⭐ ${p.stimmen}</b><span>/ ${schwelle}</span><i style="--anteil:${anteil}%"></i></div>
+        <div class="pitch-titel"><b>${esc(p.titel)}</b><span class="hinweis">#${p.nummer} · @${esc(p.von || '')} · ${new Date(p.zeit).toLocaleDateString('de-DE')}</span></div>
+        <span class="marke${p.status === 'genug Stimmen' || p.status === 'wird gebaut' ? ' akzent' : ''}">${esc(p.status)}</span>
+      </div>
+      ${offen ? `<div class="pitch-plan text-inhalt">${markdown(p.plan)}</div>` : ''}
+      <div class="knoepfe links">
+        <button type="button" class="zweit klein" data-pitch-auf="${p.nummer}">${offen ? 'Plan zuklappen' : 'Plan ansehen'}</button>
+        ${p.geschlossen ? '' : `<button type="button" class="klein" data-pitch-stern="${p.nummer}">⭐ Stern geben</button>`}
+        <a class="knopf leise klein" href="${esc(p.url)}" target="_blank" rel="noopener">Auf GitHub ↗</a>
+      </div>
+    </article>`;
+  }).join('') : '<p class="leer">Noch keine Pitches. Mach den Anfang – oben deine Idee eintippen.</p>';
+}
+$('pitchListe').addEventListener('click', async (ev) => {
+  const auf = ev.target.closest('[data-pitch-auf]');
+  if (auf) { const n = Number(auf.dataset.pitchAuf); pitchOffen.has(n) ? pitchOffen.delete(n) : pitchOffen.add(n); pitchesZeigen(); return; }
+  const stern = ev.target.closest('[data-pitch-stern]');
+  if (!stern) return;
+  const n = stern.dataset.pitchStern;
+  if (STATISCH || !pitchStand.direkt) { open(`https://github.com/${pitchStand.repo}/issues/${n}`, '_blank', 'noopener'); return; }
+  stern.disabled = true;
+  try { await api(`/api/pitches/${n}/stimme`, { method: 'POST' }); stern.textContent = '⭐ Danke!'; setTimeout(() => pitchesLaden(true), 800); }
+  catch (err) { alert(err.message); stern.disabled = false; }
+});
+$('pitchForm').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  const idee = $('pitchIdee').value.trim();
+  if (!idee) return $('pitchIdee').focus();
+  if (STATISCH || !kiEinstellung()) {
+    // Ohne KI: Idee direkt als Plan übernehmen
+    $('pitchTitel').value = idee.slice(0, 60); $('pitchPlan').value = `## Worum geht's\n${idee}\n\n## Was ändert sich\n- \n\n## Umfang und Risiken\n- `;
+    $('pitchEntwurf').hidden = false; return;
+  }
+  $('pitchPlanKnopf').disabled = true; $('pitchPlanKnopf').textContent = 'Deine KI schreibt den Plan …';
+  try {
+    const e = await api('/api/pitches/entwurf', { method: 'POST', body: JSON.stringify({ idee, ki: kiFuerAuftrag() }) });
+    $('pitchTitel').value = e.titel; $('pitchPlan').value = `${e.zusammenfassung}\n\n${e.plan}`;
+    $('pitchEntwurf').hidden = false;
+  } catch (err) { alert(err.message); }
+  finally { $('pitchPlanKnopf').disabled = false; $('pitchPlanKnopf').textContent = 'Plan schreiben lassen'; }
+});
+$('pitchVerwerfen').onclick = () => { $('pitchEntwurf').hidden = true; };
+$('pitchEinreichen').onclick = async () => {
+  const titel = $('pitchTitel').value.trim(), plan = $('pitchPlan').value.trim();
+  if (titel.length < 5 || plan.length < 20) return alert('Bitte Titel und Plan ausfüllen.');
+  const link = () => { const u = new URL(`https://github.com/${pitchStand.repo}/issues/new`); u.searchParams.set('template', 'pitch.yml'); u.searchParams.set('title', `Pitch: ${titel}`); u.searchParams.set('plan', plan.slice(0, 5000)); return u.href; };
+  if (STATISCH || !pitchStand.direkt) { open(link(), '_blank', 'noopener'); return; }
+  $('pitchEinreichen').disabled = true;
+  try {
+    const r = await api('/api/pitches', { method: 'POST', body: JSON.stringify({ titel, plan }) });
+    $('pitchEntwurf').hidden = true; $('pitchIdee').value = '';
+    pitchOffen.add(r.nummer);
+    await pitchesLaden(true);
+  } catch (err) { alert(err.message); }
+  finally { $('pitchEinreichen').disabled = false; }
+};
+addEventListener('hashchange', () => { if (location.hash === '#pitches') pitchesLaden(); });
+{
+  const idee = new URLSearchParams(location.search).get('pitch');
+  if (idee) { $('pitchIdee').value = idee; history.replaceState(null, '', '/#pitches'); bereich('pitches'); setTimeout(() => $('pitchForm').requestSubmit(), 300); }
+}
+if (location.hash === '#pitches') pitchesLaden();
