@@ -1,0 +1,96 @@
+{
+  "titel": "Raumplaner – Grundriss & Möbel in 2D",
+  "beschreibung": "Du zeichnest einen maßstabsgetreuen 2D-Grundriss deines Raums, stellst Möbel aus einer Bibliothek per Drag & Drop hinein, drehst und skalierst sie – und bekommst KI-Tipps zur Anordnung und Platznutzung. Pläne lassen sich speichern und als Bild exportieren.",
+  "kategorie": "werkzeug",
+  "funktionen": [
+    "Räume als maßstabsgetreuen 2D-Grundriss zeichnen, Möbel per Drag & Drop platzieren/drehen/skalieren und als Bild exporti"
+  ],
+  "tags": [
+    "raumplaner",
+    "grundriss",
+    "möbel",
+    "einrichtung",
+    "2d"
+  ],
+  "anfrage": "Eine Raumplaner-App: Nutzer kann Räume skizzieren (Wände und Grundriss zeichnen, Maße festlegen) und Möbel per Drag & Drop aus einer Bibliothek hinzufügen, verschieben, drehen und skalieren – als 2D-Grundriss/Draufsicht. Zusätzlich ein KI-Konnektor, der bei der Planung hilft (Vorschläge zur Anordnun",
+  "ki": "Claude",
+  "erstellt": "2026-10-12T16:51:11.021Z",
+  "version": 1,
+  "typ": "browser",
+  "hinweise": [],
+  "autor": {
+    "login": "Mi7z",
+    "name": "Mi7z"
+  },
+  "eigeneKi": {
+    "zweck": "Hilft bei der Raumplanung: Vorschläge zur Anordnung der Möbel, Platznutzung und Einrichtungstipps anhand von Raumgröße und Möbelliste.",
+    "aufgaben": [
+      "planen"
+    ]
+  },
+  "werkzeuge": [
+    {
+      "name": "plan_auswerten",
+      "beschreibung": "Berechnet Fläche und Abmessungen eines Raums sowie die belegte und freie Stellfläche aus einem Plan."
+    },
+    {
+      "name": "plan_bild",
+      "beschreibung": "Erzeugt ein PNG-Bild (Draufsicht/Grundriss) des aktuellen oder übergebenen Plans."
+    }
+  ],
+  "beispiele": [
+    "Ich möchte mein Wohnzimmer planen und Möbel anordnen",
+    "wie kann ich einen Grundriss von meiner Wohnung zeichnen",
+    "Raum ausmessen und maßstabsgetreu aufzeichnen",
+    "Möbel virtuell im Zimmer platzieren bevor ich sie kaufe",
+    "passt mein neues Sofa und der Esstisch ins Wohnzimmer",
+    "Schlafzimmer einrichten mit Bett, Schrank und Kommode",
+    "Küche planen mit Küchenzeile, Herd und Kühlschrank",
+    "Ideen zur Anordnung meiner Möbel bekommen",
+    "wie viel Platz bleibt zum Laufen zwischen den Möbeln",
+    "Grundriss erstellen und als Bild speichern",
+    "ich brauche einen Zimmerplaner mit Drag and Drop",
+    "Badezimmer mit Dusche, Wanne und WC einplanen",
+    "Büro einrichten mit Schreibtisch und Regal",
+    "plan my room layout with furniture",
+    "how can I create a floor plan of my apartment",
+    "drag and drop furniture into a room plan",
+    "export my room design as an image",
+    "Raumaufteilung optimieren und Platz besser nutzen",
+    "Möbel drehen und verschieben im Plan"
+  ],
+  "stichworte": [
+    "raumplaner",
+    "grundriss",
+    "floorplan",
+    "zimmer",
+    "room",
+    "wohnung",
+    "einrichten",
+    "möbel",
+    "furniture",
+    "sofa",
+    "bett",
+    "schrank",
+    "küche",
+    "badezimmer",
+    "wohnzimmer",
+    "schlafzimmer",
+    "büro",
+    "anordnung",
+    "layout",
+    "planen",
+    "drag and drop",
+    "maßstab",
+    "wände",
+    "raster",
+    "platzierung",
+    "einrichtungsplaner",
+    "2d",
+    "plan",
+    "skizze",
+    "interior"
+  ],
+  "symbol": "📐",
+  "beschreibungStand": "2026-10-12T16:51:26.019Z"
+}

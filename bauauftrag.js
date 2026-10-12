@@ -186,7 +186,7 @@ async function vorbilderSchritt(a) {
       ? `Bestehende App: ${a.zielKennung}\nGewünschte Änderung: „${a.anfrage}"\nNeue Funktion: ${a.funktion || ''}\nRecherchiere, wie bekannte Apps genau diese Funktion umsetzen und anordnen.`
       : `Neue App: ${a.titel || a.titelAnzeige}\nWunsch: „${a.anfrage}"\nPlan: ${a.plan || ''}`;
     a.vorbilder = String(await kiRecherche(kiVon(a), A.VORBILDER_SYSTEM, frage)).trim().slice(0, 6000);
-    const namen = (a.vorbilder.match(/^[-•*]\s*\**([^–:\n*]{2,40})\**\s*[–:-]/gm) || []).slice(0, 3).map((x) => x.replace(/^[-•*]\s*\**|\**\s*[–:-]$/g, '').trim());
+    const namen = (a.vorbilder.match(/^[-•*]\s*\**([^–:\n*]{2,40})\**\s*[–:-]/gm) || []).map((x) => x.replace(/^[-•*]\s*\**|\**\s*[–:-]$/g, '').trim()).filter((x) => !/vorbild|aufbau|funktion|muss|kann|detail|fehler|handy|desktop/i.test(x)).slice(0, 3);
     schritt(a, 'vorbilder', 'ok', namen.length ? `inspiriert von ${namen.join(', ')}` : 'Vorbilder angesehen');
   } catch (err) {
     a.vorbilder = '';

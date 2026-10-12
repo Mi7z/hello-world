@@ -1,0 +1,21 @@
+{
+  "project": "Hello World",
+  "platform": "mobile-app",
+  "audience": "Michi und andere Laien, vor allem am Android-Handy (einhändig, nebenbei), auch Desktop; wollen Werkzeug finden/öffnen, per KI bauen/verbessern, Status sehen",
+  "items": [
+    {"name": "Suchen & Wünschen", "frequency": 5, "importance": 5, "group": "Finden", "task": "Wunsch eintippen – Vorschlag öffnen oder bauen lassen"},
+    {"name": "Meine Apps (offene Tabs)", "frequency": 5, "importance": 5, "group": "Benutzen", "task": "geöffnete Apps wechseln und benutzen"},
+    {"name": "App verbessern", "frequency": 4, "importance": 5, "group": "Benutzen", "task": "aktuelle App per Satz ändern"},
+    {"name": "Aufträge & Vorschauen", "frequency": 4, "importance": 5, "group": "Bauen", "task": "Status laufender Bauten, Vorschau prüfen, übernehmen/verwerfen"},
+    {"name": "Katalog stöbern", "frequency": 3, "importance": 3, "group": "Finden"},
+    {"name": "Neu bauen", "frequency": 3, "importance": 5, "group": "Bauen"},
+    {"name": "Pitches", "frequency": 2, "importance": 3, "group": "Mitmachen"},
+    {"name": "Aussehen (Designs)", "frequency": 1, "importance": 2, "group": "Einstellungen"},
+    {"name": "Deine KI", "frequency": 1, "importance": 4, "group": "Einstellungen"},
+    {"name": "Vom Handy aus nutzen", "frequency": 1, "importance": 3, "group": "Einstellungen"},
+    {"name": "Geräte (Helfer)", "frequency": 1, "importance": 2, "group": "Einstellungen"},
+    {"name": "Als App installieren", "frequency": 1, "importance": 2, "group": "Einstellungen"},
+    {"name": "Konto", "frequency": 1, "importance": 2, "group": "Einstellungen"},
+    {"name": "Regeln & In deine KI holen", "frequency": 1, "importance": 1, "group": "Einstellungen"}
+  ]
+}

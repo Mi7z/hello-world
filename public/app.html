@@ -19,7 +19,6 @@
 
 <!-- Arbeitsfläche: offene Apps als Tabs (jede in ihrem eigenen, abgeschotteten Rahmen) -->
 <div class="hw-flaeche" id="flaeche" hidden></div>
-<div id="vorschauBand" class="vorschau-band" hidden>Vorschau – im Hello-World-Fenster übernehmen oder verwerfen</div>
 
 <!-- Skills, KI-Werkzeuge, Server-Apps: Infoseite -->
 <div id="infoseite" hidden>
@@ -28,7 +27,7 @@
     <div class="kopf-rechts" data-nur-server><button type="button" class="konto" data-anmelde-knopf>Anmelden</button></div>
   </header>
   <main class="seite" style="max-width:820px">
-    <a class="zurueck" href="/">Zurück</a>
+    <a class="zurueck" href="/">Start</a>
     <div class="app-kopf">
       <h1 id="iTitel" class="hw-titel"></h1>
       <p id="iBeschreibung"></p>
@@ -93,7 +92,7 @@ function tabZeigen(i) {
     if (t.rahmen) t.rahmen.hidden = j !== i;
   }
   const t = tabs[i];
-  $('vorschauBand').hidden = !(t.vorschau || t.art === 'vorschau');
+  window.hwLeiste?.aktualisieren();
   document.title = `${t.titel || t.kennung} – Hello World`;
   if (!STATISCH && t.art === 'app') history.replaceState(null, '', `/a/${t.kennung}${t.version ? '@' + t.version : ''}`);
   window.hwChat?.aktualisieren();
@@ -109,6 +108,7 @@ async function oeffnen(name, opts = {}) {
   if (i < 0) { tabs.push({ art: 'app', kennung: kennung(a), slug: a.slug, version: version || null, app: a, titel: kennung(a) + (version ? '@' + version : '') }); i = tabs.length - 1; tabsSpeichern(); }
   else if (opts.neu && tabs[i].rahmen) { tabs[i].rahmen.remove(); tabs[i].rahmen = null; tabs[i].baum = null; appCache.delete(a.slug); tabs[i].app = await appHolen(a.slug) || a; }
   $('infoseite').hidden = true; $('flaeche').hidden = false;
+  zuletztMerken(kennung(a) + (version ? '@' + version : ''));
   tabZeigen(i);
 }
 function tabZu(i) {
@@ -128,12 +128,12 @@ function vorschau(a) {
   if (a && a.zielSlug !== t.slug) return;
   t.vorschau = a || null;
   if (t.rahmen) rahmenSetzen(t.rahmen, a ? `/api/bau/${a.id}/vorschau?design=${designName()}&t=${a.aktualisiert}` : `${quelle(t)}${quelle(t).includes('?') ? '&' : '?'}t=${Date.now()}`);
-  $('vorschauBand').hidden = !a;
+  window.hwLeiste?.aktualisieren();
 }
 // Vorschau einer NEUEN App als eigener Tab
 function vorschauOeffnen(a) {
   let i = tabs.findIndex((t) => t.art === 'vorschau' && t.auftrag === a.id);
-  if (i < 0) { tabs.push({ art: 'vorschau', auftrag: a.id, kennung: `Vorschau ${a.titelAnzeige || ''}`.trim(), titel: `Vorschau: ${a.titelAnzeige || 'neue App'}`, app: { slug: '', typ: 'browser', symbol: '👀' } }); i = tabs.length - 1; }
+  if (i < 0) { tabs.push({ art: 'vorschau', auftrag: a.id, job: a, kennung: `Vorschau ${a.titelAnzeige || ''}`.trim(), titel: `Vorschau: ${a.titelAnzeige || 'neue App'}`, app: { slug: '', typ: 'browser', symbol: '👀' } }); i = tabs.length - 1; }
   $('infoseite').hidden = true; $('flaeche').hidden = false;
   tabZeigen(i);
 }
@@ -142,6 +142,7 @@ document.addEventListener('hw-auftrag', (ev) => {
   const a = ev.detail;
   const i = tabs.findIndex((t) => t.art === 'vorschau' && t.auftrag === a.id);
   if (i >= 0 && ['fertig', 'verworfen'].includes(a.status)) tabZu(i);
+  if (i >= 0) tabs[i].job = a;
   if (i >= 0 && a.status === 'vorschau' && tabs[i].rahmen) rahmenSetzen(tabs[i].rahmen, `/api/bau/${a.id}/vorschau?design=${designName()}&t=${a.aktualisiert}`);
 });
 
@@ -182,7 +183,62 @@ function appBereich(el) {
   };
 }
 
+// ---------- Aktionsleiste: Ort und passende Aktionen ----------
+const offeneVorschau = (t) => (typeof hwStatus !== 'undefined' ? hwStatus.vorschau.find((a) => a.zielSlug === t.slug) : null);
+function ort() {
+  const t = tabs[aktiv];
+  if (!t) return { name: 'Hello World' };
+  if (t.art === 'vorschau') return { name: t.titel, info: 'Neue App – noch nicht veröffentlicht', vorschau: true };
+  const v = t.baum?.versionen?.find((x) => x.id === (t.version || t.baum.standard));
+  if (t.vorschau) return { name: `Vorschau · ${t.kennung}`, info: 'Änderung – noch nicht übernommen', vorschau: true };
+  return { name: t.kennung + (t.version ? '@' + t.version : ''), info: v ? `Version ${v.id.slice(1)} · ${autorText(v.autor)}${t.version ? '' : ' · beste Version'}` : (TYP_NAME[t.app?.typ || 'browser'] || '') };
+}
+function aktionen() {
+  const t = tabs[aktiv];
+  if (!t) return [];
+  const job = t.art === 'vorschau' ? t.job : t.vorschau;
+  if (job) return [
+    { id: 'verwerfen', text: '✗ Verwerfen', art: 'leise' },
+    { id: 'nachbessern', text: '✎ Nachbessern', art: 'zweit' },
+    { id: 'uebernehmen', text: t.art === 'vorschau' ? '✓ Veröffentlichen' : '✓ Übernehmen', art: 'haupt', breit: true },
+  ];
+  const liste = [];
+  const offen = offeneVorschau(t);
+  if (offen) liste.push({ id: 'vorschauZeigen', text: '▶ Vorschau ansehen', art: 'haupt', breit: true });
+  liste.push({ id: 'verbessern', text: '✎ Verbessern', art: offen ? 'zweit' : 'haupt' });
+  if (istDesign(t.app) && designName() !== t.slug) liste.push({ id: 'designNutzen', text: '◐ Design verwenden', art: 'zweit' });
+  if (t.baum) liste.push({ id: 'versionen', text: `Versionen (${t.baum.versionen.length})`, art: 'zweit' });
+  liste.push({ id: 'mehr', text: '⋯ Mehr', art: 'leise' });
+  return liste;
+}
+async function aktion(id, { schliessen }) {
+  const t = tabs[aktiv];
+  if (!t) return;
+  const job = t.art === 'vorschau' ? t.job : t.vorschau;
+  if (id === 'verbessern') return window.hwLeiste.zuChat();
+  if (id === 'versionen') { location.href = `/b/${t.kennung}`; return; }
+  if (id === 'designNutzen') { designWaehlen(t.slug); return; }
+  if (id === 'vorschauZeigen') { const a = offeneVorschau(t); if (a) { vorschau(await api(`/api/bau/${a.id}`)); schliessen(); } return; }
+  if (!job) return;
+  if (id === 'nachbessern') return window.hwLeiste.zuChat({ nachbessern: { id: job.id, titel: job.titelAnzeige || t.titel } });
+  if (id === 'verwerfen') {
+    if (!confirm('Vorschau verwerfen? Es wird nichts geändert.')) return;
+    await auftragAktion(job.id, 'verwerfen');
+    if (t.art === 'vorschau') tabZu(aktiv); else vorschau(null);
+    statusLaden(); schliessen(); return;
+  }
+  if (id === 'uebernehmen') {
+    try {
+      const a = await auftragAktion(job.id, 'uebernehmen');
+      if (t.art === 'vorschau') tabZu(aktiv); else t.vorschau = null;
+      statusLaden(); schliessen();
+      if (a.app) await oeffnen(`${a.app.kennung}${a.app.version ? '@' + a.app.version : ''}`, { neu: true });
+    } catch (err) { alert(`Das hat nicht geklappt: ${err.message}`); }
+  }
+}
+
 window.HW_SEITE = {
+  ort, aktionen, aktion, mehrBereich: (el) => appBereich(el),
   kontext: () => { const t = tabs[aktiv]; return t && t.art === 'app' ? { slug: t.slug, kennung: t.kennung, version: t.version } : null; },
   tabs: () => tabs.map((t, i) => ({ kennung: t.kennung, name: t.titel || t.kennung, aktiv: i === aktiv, symbol: t.app ? symbolHtml(t.app) : '' })),
   tabWahl: (i) => { $('infoseite').hidden = true; $('flaeche').hidden = false; tabZeigen(i); },
@@ -237,8 +293,9 @@ addEventListener('message', async (ev) => {
   const s = await (await fetch('/api/apps', { cache: 'no-store' })).json();
   katalog = s.apps || [];
   if (!kiEinstellung() && s.lokaleKi) localStorage.setItem('hw-ki', JSON.stringify({ art: 'lokal', programm: s.kiProgramme?.[0]?.id }));
-  const start = startName ? await appHolen(startName) : null;
-  if (startName && !start) { document.body.innerHTML = '<main class="seite"><h1 class="hw-titel" style="margin-top:40px">Nicht gefunden</h1><p><a href="/">Zurück zu Hello World</a></p></main>'; return; }
+  const nurVorschau = startName === 'vorschau';
+  const start = startName && !nurVorschau ? await appHolen(startName) : null;
+  if (startName && !start && !nurVorschau) { document.body.innerHTML = '<main class="seite"><h1 class="hw-titel" style="margin-top:40px">Nicht gefunden</h1><p><a href="/">← Start</a></p></main>'; return; }
   // Gespeicherte Tabs wiederherstellen (ohne sie schon zu laden – erst beim Antippen)
   for (const g of tabsLaden()) {
     const a = await appHolen(g.slug);
@@ -247,10 +304,18 @@ addEventListener('message', async (ev) => {
   const q = new URLSearchParams(location.search);
   if (start && !['browser', 'design'].includes(start.typ || 'browser')) infoseite(start);
   else if (start) await oeffnen(startName, { neu: q.has('neu') || q.has('erweitert') });
-  else if (tabs.length) tabZeigen(0);
-  else location.href = '/';
-  const sc = document.createElement('script'); sc.src = '/chat.js'; document.body.appendChild(sc);
-  if (q.has('neu') || q.has('erweitert') || q.has('weiter')) sc.onload = () => window.hwChat.oeffnen();
+  else if (tabs.length && !nurVorschau) tabZeigen(0);
+  else if (!nurVorschau) location.href = '/';
+  if (nurVorschau) { $('infoseite').hidden = true; $('flaeche').hidden = false; }
+  // Vorschau aus der Adresse: /a/app.x?vorschau=ID (Änderung) bzw. /a/vorschau?auftrag=ID (neue App) – immer Vollbild
+  if (!STATISCH && (q.get('vorschau') || q.get('auftrag'))) {
+    try {
+      const job = await api(`/api/bau/${q.get('vorschau') || q.get('auftrag')}`);
+      if (job.status === 'vorschau') { if (job.zielSlug && start) vorschau(job); else vorschauOeffnen(job); }
+    } catch { /* Auftrag gibt es nicht mehr */ }
+  }
+  for (const datei of ['/chat.js', '/leiste.js']) { const sc = document.createElement('script'); sc.src = datei; document.body.appendChild(sc); }
+  if (q.has('weiter')) setTimeout(() => window.hwChat?.oeffnen(), 600);
 })();
 </script>
 </body>

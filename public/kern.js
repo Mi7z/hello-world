@@ -446,3 +446,39 @@ function ablaufMeldungen(a) {
   if (!zeilen.length && a.status === 'laeuft') zeilen.push(`<li class="laeuft">${esc(LAEUFT.pruefen)}</li>`);
   return `<ul class="meldungen">${zeilen.join('')}</ul>`;
 }
+
+// ---------- Gemeinsamer Status: laufende Aufträge und fertige Vorschauen ----------
+// Alle Seiten zeigen denselben Stand (Status-Feld, „Läuft gerade", Punkt am Pfeil).
+let hwStatus = { laeuft: [], vorschau: [] };
+async function statusLaden() {
+  if (STATISCH) return;
+  try {
+    const { auftraege } = await (await fetch('/api/bau', { cache: 'no-store' })).json();
+    hwStatus = { laeuft: auftraege.filter((a) => a.status === 'laeuft'), vorschau: auftraege.filter((a) => a.status === 'vorschau') };
+    document.dispatchEvent(new CustomEvent('hw-status', { detail: hwStatus }));
+  } catch { /* später nochmal */ }
+}
+// Kurzer Text fürs Status-Feld, z. B. „⏳ 1 baut · 1 Vorschau"
+function statusText(s = hwStatus) {
+  const teile = [];
+  if (s.laeuft.length) teile.push(`<b>${s.laeuft.length}</b><span class="status-wort"> baut</span>`);
+  if (s.vorschau.length) teile.push(`<b>${s.vorschau.length}</b><span class="status-wort"> Vorschau</span>`);
+  return teile.join('<span class="status-wort"> · </span><span class="status-trenner"> </span>');
+}
+function statusChipHtml(s = hwStatus) {
+  const t = statusText(s);
+  if (!t) return '';
+  return `<a class="status-chip${s.laeuft.length ? ' baut' : ' fertig'}" href="/#auftraege" title="Aufträge ansehen">${s.laeuft.length ? '<span class="status-dreht" aria-hidden="true"></span>' : '<span class="status-punkt" aria-hidden="true"></span>'}${t}</a>`;
+}
+if (!STATISCH) { setTimeout(statusLaden, 300); setInterval(statusLaden, 8000); document.addEventListener('visibilitychange', () => { if (!document.hidden) statusLaden(); }); }
+
+// Vorschau-Adresse: immer Vollbild in der App-Ansicht
+const vorschauAdresse = (a) => (a.zielKennung ? `/a/${a.zielKennung}?vorschau=${a.id}` : `/a/vorschau?auftrag=${a.id}`);
+
+// Zuletzt benutzte Apps (für „Meine Apps")
+const zuletztListe = () => { try { return JSON.parse(localStorage.getItem('hw-zuletzt') || '[]'); } catch { return []; } };
+function zuletztMerken(kennungText) {
+  const l = zuletztListe().filter((k) => k !== kennungText);
+  l.unshift(kennungText);
+  localStorage.setItem('hw-zuletzt', JSON.stringify(l.slice(0, 12)));
+}

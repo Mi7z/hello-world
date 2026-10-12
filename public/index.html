@@ -17,17 +17,19 @@
 </head>
 <body class="mit-nav">
 <header class="kopf">
-  <a href="#entdecken" data-baustein="logo" class="logo" aria-label="Hello World – Entdecken"><span class="logo-zeichen" aria-hidden="true">hw</span><span>Hello World</span></a>
+  <a href="#entdecken" data-baustein="logo" class="logo" aria-label="Hello World – Start"><span class="logo-zeichen" aria-hidden="true">hw</span><span class="logo-name">Hello World</span></a>
+  <span class="ort" id="ort" aria-live="polite">› Start</span>
   <nav data-baustein="navigation" class="nav" id="nav" aria-label="Bereiche">
-    <a href="#entdecken" data-ziel="entdecken"><span class="nav-zeichen" aria-hidden="true">⌕</span>Entdecken</a>
+    <a href="#entdecken" data-ziel="entdecken"><span class="nav-zeichen" aria-hidden="true">⌂</span>Start</a>
+    <a href="#apps" data-ziel="apps"><span class="nav-zeichen" aria-hidden="true">▦</span>Meine Apps</a>
     <a href="#auftraege" data-ziel="auftraege" data-nur-server><span class="nav-zeichen" aria-hidden="true">⚒</span>Aufträge<span class="zahl" id="auftragZahl" hidden></span></a>
-    <a href="#geraete" data-ziel="geraete" data-nur-server><span class="nav-zeichen" aria-hidden="true">⌂</span>Geräte</a>
-    <a href="#pitches" data-ziel="pitches"><span class="nav-zeichen" aria-hidden="true">💡</span>Pitches</a>
     <a href="#mehr" data-ziel="mehr"><span class="nav-zeichen" aria-hidden="true">☰</span>Mehr</a>
     <a href="https://github.com/Mi7z/hello-world/releases/latest" target="_blank" rel="noopener" data-nur-statisch><span class="nav-zeichen" aria-hidden="true">⬇</span>Programm</a>
   </nav>
-  <div class="kopf-rechts" data-baustein="konto" data-nur-server>
-    <button type="button" class="konto" data-anmelde-knopf>Anmelden</button>
+  <div class="kopf-rechts" data-baustein="konto">
+    <span id="statusFeld"></span>
+    <button type="button" class="konto chat-knopf" id="chatKnopf" aria-label="Chat öffnen" title="Chat">💬</button>
+    <button type="button" class="konto" data-anmelde-knopf data-nur-server>Anmelden</button>
   </div>
 </header>
 
@@ -56,6 +58,15 @@
       </div>
     </section>
 
+    <section data-baustein="weitermachen" id="weitermachenBereich" hidden>
+      <h2 class="hw-abschnitt">Weitermachen</h2>
+      <div class="weiter-reihe" id="weitermachen"></div>
+    </section>
+    <section data-baustein="laeuft-gerade" id="laeuftBereich" hidden>
+      <h2 class="hw-abschnitt">Läuft gerade <a class="abschnitt-link" href="#auftraege">Alle Aufträge ›</a></h2>
+      <div class="laeuft-liste" id="laeuftGerade"></div>
+    </section>
+
     <section id="treffer" data-baustein="treffer" hidden>
       <h2 class="hw-abschnitt" id="trefferTitel">Treffer</h2>
       <div class="raster" id="trefferListe"></div>
@@ -79,6 +90,20 @@
     </section>
   </div>
 
+  <!-- ========== Meine Apps ========== -->
+  <div data-ansicht="apps" hidden>
+    <section class="held">
+      <h1 class="hw-titel">Meine Apps</h1>
+      <p class="unterzeile">Deine offenen Apps und was du zuletzt benutzt hast.</p>
+    </section>
+    <div data-baustein="meine-apps">
+      <h2 class="hw-abschnitt">Offen <span class="anzahl" id="offenAnzahl"></span></h2>
+      <div class="raster" id="offenListe"></div>
+      <h2 class="hw-abschnitt">Zuletzt benutzt</h2>
+      <div class="raster" id="zuletztListe"></div>
+    </div>
+  </div>
+
   <!-- ========== Aufträge ========== -->
   <div data-ansicht="auftraege" hidden>
     <section class="held">
@@ -92,16 +117,12 @@
       <div id="ablauf"></div>
       <div id="bauMeldung" class="meldung" hidden></div>
       <div id="vorschauBereich" hidden>
-        <h3 class="unter-titel">Vorschau</h3>
-        <ul class="pruefliste" id="pruefbericht"></ul>
-        <div class="umschalter" id="ansichtWahl"><button type="button" data-ansicht-art="handy" aria-pressed="true">Handy</button><button type="button" data-ansicht-art="desktop" aria-pressed="false">Desktop</button></div>
-        <iframe id="vorschau" class="app-rahmen" title="Vorschau" sandbox="allow-scripts allow-downloads allow-modals allow-popups allow-popups-to-escape-sandbox"></iframe>
-        <p class="hinweis">Erst „Veröffentlichen" macht es für alle sichtbar. Du kannst das Handy auch weglegen – der Auftrag wartet.</p>
-        <div class="knoepfe">
-          <button type="button" class="leise" id="verwerfen">Verwerfen</button>
-          <button type="button" class="zweit" id="nachbessern">Nachbessern</button>
-          <button type="button" id="veroeffentlichen">Veröffentlichen</button>
+        <a class="knopf breit" id="vorschauVoll" href="#">▶ Vorschau ansehen (Vollbild)</a>
+        <div class="knoepfe voll">
+          <button type="button" class="leise" id="verwerfen">✗ Verwerfen</button>
+          <button type="button" class="zweit" id="veroeffentlichen">✓ Veröffentlichen</button>
         </div>
+        <p class="hinweis" id="vorschauHinweis">In der Vorschau kannst du oben über den Pfeil auch nachbessern.</p>
       </div>
     </section>
 
@@ -113,6 +134,7 @@
 
   <!-- ========== Geräte ========== -->
   <div data-ansicht="geraete" hidden>
+    <a class="zurueck" href="#mehr">Mehr</a>
     <section class="held">
       <h1 class="hw-titel">Geräte</h1>
       <p class="unterzeile">Manche Apps steuern deinen Computer, z. B. ein Ausschalt-Timer. Das geht über den <b>Hello-World-Helfer</b>: ein kleines Programm, das nur eine feste Liste geprüfter Dinge kann – und jedes Mal um Erlaubnis fragt.</p>
@@ -147,6 +169,7 @@ Benachrichtigung zeigen.</pre></details>
 
   <!-- ========== Pitches ========== -->
   <div data-ansicht="pitches" hidden>
+    <a class="zurueck" href="#mehr">Mehr</a>
     <section class="held">
       <h1 class="hw-titel">Pitches</h1>
       <p class="unterzeile">Vorschläge, Hello World selbst besser zu machen. Stimm mit 👍 oder 👎 ab – ab <b id="pitchMin">10</b> Stimmen und mindestens <b id="pitchQuote">80 %</b> dafür wird es gebaut.</p>
@@ -176,6 +199,10 @@ Benachrichtigung zeigen.</pre></details>
     <section class="held">
       <h1 class="hw-titel">Mehr</h1>
     </section>
+    <nav class="flaeche mehr-liste" aria-label="Weitere Bereiche" style="margin-bottom:14px">
+      <a class="liste-zeile" href="#pitches"><span class="symbol" aria-hidden="true">💡</span><div><b>Pitches</b><span class="hinweis">Hello World selbst weiterentwickeln – abstimmen mit 👍/👎</span></div><span aria-hidden="true">›</span></a>
+      <a class="liste-zeile" href="#geraete" data-nur-server><span class="symbol" aria-hidden="true">💻</span><div><b>Geräte</b><span class="hinweis">Computer mit Hello-World-Helfer (z. B. Ausschalt-Timer)</span></div><span aria-hidden="true">›</span></a>
+    </nav>
 
     <section class="flaeche" id="installBereich" data-baustein="installieren" style="margin-bottom:14px" hidden>
       <h3>Als App installieren</h3>

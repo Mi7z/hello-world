@@ -1,15 +1,21 @@
-// Hello World – Startseite: Entdecken, Aufträge, Geräte, Mehr (nutzt kern.js)
+// Hello World – Startseite: Start, Meine Apps, Aufträge, Mehr (nutzt kern.js)
 let stand = { apps: [], lokaleKi: false, csp: '', basisCss: '' };
 
 // ---------- Bereiche (unten auf dem Handy, oben auf dem Desktop) ----------
-const BEREICHE = ['entdecken', 'auftraege', 'geraete', 'mehr'];
+// Oben steht immer, wo man ist („Hello World › Mehr › Pitches")
+const ORTE = { entdecken: ['Start'], apps: ['Meine Apps'], auftraege: ['Aufträge'], mehr: ['Mehr'], pitches: ['Mehr', 'Pitches'], geraete: ['Mehr', 'Geräte'] };
 function bereich(name, scrollen = true) {
   // Auch eigene Bereiche aus Layout-Designs (data-hw-ansicht)
   if (!name || !document.querySelector(`[data-ansicht="${CSS.escape(name)}"]`)) name = 'entdecken';
   for (const el of document.querySelectorAll('[data-ansicht]')) el.hidden = el.dataset.ansicht !== name;
+  const ort = ORTE[name] || [name];
+  const navZiel = ort.length > 1 ? 'mehr' : name;
   for (const a of document.querySelectorAll('#nav a')) {
-    if (a.dataset.ziel === name) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    if (a.dataset.ziel === navZiel) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
   }
+  if ($('ort')) $('ort').textContent = `› ${ort.join(' › ')}`;
+  document.title = `${ort.at(-1)} – Hello World`;
+  if (name === 'apps') zeigeMeineApps();
   if (scrollen) window.scrollTo({ top: 0 });
 }
 addEventListener('hashchange', () => bereich(location.hash.slice(1)));
@@ -134,7 +140,7 @@ function beschreibung(slug) {
 }
 document.addEventListener('click', (ev) => {
   const k = ev.target.closest('.hw-karte[data-slug]');
-  if (!k || ev.metaKey || ev.ctrlKey) return;
+  if (!k || ev.metaKey || ev.ctrlKey || k.closest('#offenListe, #zuletztListe')) return;
   ev.preventDefault();
   beschreibung(k.dataset.slug);
 });
@@ -184,7 +190,7 @@ window.HW_SEITE = {
   tabZu: (i) => { const l = offeneTabs(); l.splice(i, 1); localStorage.setItem('hw-tabs', JSON.stringify(l)); },
   oeffnen: (k) => { location.href = `/a/${k}`; },
   vorschau: () => {},
-  vorschauOeffnen: (a) => { window.hwChat?.schliessen(); zeigeAuftrag(a.id); },
+  vorschauOeffnen: (a) => { location.href = vorschauAdresse(a); },
 };
 
 // ---------- Neu bauen: der PC arbeitet, die Seite zeigt nur den Stand ----------
@@ -238,14 +244,9 @@ function darstellen(a) {
     zeigeAuftrag(neu.id);
   });
   if (a.status === 'vorschau') {
-    const pruef = [...[a.quelle, ...(a.quellen || [])].filter(Boolean).map((q) => `nutzt ${q.repo} (${q.lizenz})`), 'Sicherheit', design ? 'gut lesbar' : 'läuft auf Handy und Desktop', ...(a.zielSlug && !design ? ['alle Funktionen erhalten'] : [])];
-    $('pruefbericht').innerHTML = pruef.map((p) => `<li>${esc(p)}</li>`).join('');
-    $('veroeffentlichen').textContent = a.zielSlug ? 'Neue Version veröffentlichen' : 'Veröffentlichen';
-    if ($('vorschau').dataset.auftrag !== a.id + a.aktualisiert) {
-      $('vorschau').dataset.auftrag = a.id + a.aktualisiert;
-      $('vorschau').src = `/api/bau/${a.id}/vorschau?design=${designName()}&t=${a.aktualisiert}`;
-      ansicht('handy');
-    }
+    $('veroeffentlichen').textContent = a.zielSlug ? '✓ Übernehmen' : '✓ Veröffentlichen';
+    $('vorschauHinweis').textContent = a.zielSlug ? 'Übernehmen speichert die Änderung als neue Version. In der Vorschau kannst du oben über den Pfeil auch nachbessern.' : 'Veröffentlichen macht die App für alle sichtbar. In der Vorschau kannst du oben über den Pfeil auch nachbessern.';
+    $('vorschauVoll').href = vorschauAdresse(a);
     $('vorschauBereich').hidden = false;
   } else {
     $('vorschauBereich').hidden = true;
@@ -255,19 +256,7 @@ function darstellen(a) {
   zeigeAuftraege();
 }
 
-function ansicht(art) {
-  $('vorschau').classList.toggle('handy', art === 'handy');
-  for (const b of document.querySelectorAll('[data-ansicht-art]')) b.setAttribute('aria-pressed', String(b.dataset.ansichtArt === art));
-}
-$('ansichtWahl').addEventListener('click', (ev) => { const b = ev.target.closest('[data-ansicht-art]'); if (b) ansicht(b.dataset.ansichtArt); });
-
 $('verwerfen').addEventListener('click', async () => { if (aktuell) await auftragAktion(aktuell, 'verwerfen'); $('bau').hidden = true; localStorage.removeItem('hw-auftrag'); zeigeAuftraege(); });
-$('nachbessern').addEventListener('click', async () => {
-  const was = prompt('Was soll deine KI verbessern?');
-  if (!was || !aktuell) return;
-  await auftragAktion(aktuell, 'nachbessern', { was });
-  zeigeAuftrag(aktuell);
-});
 $('veroeffentlichen').addEventListener('click', async () => {
   if (!aktuell) return;
   $('veroeffentlichen').disabled = true;
@@ -278,14 +267,55 @@ $('veroeffentlichen').addEventListener('click', async () => {
   finally { $('veroeffentlichen').disabled = false; }
 });
 
-// Vorschau: Apps mit eigener KI rechnen schon hier mit deiner KI
-addEventListener('message', async (ev) => {
-  const d = ev.data;
-  if (!d || d.hwSdk !== 'ki' || ev.source !== $('vorschau').contentWindow || !aktuell) return;
-  const antworten = (x) => $('vorschau').contentWindow.postMessage({ hwAntwort: true, id: d.id, ...x }, '*');
-  try { antworten({ ok: true, ergebnis: await appKiAusfuehren({ auftrag: aktuell, kennung: $('bauTitel').textContent, adresse: `/api/bau/${aktuell}/vorschau` }, String(d.aufgabe), d.eingabe ?? {}) }); }
-  catch (err) { antworten({ ok: false, fehler: err.message }); }
+// ---------- Status: Feld oben, Zahl an „Aufträge", „Läuft gerade" auf Start ----------
+document.addEventListener('hw-status', (ev) => {
+  const s = ev.detail;
+  $('statusFeld').innerHTML = statusChipHtml(s);
+  const n = s.laeuft.length + s.vorschau.length;
+  $('auftragZahl').hidden = !n; $('auftragZahl').textContent = n;
+  const liste = [...s.vorschau, ...s.laeuft];
+  $('laeuftBereich').hidden = !liste.length;
+  $('laeuftGerade').innerHTML = liste.map((a) => {
+    const jetzt = a.status === 'vorschau' ? 'Fertig – Vorschau bereit' : (Object.entries(a.schritte || {}).find(([, v]) => v === 'laeuft') || [])[0];
+    const text = a.status === 'vorschau' ? jetzt : { pruefen: 'prüft, ob es möglich ist …', github: 'sucht freie Bausteine …', vorbilder: 'schaut sich Vorbilder an …', bauen: a.zielSlug ? 'baut die Änderung ein …' : 'baut den Prototyp …', test: 'testet …', fertig: 'bereitet die Vorschau vor …' }[jetzt] || 'arbeitet …';
+    return `<div class="laeuft-zeile ${a.status}">
+      <span class="${a.status === 'laeuft' ? 'status-dreht' : 'status-punkt'}" aria-hidden="true"></span>
+      <div><b>${esc(a.titelAnzeige || 'Auftrag')}</b><span class="hinweis">${esc(text)}</span></div>
+      ${a.status === 'vorschau' ? `<a class="knopf klein" href="${vorschauAdresse(a)}">Ansehen</a>` : `<a class="knopf zweit klein" href="#auftraege" data-auftrag-oeffnen="${a.id}">Details</a>`}
+    </div>`;
+  }).join('');
 });
+document.addEventListener('click', (ev) => { const d = ev.target.closest('[data-auftrag-oeffnen]'); if (d) { ev.preventDefault(); zeigeAuftrag(d.dataset.auftragOeffnen); } });
+$('chatKnopf').onclick = () => window.hwChat?.oeffnen();
+
+// ---------- Weitermachen (offene Apps) und Meine Apps ----------
+function appKarteKlein(k) {
+  const a = stand.apps.find((x) => kennung(x) === k.split('@')[0]);
+  if (!a) return '';
+  return `<a class="weiter-app" href="/a/${esc(k)}">${symbolHtml(a)}<span>${esc(k.replace(/^app\./, ''))}</span></a>`;
+}
+function zeigeWeitermachen() {
+  const offen = offeneTabs().map((t) => t.kennung + (t.version ? '@' + t.version : ''));
+  $('weitermachenBereich').hidden = !offen.length;
+  $('weitermachen').innerHTML = offen.map(appKarteKlein).join('');
+}
+function zeigeMeineApps() {
+  const offen = offeneTabs();
+  $('offenAnzahl').textContent = offen.length || '';
+  $('offenListe').innerHTML = offen.map((t, i) => {
+    const a = stand.apps.find((x) => x.slug === t.slug);
+    return a ? karte(a).replace('href="/a/' + kennung(a) + '"', `href="/a/${kennung(a)}${t.version ? '@' + t.version : ''}"`).replace('</a>', `<button type="button" class="leise klein tab-zu" data-tab-zu="${i}" aria-label="Schließen">✕</button></a>`) : '';
+  }).join('') || '<p class="leer">Keine App offen. Öffne eine unter „Start".</p>';
+  const zuletzt = zuletztListe().filter((k) => !offen.some((t) => t.kennung === k.split('@')[0]));
+  $('zuletztListe').innerHTML = zuletzt.map((k) => { const a = stand.apps.find((x) => kennung(x) === k.split('@')[0]); return a ? karte(a) : ''; }).join('') || '<p class="hinweis">Noch nichts.</p>';
+}
+document.addEventListener('click', (ev) => {
+  const z = ev.target.closest('[data-tab-zu]');
+  if (!z) return;
+  ev.preventDefault(); ev.stopPropagation();
+  const l = offeneTabs(); l.splice(Number(z.dataset.tabZu), 1); localStorage.setItem('hw-tabs', JSON.stringify(l));
+  zeigeMeineApps(); zeigeWeitermachen();
+}, true);
 
 // Aufträge der letzten Tage (auch von anderen Geräten)
 async function zeigeAuftraege() {
@@ -418,6 +448,8 @@ bereich(location.hash.slice(1), false);
   zeigeKi();
   zeigeKiErlaubnisse();
   zeigeAlle();
+  zeigeWeitermachen();
+  if (location.hash === '#apps') zeigeMeineApps();
   zeigeDesigns();
   if (!STATISCH) {
     ichLaden().catch(() => {}).finally(() => { zeigeKonto(); zeigeGeraete(); });

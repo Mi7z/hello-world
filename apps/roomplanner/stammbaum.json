@@ -1,0 +1,14 @@
+{
+  "versionen": [
+    {
+      "id": "v1",
+      "eltern": null,
+      "autor": {
+        "login": "Mi7z",
+        "name": "Mi7z"
+      },
+      "zeit": "2026-10-12T16:51:11.022Z",
+      "aenderung": "erste Version: Eine Raumplaner-App: Nutzer kann Räume skizzieren (Wände und Grundriss zeichnen, Maße festlegen) und Möbel per Drag & Drop aus einer Bibliot"
+    }
+  ]
+}

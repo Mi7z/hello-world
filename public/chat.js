@@ -19,14 +19,12 @@
 
   // ---------- Grundgerüst ----------
   document.body.insertAdjacentHTML('beforeend', `
-    <button type="button" class="hw-griff" id="hwGriff" aria-label="Hello World öffnen" title="Hello World (gedrückt halten zum Verschieben)"><span aria-hidden="true">‹</span></button>
-    <aside class="hw-fenster" id="hwFenster" aria-label="Hello World" hidden>
+    <aside class="hw-fenster" id="hwFenster" aria-label="Chat" hidden>
       <header class="hw-fenster-kopf">
-        <a href="/" class="logo"><span class="logo-zeichen" aria-hidden="true">hw</span><span>Hello World</span></a>
-        <button type="button" class="leise klein" id="hwZu" aria-label="Schließen">✕</button>
+        <button type="button" class="leise klein" id="hwZu" aria-label="Chat schließen">← Zurück</button>
+        <b class="hw-fenster-titel">💬 Chat</b>
+        <span id="hwFensterStatus"></span>
       </header>
-      <nav class="hw-tabs" id="hwTabs" aria-label="Offene Apps"></nav>
-      <section class="hw-app" id="hwApp" hidden></section>
       <div class="hw-verlauf" id="hwVerlauf" aria-live="polite"></div>
       <form class="hw-eingabe" id="hwEingabe" autocomplete="off">
         <div class="hw-bezug" id="hwBezug" hidden></div>
@@ -37,41 +35,6 @@
       </form>
     </aside>`);
   const $h = (id) => document.getElementById(id);
-
-  // ---------- Griff: antippen öffnet, gedrückt halten + ziehen verschiebt ----------
-  const griff = $h('hwGriff');
-  const lage = (() => { try { return JSON.parse(localStorage.getItem('hw-griff')) || { seite: 'rechts', y: 0.5 }; } catch { return { seite: 'rechts', y: 0.5 }; } })();
-  function griffSetzen() {
-    griff.classList.toggle('links', lage.seite === 'links');
-    griff.style.top = `${Math.round(Math.min(0.92, Math.max(0.08, lage.y)) * window.innerHeight)}px`;
-    griff.querySelector('span').textContent = lage.seite === 'links' ? '›' : '‹';
-  }
-  griffSetzen();
-  addEventListener('resize', griffSetzen);
-  let druck = null;
-  griff.addEventListener('pointerdown', (ev) => {
-    griff.setPointerCapture(ev.pointerId);
-    druck = { x: ev.clientX, y: ev.clientY, ziehen: false, uhr: setTimeout(() => { druck.ziehen = true; griff.classList.add('zieht'); navigator.vibrate?.(15); }, 350) };
-  });
-  griff.addEventListener('pointermove', (ev) => {
-    if (!druck) return;
-    if (!druck.ziehen && Math.hypot(ev.clientX - druck.x, ev.clientY - druck.y) > 12) { clearTimeout(druck.uhr); druck.abbruch = true; }
-    if (druck.ziehen) { griff.style.top = `${ev.clientY}px`; griff.style.left = `${ev.clientX - 18}px`; griff.style.right = 'auto'; }
-  });
-  griff.addEventListener('pointerup', (ev) => {
-    if (!druck) return;
-    clearTimeout(druck.uhr);
-    if (druck.ziehen) {
-      lage.seite = ev.clientX < window.innerWidth / 2 ? 'links' : 'rechts';
-      lage.y = ev.clientY / window.innerHeight;
-      localStorage.setItem('hw-griff', JSON.stringify(lage));
-      griff.style.left = ''; griff.style.right = '';
-      griff.classList.remove('zieht');
-      griffSetzen();
-    } else if (!druck.abbruch) fensterAuf(true);
-    druck = null;
-  });
-  griff.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); fensterAuf(true); } });
 
   // Tastatur auf dem Handy: Fenster genau auf den sichtbaren Bereich setzen,
   // damit das Eingabefeld über der Tastatur bleibt (auch in Browsern ohne „resizes-content")
@@ -89,15 +52,24 @@
   window.visualViewport?.addEventListener('scroll', anTastaturAnpassen);
   $h('hwText').addEventListener('focus', () => setTimeout(() => { anTastaturAnpassen(); $h('hwText').scrollIntoView({ block: 'nearest' }); }, 300));
 
-  function fensterAuf(auf) {
+  // Öffnen/Schließen – die Zurück-Taste (Android) schließt den Chat
+  let nachbessernFuer = null; // { id, titel } – nächste Nachricht bessert diesen Auftrag nach
+  function fensterAuf(auf, opts = {}) {
+    if (opts.nachbessern) { nachbessernFuer = opts.nachbessern; ohneBezug = false; }
+    if (auf === offen) { if (auf) zeigen(); return; }
     offen = auf;
     $h('hwFenster').hidden = !auf;
-    griff.hidden = auf;
     document.body.classList.toggle('hw-fenster-offen', auf);
-    if (auf) { zeigen(); setTimeout(() => $h('hwText').focus({ preventScroll: true }), 50); }
+    if (auf) {
+      if (!opts.ohneVerlauf) history.pushState({ ...(history.state || {}), hwEbene: 'chat' }, '');
+      zeigen();
+      setTimeout(() => $h('hwText').focus({ preventScroll: true }), 50);
+    } else if (!opts.durchZurueck && history.state?.hwEbene === 'chat') history.back();
   }
+  addEventListener('popstate', () => { if (offen && history.state?.hwEbene !== 'chat') fensterAuf(false, { durchZurueck: true }); });
   $h('hwZu').onclick = () => fensterAuf(false);
   document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && offen) fensterAuf(false); });
+  document.addEventListener('hw-status', () => { $h('hwFensterStatus').innerHTML = statusChipHtml(); });
 
   // ---------- Verlauf ----------
   const verlauf = () => { try { return JSON.parse(localStorage.getItem(CHAT) || '[]'); } catch { return []; } };
@@ -117,7 +89,7 @@
     const neu = !a.zielSlug;
     let knoepfe = '';
     if (a.status === 'vorschau') {
-      knoepfe = `${neu ? `<button type="button" class="zweit klein" data-hw-ansehen="${id}">Ansehen</button>` : ''}
+      knoepfe = `<button type="button" class="zweit klein" data-hw-ansehen="${id}">▶ Vorschau</button>
         <button type="button" class="leise klein" data-hw-verwerfen="${id}">Verwerfen</button>
         <button type="button" class="zweit klein" data-hw-nachbessern="${id}">Nachbessern</button>
         <button type="button" class="klein" data-hw-uebernehmen="${id}">${neu ? 'Veröffentlichen' : 'Übernehmen'}</button>`;
@@ -136,21 +108,16 @@
   }
   function zeigen() {
     if (!offen) return;
-    // Tabs
-    const tabs = S().tabs?.() || [];
-    $h('hwTabs').innerHTML = `<a href="/" class="hw-tab heim" title="Hello World Startseite"><span class="logo-zeichen" aria-hidden="true">hw</span><span>Start</span></a>`
-      + tabs.map((t, i) => `<button type="button" class="hw-tab${t.aktiv ? ' an' : ''}" data-hw-tab="${i}" title="${esc(t.kennung)}">${t.symbol || ''}<span>${esc(t.name)}</span><i data-hw-tabzu="${i}" aria-label="Schließen" role="button">✕</i></button>`).join('');
-    // Aktuelle App
     const k = S().kontext?.();
-    $h('hwApp').hidden = !k || !S().appBereich;
-    if (k && S().appBereich) S().appBereich($h('hwApp'));
-    // Bezug
+    // Bezug: worauf sich die nächste Nachricht bezieht
     const bezug = k && !ohneBezug;
-    $h('hwBezug').hidden = !k;
-    $h('hwBezug').innerHTML = bezug ? `Für <b>${esc(k.kennung)}</b> <button type="button" class="leise klein" id="hwBezugAus" aria-label="Ohne Bezug zur App schreiben">✕</button>` : `<button type="button" class="leise klein" id="hwBezugAn">Für ${esc(k?.kennung || '')} schreiben</button>`;
-    $h('hwBezugAus')?.addEventListener('click', () => { ohneBezug = true; zeigen(); });
+    $h('hwBezug').hidden = !k && !nachbessernFuer;
+    $h('hwBezug').innerHTML = nachbessernFuer ? `✎ Nachbessern: <b>${esc(nachbessernFuer.titel)}</b> <button type="button" class="leise klein" id="hwBezugAus" aria-label="Nicht nachbessern">✕</button>`
+      : bezug ? `Für <b>${esc(k.kennung)}</b> <button type="button" class="leise klein" id="hwBezugAus" aria-label="Ohne Bezug zur App schreiben">✕</button>`
+      : k ? `<button type="button" class="leise klein" id="hwBezugAn">Für ${esc(k.kennung)} schreiben</button>` : '';
+    $h('hwBezugAus')?.addEventListener('click', () => { if (nachbessernFuer) nachbessernFuer = null; else ohneBezug = true; zeigen(); });
     $h('hwBezugAn')?.addEventListener('click', () => { ohneBezug = false; zeigen(); });
-    $h('hwText').placeholder = bezug ? 'Was soll die App können?' : 'Was brauchst du?';
+    $h('hwText').placeholder = nachbessernFuer ? 'Was soll noch anders werden?' : bezug ? 'Was soll die App können?' : 'Was brauchst du?';
     // Verlauf
     const v = verlauf();
     $h('hwVerlauf').innerHTML = v.length ? v.map((n, i) => `<div class="hw-nachricht ${n.wer}">
@@ -173,9 +140,9 @@
     const tab = t.closest('[data-hw-tab]');
     if (tab) { S().tabWahl?.(Number(tab.dataset.hwTab)); zeigen(); if (matchMedia('(max-width: 700px)').matches) fensterAuf(false); return; }
     const o = t.closest('[data-hw-oeffnen]');
-    if (o) { S().oeffnen?.(o.dataset.hwOeffnen); if (matchMedia('(max-width: 700px)').matches) fensterAuf(false); return; }
+    if (o) { fensterAuf(false, { durchZurueck: true }); S().oeffnen?.(o.dataset.hwOeffnen); return; }
     const an = t.closest('[data-hw-ansehen]');
-    if (an) { const a = auftraegeStand.get(an.dataset.hwAnsehen); if (a) { S().vorschauOeffnen?.(a); if (matchMedia('(max-width: 700px)').matches) fensterAuf(false); } return; }
+    if (an) { const a = auftraegeStand.get(an.dataset.hwAnsehen); if (a) { fensterAuf(false, { durchZurueck: true }); if (S().vorschauOeffnen) S().vorschauOeffnen(a); else location.href = vorschauAdresse(a); } return; }
     const ub = t.closest('[data-hw-uebernehmen]');
     if (ub) {
       ub.disabled = true;
@@ -191,7 +158,7 @@
     const vw = t.closest('[data-hw-verwerfen]');
     if (vw) { const a = await auftragAktion(vw.dataset.hwVerwerfen, 'verwerfen').catch(() => null); if (a) auftraegeStand.set(a.id, a); S().vorschau?.(null); zeigen(); return; }
     const nb = t.closest('[data-hw-nachbessern]');
-    if (nb) { const was = prompt('Was soll noch anders werden?'); if (!was) return; await auftragAktion(nb.dataset.hwNachbessern, 'nachbessern', { was }); verfolgen(nb.dataset.hwNachbessern); return; }
+    if (nb) { const a = auftraegeStand.get(nb.dataset.hwNachbessern); nachbessernFuer = { id: nb.dataset.hwNachbessern, titel: a?.titelAnzeige || 'Auftrag' }; zeigen(); $h('hwText').focus(); return; }
     const ns = t.closest('[data-hw-nochmal-text]');
     if (ns) { const n = verlauf()[Number(ns.dataset.hwNochmalText)]; if (n?.nochmal) { aendern(Number(ns.dataset.hwNochmalText), { nochmal: null }); senden(n.nochmal); } return; }
     const nm = t.closest('[data-hw-nochmal]');
@@ -226,6 +193,16 @@
     }).filter((x) => x.p >= 0.5).sort((x, y) => y.p - x.p).slice(0, 4).map((x) => x.a.slug);
   }
   async function senden(text) {
+    if (nachbessernFuer) {
+      const ziel = nachbessernFuer; nachbessernFuer = null;
+      hinzu({ wer: 'ich', text });
+      try {
+        await auftragAktion(ziel.id, 'nachbessern', { was: text });
+        hinzu({ wer: 'hw', text: 'Ich bessere nach – die Vorschau aktualisiert sich gleich.', auftrag: ziel.id });
+        verfolgen(ziel.id);
+      } catch (err) { hinzu({ wer: 'hw', text: `Nachbessern hat nicht geklappt: ${err.message}` }); }
+      return;
+    }
     const k = ohneBezug ? null : S().kontext?.();
     const bisher = verlauf().filter((n) => n.text).map((n) => ({ wer: n.wer, text: n.text }));
     hinzu({ wer: 'ich', text });
@@ -301,5 +278,5 @@
   for (const n of verlauf()) if (n.auftrag) verfolgen(n.auftrag);
   verlauf().forEach((n, i) => { if (n.denkt) abwarten(i); });
   // Von außen nutzbar (z. B. Suche auf der Startseite)
-  window.hwChat = { oeffnen: () => fensterAuf(true), schliessen: () => fensterAuf(false), senden: (t) => { fensterAuf(true); senden(t); }, aktualisieren: zeigen, leeren: () => { speichern([]); zeigen(); } };
+  window.hwChat = { oeffnen: (opts = {}) => fensterAuf(true, opts), istOffen: () => offen, schliessen: () => fensterAuf(false), senden: (t) => { fensterAuf(true); senden(t); }, aktualisieren: zeigen, leeren: () => { speichern([]); zeigen(); } };
 })();

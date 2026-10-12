@@ -1,0 +1,835 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Raumplaner – Grundriss & Möbel</title>
+<script type="application/json" id="hw-ki">
+{ "zweck": "Hilft bei der Raumplanung: Vorschläge zur Anordnung der Möbel, Platznutzung und Einrichtungstipps anhand von Raumgröße und Möbelliste.",
+  "aufgaben": {
+    "planen": {
+      "anweisung": "Du bist Einrichtungsberater. Du bekommst die Maße eines Raums (Breite, Länge, Fläche in Metern) und eine Liste der vorhandenen Möbel mit Maßen in cm und ungefährer Position in Metern (x = von links, y = von oben, Draufsicht). Gib eine kurze, praxisnahe Beratung auf Deutsch: 1) eine kurze Gesamteinschätzung zur Platznutzung (ist der Raum voll/leer, passt alles, wie viel Bewegungsfläche bleibt), 2) konkrete, umsetzbare Tipps zur Anordnung (z. B. Laufwege von mind. 60-90 cm freihalten, Bett/Sofa an die lange Wand, Esstisch zentral, Lichtquellen beachten), 3) für wichtige Möbel je eine konkrete Empfehlung zur Platzierung. Sei konkret und beziehe dich auf die tatsächlichen Maße. Keine erfundenen Möbel, nutze nur die genannten.",
+      "schema": { "type": "object", "properties": {
+        "bewertung": { "type": "string" },
+        "tipps": { "type": "array", "items": { "type": "string" } },
+        "anordnung": { "type": "array", "items": { "type": "object", "properties": {
+          "moebel": { "type": "string" }, "empfehlung": { "type": "string" } }, "required": ["moebel","empfehlung"] } }
+      }, "required": ["bewertung","tipps"] }
+    }
+  } }
+</script>
+<script type="application/json" id="hw-werkzeuge">
+{ "werkzeuge": {
+  "plan_auswerten": {
+    "beschreibung": "Berechnet Fläche und Abmessungen eines Raums sowie die belegte und freie Stellfläche aus einem Plan.",
+    "dateien": "keine",
+    "eingabe": { "type": "object", "properties": {
+      "plan": { "type": "object", "description": "Plan-Objekt mit walls (Punkte in Metern), closed und furniture. Fehlt es, wird der aktuell geöffnete Plan verwendet." } } },
+    "ausgabe": "Objekt mit flaeche_qm, breite_m, laenge_m, anzahl_moebel, moebel-Liste mit Maßen, belegte_flaeche_qm, freie_flaeche_qm und auslastung_prozent."
+  },
+  "plan_bild": {
+    "beschreibung": "Erzeugt ein PNG-Bild (Draufsicht/Grundriss) des aktuellen oder übergebenen Plans.",
+    "dateien": "keine",
+    "eingabe": { "type": "object", "properties": {
+      "plan": { "type": "object", "description": "Plan-Objekt wie bei plan_auswerten. Fehlt es, wird der aktuelle Plan verwendet." },
+      "breite_px": { "type": "number", "description": "Bildbreite in Pixeln (Standard 1600)." } } },
+    "ausgabe": "PNG-Bilddatei des Grundrisses."
+  }
+} }
+</script>
+<style>
+:where(:root){color-scheme:light dark;--bg:#f6f5f2;--fl:#fff;--fl2:#f1efea;--li:#e6e3dc;--li2:#d3cfc6;--tx:#1d1c1a;--tx2:#5d5a55;--tx3:#918d86;--ak:#3b5bdb;--ak2:#e9eeff;--ak-tx:#fff;--rot:#d9480f;--gelb:#d68c00;--gruen:#2b8a3e;--r:16px;--r-klein:10px;--schrift:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--schrift-titel:var(--schrift);--mono:ui-monospace,Menlo,Consolas,monospace;--schatten:0 1px 2px rgba(0,0,0,.05),0 8px 24px rgba(0,0,0,.06)}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--bg);color:var(--tx);font:16px/1.55 var(--schrift);padding:20px 16px 40px;max-width:760px;margin:0 auto;-webkit-font-smoothing:antialiased}
+h1{font:700 24px/1.2 var(--schrift-titel);margin:6px 0 6px;letter-spacing:-.01em}h2{font:650 18px/1.3 var(--schrift-titel);margin:18px 0 8px}
+p.unter{color:var(--tx2);margin:0 0 20px}
+.karte{background:var(--fl);border:1px solid var(--li);border-radius:var(--r);padding:18px;margin-bottom:14px;box-shadow:var(--schatten)}
+button,.knopf{font:600 15px/1 var(--schrift);border:1px solid var(--ak);border-radius:var(--r-klein);padding:12px 18px;min-height:46px;background:var(--ak);color:var(--ak-tx);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:filter .15s,transform .05s}
+button:hover,.knopf:hover{filter:brightness(1.07)}button:active,.knopf:active{transform:translateY(1px)}
+button.zweit,.knopf.zweit{background:var(--fl2);color:var(--tx);border-color:var(--li)}
+button:disabled{opacity:.45;cursor:default;filter:none}
+input,select,textarea{font:16px/1.4 var(--schrift);color:var(--tx);background:var(--fl2);border:1px solid var(--li);border-radius:var(--r-klein);padding:11px 13px;min-height:46px;width:100%;caret-color:var(--ak)}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--ak);outline-offset:-1px;border-color:transparent}
+input[type=range]{padding:0;min-height:32px;accent-color:var(--ak)}input[type=color]{padding:4px;min-height:46px}input[type=checkbox],input[type=radio]{width:auto;min-height:auto;accent-color:var(--ak)}
+label{display:block;font-size:14px;color:var(--tx2);margin:12px 0 6px;font-weight:500}
+.ablage{border:2px dashed var(--li2);border-radius:var(--r);padding:32px 16px;text-align:center;color:var(--tx2);cursor:pointer;background:var(--fl)}
+.ablage.drueber{border-color:var(--ak);background:var(--ak2);color:var(--tx)}
+.zeile{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.spalten{display:grid;gap:14px}
+.reiter{display:flex;gap:4px;background:var(--fl2);border:1px solid var(--li);border-radius:var(--r-klein);padding:4px;margin-bottom:14px}
+.reiter button{flex:1;background:none;color:var(--tx2);border:0;min-height:40px;font-weight:500}
+.reiter button[aria-selected=true],.reiter button.an{background:var(--fl);color:var(--tx);box-shadow:var(--schatten);font-weight:650}
+.hinweis{font-size:14px;color:var(--tx2)}.fehler{color:var(--rot)}
+a{color:var(--ak)}
+[hidden]{display:none!important}
+:focus-visible{outline:2px solid var(--ak);outline-offset:2px}
+body.app{display:flex;flex-direction:column;height:100vh;height:100dvh;max-width:none;margin:0;padding:12px 14px calc(12px + env(safe-area-inset-bottom));overflow:hidden;gap:10px}
+.app-kopf{flex:none;display:flex;align-items:center;gap:10px;flex-wrap:wrap}.app-kopf h1{font-size:20px;margin:0}.app-kopf p.unter{margin:0;font-size:14px}
+.app-inhalt{flex:1;min-height:0;display:flex;flex-direction:column;gap:12px}
+.fuellt{flex:1;min-height:0}.scroll{overflow:auto;min-height:0;overscroll-behavior:contain}
+
+/* App-eigenes Layout (nur Positionen/Größen, Farben über Design-Tokens) */
+.layout{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;gap:10px}
+.canvas-wrap{position:relative;flex:1;min-width:0;min-height:0;border:1px solid var(--li);border-radius:var(--r);overflow:hidden;background:var(--fl);box-shadow:var(--schatten)}
+.canvas-wrap canvas{width:100%;height:100%;display:block;touch-action:none}
+.panel{flex:none;height:42dvh;display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden}
+.panel .scroll{flex:1;padding:2px 2px 6px;overflow-x:hidden}
+/* Reiter-Tabs an schmale Spalte anpassen, damit nichts überläuft */
+.reiter{flex-wrap:nowrap}
+.reiter button{padding:9px 4px;min-width:0;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ov{position:absolute;background:var(--fl);border:1px solid var(--li);border-radius:var(--r-klein);box-shadow:var(--schatten);font-size:13px;color:var(--tx2);padding:6px 10px;pointer-events:none}
+.ov-info{top:8px;right:8px;max-width:60%;text-align:right}
+.cbar{position:absolute;top:8px;left:8px;display:flex;gap:6px;flex-wrap:wrap;max-width:calc(100% - 16px)}
+.cbar button{min-height:40px;padding:8px 12px;font-size:14px}
+.cbar .mi{min-width:42px;padding:8px;font-size:16px}
+.lib-cat{font-weight:650;font-size:14px;color:var(--tx2);margin:14px 0 6px}
+.lib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px}
+.lib-item{touch-action:none;background:var(--fl2);border:1px solid var(--li);color:var(--tx);border-radius:var(--r-klein);padding:10px 6px;min-height:68px;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:grab;text-align:center;font-weight:500;font-size:12px;line-height:1.2}
+.lib-item .ic{font-size:22px}
+.lib-item .sz{font-size:11px;color:var(--tx3)}
+.ghost{position:fixed;z-index:50;transform:translate(-50%,-50%);background:var(--ak2);border:1px solid var(--ak);border-radius:var(--r-klein);padding:6px 10px;font-size:13px;color:var(--tx);pointer-events:none;box-shadow:var(--schatten)}
+.feld2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.feld2 input{min-width:0}
+.ki-box{background:var(--fl2);border:1px solid var(--li);border-radius:var(--r-klein);padding:12px;margin-top:10px}
+.ki-box ul{margin:6px 0 0;padding-left:20px}
+.ki-box li{margin-bottom:5px}
+.plan-row{display:flex;align-items:center;gap:8px;background:var(--fl2);border:1px solid var(--li);border-radius:var(--r-klein);padding:8px 10px;margin-bottom:8px}
+.plan-row .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;font-size:14px}
+.plan-row button{min-height:38px;padding:8px 12px;font-size:13px}
+.denk{display:inline-flex;align-items:center;gap:8px;color:var(--ak);font-weight:600}
+@media (min-width:900px){
+  body.app{padding:18px 26px}
+  .layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,360px);grid-auto-rows:1fr;gap:14px}
+  .canvas-wrap{height:100%}
+  .panel{height:100%}
+  .reiter button{font-size:14px}
+}
+</style>
+</head>
+<body class="app">
+<header class="app-kopf">
+  <h1>📐 Raumplaner</h1>
+  <p class="unter">Grundriss zeichnen, Möbel platzieren, KI um Rat fragen – alles offline.</p>
+</header>
+
+<main class="app-inhalt layout">
+  <div class="canvas-wrap" id="cwrap">
+    <canvas id="canvas"></canvas>
+    <div class="cbar">
+      <button id="btnSelect" class="zweit" title="Auswählen & bewegen">✋ Auswählen</button>
+      <button id="btnWall" class="zweit" title="Wände zeichnen">✏️ Wände</button>
+      <button id="btnUndo" class="zweit mi" title="Rückgängig">↶</button>
+      <button id="btnRedo" class="zweit mi" title="Wiederholen">↷</button>
+      <button id="btnZoomOut" class="zweit mi" title="Verkleinern">−</button>
+      <button id="btnZoomIn" class="zweit mi" title="Vergrößern">+</button>
+      <button id="btnFit" class="zweit mi" title="Ansicht zentrieren">⤢</button>
+    </div>
+    <div class="ov ov-info" id="ovInfo">—</div>
+  </div>
+
+  <div class="panel">
+    <div class="reiter" role="tablist">
+      <button role="tab" data-tab="draw" aria-selected="true">Zeichnen</button>
+      <button role="tab" data-tab="furn" aria-selected="false">Möbel</button>
+      <button role="tab" data-tab="props" aria-selected="false">Eigensch.</button>
+      <button role="tab" data-tab="ki" aria-selected="false">KI</button>
+      <button role="tab" data-tab="plans" aria-selected="false">Pläne</button>
+    </div>
+    <div class="scroll">
+      <!-- ZEICHNEN -->
+      <section data-panel="draw">
+        <h2>Rechteck-Raum</h2>
+        <div class="feld2">
+          <div><label for="recW">Breite (m)</label><input id="recW" type="number" min="0.5" max="40" step="0.1" value="5"></div>
+          <div><label for="recL">Länge (m)</label><input id="recL" type="number" min="0.5" max="40" step="0.1" value="4"></div>
+        </div>
+        <div class="zeile" style="margin-top:12px"><button id="btnRect">Raum erstellen</button></div>
+        <p class="hinweis">Ersetzt den aktuellen Grundriss durch ein maßgetreues Rechteck.</p>
+
+        <h2>Wände frei zeichnen</h2>
+        <p class="hinweis">Klicke nacheinander die Ecken. Auf den Startpunkt oder Doppelklick schließt den Raum (Enter schließt, Esc bricht ab).</p>
+        <div class="zeile">
+          <button id="btnDraw" class="zweit">Zeichnen starten</button>
+          <button id="btnDrawDone" class="zweit">Schließen</button>
+          <button id="btnUndoPt" class="zweit">Punkt zurück</button>
+        </div>
+        <div class="zeile" style="margin-top:10px"><button id="btnClearWalls" class="zweit">Alle Wände löschen</button></div>
+
+        <h2>Raster</h2>
+        <label style="display:flex;align-items:center;gap:8px;margin-top:0"><input id="snapOn" type="checkbox" checked> Am Raster einrasten</label>
+        <label for="snapStep">Raster-Schritt</label>
+        <select id="snapStep">
+          <option value="0.1">10 cm</option>
+          <option value="0.25" selected>25 cm</option>
+          <option value="0.5">50 cm</option>
+          <option value="1">1 m</option>
+        </select>
+      </section>
+
+      <!-- MÖBEL -->
+      <section data-panel="furn" hidden>
+        <label for="libSearch">Möbel suchen</label>
+        <input id="libSearch" type="text" placeholder="z. B. Bett, Sofa, Tisch …">
+        <p class="hinweis">Tippen fügt mittig ein · Ziehen platziert am Zielpunkt.</p>
+        <div id="libList"></div>
+      </section>
+
+      <!-- EIGENSCHAFTEN -->
+      <section data-panel="props" hidden>
+        <p class="hinweis" id="propsEmpty">Wähle ein Möbel im Plan aus, um es zu bearbeiten.</p>
+        <div id="propsForm" hidden>
+          <h2 id="propsName" style="margin-top:4px">Möbel</h2>
+          <div class="feld2">
+            <div><label for="pW">Breite (cm)</label><input id="pW" type="number" min="10" step="1"></div>
+            <div><label for="pH">Tiefe (cm)</label><input id="pH" type="number" min="10" step="1"></div>
+          </div>
+          <label for="pA">Drehung: <span id="pAval">0</span>°</label>
+          <input id="pA" type="range" min="0" max="359" step="1" value="0">
+          <div class="feld2">
+            <div><label for="pX">Position X (m)</label><input id="pX" type="number" step="0.05"></div>
+            <div><label for="pY">Position Y (m)</label><input id="pY" type="number" step="0.05"></div>
+          </div>
+          <div class="zeile" style="margin-top:14px">
+            <button id="pRot" class="zweit">↻ 90° drehen</button>
+            <button id="pDup" class="zweit">Duplizieren</button>
+            <button id="pDel" class="zweit">Löschen</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- KI -->
+      <section data-panel="ki" hidden>
+        <h2 style="margin-top:4px">Planungs-Berater</h2>
+        <p class="hinweis">Deine KI schaut sich Raumgröße und Möbel an und gibt Tipps zu Anordnung und Platznutzung. Es wird nichts hochgeladen – nur deine eigene KI antwortet.</p>
+        <div class="zeile"><button id="btnKi">💡 Vorschläge holen</button></div>
+        <div id="kiStatus" style="margin-top:12px"></div>
+        <div id="kiResult"></div>
+      </section>
+
+      <!-- PLÄNE -->
+      <section data-panel="plans" hidden>
+        <h2 style="margin-top:4px">Speichern & Export</h2>
+        <label for="planName">Name des Plans</label>
+        <input id="planName" type="text" placeholder="z. B. Wohnzimmer">
+        <div class="zeile" style="margin-top:12px">
+          <button id="btnSave">💾 Speichern</button>
+          <button id="btnExport" class="zweit">🖼️ Als Bild (PNG)</button>
+        </div>
+        <div class="zeile" style="margin-top:10px"><button id="btnNew" class="zweit">Neuer leerer Plan</button></div>
+        <h2>Gespeicherte Pläne</h2>
+        <div id="plansList"><p class="hinweis">Noch keine gespeicherten Pläne.</p></div>
+        <p class="hinweis" id="saveMsg"></p>
+      </section>
+    </div>
+  </div>
+</main>
+
+<script>
+"use strict";
+/* ---------- Möbel-Bibliothek ---------- */
+const BIB=[
+ {kat:"Wohnen",items:[
+   {typ:"sofa",name:"Sofa",b:200,t:90,icon:"🛋️"},
+   {typ:"sessel",name:"Sessel",b:80,t:80,icon:"🪑"},
+   {typ:"couchtisch",name:"Couchtisch",b:110,t:60,icon:"🫖"},
+   {typ:"tvmoebel",name:"TV-Möbel",b:160,t:45,icon:"📺"},
+   {typ:"regal",name:"Regal",b:80,t:30,icon:"🗄️"}]},
+ {kat:"Schlafen",items:[
+   {typ:"bett140",name:"Bett 140",b:140,t:200,icon:"🛏️"},
+   {typ:"bett180",name:"Bett 180",b:180,t:200,icon:"🛏️"},
+   {typ:"nachttisch",name:"Nachttisch",b:45,t:40,icon:"🕯️"},
+   {typ:"schrank",name:"Kleiderschrank",b:150,t:60,icon:"🚪"},
+   {typ:"kommode",name:"Kommode",b:100,t:45,icon:"🗃️"}]},
+ {kat:"Essen",items:[
+   {typ:"esstisch",name:"Esstisch",b:160,t:90,icon:"🍽️"},
+   {typ:"stuhl",name:"Stuhl",b:45,t:45,icon:"🪑"},
+   {typ:"sideboard",name:"Sideboard",b:180,t:45,icon:"🗄️"}]},
+ {kat:"Küche",items:[
+   {typ:"kuechenzeile",name:"Küchenzeile",b:240,t:60,icon:"🍳"},
+   {typ:"kuehlschrank",name:"Kühlschrank",b:60,t:60,icon:"🧊"},
+   {typ:"herd",name:"Herd",b:60,t:60,icon:"🔥"},
+   {typ:"spuele",name:"Spüle",b:80,t:60,icon:"🚰"}]},
+ {kat:"Bad",items:[
+   {typ:"badewanne",name:"Badewanne",b:170,t:75,icon:"🛁"},
+   {typ:"dusche",name:"Dusche",b:90,t:90,icon:"🚿"},
+   {typ:"wc",name:"WC",b:40,t:60,icon:"🚽"},
+   {typ:"waschbecken",name:"Waschbecken",b:60,t:45,icon:"🧼"}]},
+ {kat:"Büro",items:[
+   {typ:"schreibtisch",name:"Schreibtisch",b:140,t:70,icon:"💻"},
+   {typ:"buerostuhl",name:"Bürostuhl",b:60,t:60,icon:"🪑"},
+   {typ:"buecherregal",name:"Bücherregal",b:100,t:30,icon:"📚"}]},
+ {kat:"Weiteres",items:[
+   {typ:"tuer",name:"Tür",b:90,t:12,icon:"🚪"},
+   {typ:"fenster",name:"Fenster",b:120,t:12,icon:"🪟"},
+   {typ:"teppich",name:"Teppich",b:200,t:140,icon:"▦"},
+   {typ:"pflanze",name:"Pflanze",b:50,t:50,icon:"🪴"}]}
+];
+const DEF={}; BIB.forEach(c=>c.items.forEach(i=>DEF[i.typ]=i));
+
+/* ---------- Speicher (mit Fallback) ---------- */
+const mem={};
+function lsGet(k){try{const v=localStorage.getItem(k);return v!=null?v:(mem[k]||null);}catch(e){return mem[k]||null;}}
+function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){mem[k]=v;}}
+const K_CUR="roomplanner.current", K_PLANS="roomplanner.plans";
+
+/* ---------- Zustand ---------- */
+let state={walls:[],closed:false,furniture:[],nextId:1,drawing:false,cursor:null};
+let selected=null;
+let cam={scale:60,ox:60,oy:60};
+let mode="select";
+let snapOn=true, snapStep=0.25;
+let logicalW=800, logicalH=600;
+let fitted=false;
+
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
+let C={};
+
+/* ---------- Hilfen ---------- */
+function rot(px,py,a){const c=Math.cos(a),s=Math.sin(a);return{x:px*c-py*s,y:px*s+py*c};}
+function w2s(wx,wy){return{x:cam.ox+wx*cam.scale,y:cam.oy+wy*cam.scale};}
+function s2w(sx,sy){return{x:(sx-cam.ox)/cam.scale,y:(sy-cam.oy)/cam.scale};}
+function dist(ax,ay,b){return Math.hypot(ax-b.x,ay-b.y);}
+function snapV(v){return snapOn?Math.round(v/snapStep)*snapStep:v;}
+function snapP(p){return snapOn?{x:snapV(p.x),y:snapV(p.y)}:p;}
+function readColors(){const cs=getComputedStyle(document.body);const g=n=>cs.getPropertyValue(n).trim();return{
+  bg:g("--bg"),fl:g("--fl"),fl2:g("--fl2"),li:g("--li"),li2:g("--li2")||g("--li"),
+  tx:g("--tx"),tx2:g("--tx2"),tx3:g("--tx3"),ak:g("--ak"),ak2:g("--ak2"),
+  gruen:g("--gruen"),rot:g("--rot"),schrift:g("--schrift")||"sans-serif"};}
+function roundRect(c,x,y,w,h,r){r=Math.min(r,Math.abs(w)/2,Math.abs(h)/2);c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
+
+/* ---------- Geometrie ---------- */
+function polyArea(pts){let a=0;for(let i=0;i<pts.length;i++){const j=(i+1)%pts.length;a+=pts[i].x*pts[j].y-pts[j].x*pts[i].y;}return Math.abs(a)/2;}
+function bboxPts(pts){let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;pts.forEach(p=>{x0=Math.min(x0,p.x);y0=Math.min(y0,p.y);x1=Math.max(x1,p.x);y1=Math.max(y1,p.y);});return{x0,y0,x1,y1,w:x1-x0,h:y1-y0};}
+function roomInfo(){
+  if(state.walls.length<2) return null;
+  const bb=bboxPts(state.walls);
+  const area=state.closed&&state.walls.length>=3?polyArea(state.walls):bb.w*bb.h;
+  return{breite:bb.w,laenge:bb.h,flaeche:area};
+}
+function boundsAll(data){
+  const pts=[];
+  data.walls.forEach(p=>pts.push({x:p.x,y:p.y}));
+  data.furniture.forEach(f=>{const r=Math.max(f.w,f.h)/2;pts.push({x:f.x-r,y:f.y-r});pts.push({x:f.x+r,y:f.y+r});});
+  if(!pts.length)return null;
+  return bboxPts(pts);
+}
+
+/* ---------- Zeichnen ---------- */
+function drawGrid(c,x0,y0,x1,y1){
+  const w0=s2w(x0,y0), w1=s2w(x1,y1);
+  const minor=0.5;
+  const startX=Math.floor(w0.x/minor)*minor, endX=Math.ceil(w1.x/minor)*minor;
+  const startY=Math.floor(w0.y/minor)*minor, endY=Math.ceil(w1.y/minor)*minor;
+  c.lineWidth=1;
+  for(let gx=startX;gx<=endX+1e-6;gx+=minor){
+    const s=w2s(gx,0);const major=Math.abs(gx-Math.round(gx))<1e-6;
+    c.strokeStyle=major?C.li2:C.li;
+    c.beginPath();c.moveTo(s.x,y0);c.lineTo(s.x,y1);c.stroke();
+  }
+  for(let gy=startY;gy<=endY+1e-6;gy+=minor){
+    const s=w2s(0,gy);const major=Math.abs(gy-Math.round(gy))<1e-6;
+    c.strokeStyle=major?C.li2:C.li;
+    c.beginPath();c.moveTo(x0,s.y);c.lineTo(x1,s.y);c.stroke();
+  }
+}
+function labelBox(c,x,y,text){
+  c.font="600 12px "+C.schrift;
+  const w=c.measureText(text).width;
+  c.fillStyle=C.fl;c.strokeStyle=C.li;c.lineWidth=1;
+  roundRect(c,x-w/2-5,y-10,w+10,20,5);c.fill();c.stroke();
+  c.fillStyle=C.tx;c.textAlign="center";c.textBaseline="middle";c.fillText(text,x,y);
+}
+function drawWallsAndLabels(c,data){
+  const pts=data.walls;
+  if(pts.length>=3&&data.closed){
+    c.beginPath();const s0=w2s(pts[0].x,pts[0].y);c.moveTo(s0.x,s0.y);
+    for(let i=1;i<pts.length;i++){const s=w2s(pts[i].x,pts[i].y);c.lineTo(s.x,s.y);}
+    c.closePath();c.fillStyle=C.fl2;c.fill();
+  }
+  if(pts.length>=2||(data.drawing&&pts.length>=1)){
+    c.lineWidth=Math.max(4,0.1*cam.scale);c.strokeStyle=C.tx;c.lineJoin="round";c.lineCap="round";
+    c.beginPath();const s0=w2s(pts[0].x,pts[0].y);c.moveTo(s0.x,s0.y);
+    for(let i=1;i<pts.length;i++){const s=w2s(pts[i].x,pts[i].y);c.lineTo(s.x,s.y);}
+    if(data.closed&&pts.length>=3)c.closePath();
+    c.stroke();
+  }
+  // Maßlabels
+  const n=pts.length;
+  const segs=[];
+  for(let i=0;i<n-1;i++)segs.push([pts[i],pts[i+1]]);
+  if(data.closed&&n>=3)segs.push([pts[n-1],pts[0]]);
+  segs.forEach(([a,b])=>{
+    const len=Math.hypot(b.x-a.x,b.y-a.y);
+    const m=w2s((a.x+b.x)/2,(a.y+b.y)/2);
+    labelBox(c,m.x,m.y,len.toFixed(2)+" m");
+  });
+  // Punkte beim Zeichnen
+  if(data.drawing){
+    pts.forEach((p,i)=>{const s=w2s(p.x,p.y);c.beginPath();c.arc(s.x,s.y,i===0?7:4,0,7);c.fillStyle=i===0?C.ak:C.tx2;c.fill();});
+    if(data.cursor&&pts.length>0){
+      const last=pts[pts.length-1];const sl=w2s(last.x,last.y);const sc=w2s(data.cursor.x,data.cursor.y);
+      c.setLineDash([6,5]);c.lineWidth=2;c.strokeStyle=C.ak;c.beginPath();c.moveTo(sl.x,sl.y);c.lineTo(sc.x,sc.y);c.stroke();c.setLineDash([]);
+      const len=Math.hypot(data.cursor.x-last.x,data.cursor.y-last.y);
+      labelBox(c,(sl.x+sc.x)/2,(sl.y+sc.y)/2,len.toFixed(2)+" m");
+    }
+  }
+}
+function drawFurniture(c,f,sel){
+  const center=w2s(f.x,f.y);
+  const w=f.w*cam.scale, h=f.h*cam.scale;
+  c.save();c.translate(center.x,center.y);c.rotate(f.angle);
+  c.fillStyle=sel?C.ak2:C.fl;c.strokeStyle=sel?C.ak:C.tx3;c.lineWidth=sel?2.4:1.4;
+  roundRect(c,-w/2,-h/2,w,h,Math.min(6,Math.min(w,h)*0.12));c.fill();c.stroke();
+  // Vorderseiten-Markierung
+  c.strokeStyle=sel?C.ak:C.tx3;c.lineWidth=2;
+  c.beginPath();c.moveTo(0,-h/2);c.lineTo(0,-h/2+Math.min(14,h*0.25));c.stroke();
+  c.rotate(-f.angle);
+  if(w>26&&h>26){
+    const fs=Math.max(11,Math.min(22,Math.min(w,h)*0.5));
+    c.font=fs+"px "+C.schrift;c.textAlign="center";c.textBaseline="middle";
+    c.fillText(f.icon, 0, h>fs+24?-6:0);
+    if(h>fs+26){c.font="11px "+C.schrift;c.fillStyle=C.tx2;c.fillText(f.name,0,fs/2+8);}
+  }
+  c.restore();
+}
+function handlePos(f){
+  const center=w2s(f.x,f.y);
+  const rz=rot(f.w/2*cam.scale,f.h/2*cam.scale,f.angle);
+  const resize={x:center.x+rz.x,y:center.y+rz.y};
+  const top=rot(0,-f.h/2*cam.scale,f.angle);
+  const up=rot(0,-1,f.angle);
+  const rotate={x:center.x+top.x+up.x*26,y:center.y+top.y+up.y*26};
+  return{center,resize,rotate};
+}
+function draw(){
+  C=readColors();
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,logicalW,logicalH);
+  ctx.fillStyle=C.bg;ctx.fillRect(0,0,logicalW,logicalH);
+  drawGrid(ctx,0,0,logicalW,logicalH);
+  drawWallsAndLabels(ctx,state);
+  state.furniture.forEach(f=>drawFurniture(ctx,f,f.id===selected));
+  // Griffe
+  if(selected!=null&&mode==="select"&&!state.drawing){
+    const f=getSel();if(f){const H=handlePos(f);
+      ctx.strokeStyle=C.ak;ctx.lineWidth=1.5;ctx.setLineDash([4,3]);
+      ctx.beginPath();ctx.moveTo(H.center.x,H.center.y);ctx.lineTo(H.rotate.x,H.rotate.y);ctx.stroke();ctx.setLineDash([]);
+      ctx.fillStyle=C.ak;ctx.strokeStyle=C.fl;ctx.lineWidth=2;
+      ctx.beginPath();ctx.arc(H.rotate.x,H.rotate.y,8,0,7);ctx.fill();ctx.stroke();
+      ctx.fillStyle=C.gruen;
+      ctx.beginPath();ctx.arc(H.resize.x,H.resize.y,8,0,7);ctx.fill();ctx.stroke();
+    }
+  }
+  updateInfo();
+}
+let dpr=1;
+function resize(){
+  dpr=Math.max(1,Math.min(3,window.devicePixelRatio||1));
+  const wrap=document.getElementById("cwrap");
+  logicalW=wrap.clientWidth;logicalH=wrap.clientHeight;
+  canvas.width=Math.round(logicalW*dpr);canvas.height=Math.round(logicalH*dpr);
+  canvas.style.width=logicalW+"px";canvas.style.height=logicalH+"px";
+  if(!fitted){fitView();fitted=true;}
+  draw();
+}
+function fitView(){
+  const bb=boundsAll(state)||{x0:0,y0:0,x1:6,y1:4,w:6,h:4};
+  const m=50;
+  const sw=(logicalW-2*m)/Math.max(0.5,bb.w);
+  const sh=(logicalH-2*m)/Math.max(0.5,bb.h);
+  cam.scale=Math.max(8,Math.min(400,Math.min(sw,sh)));
+  cam.ox=logicalW/2-(bb.x0+bb.w/2)*cam.scale;
+  cam.oy=logicalH/2-(bb.y0+bb.h/2)*cam.scale;
+}
+function zoomAt(mx,my,ns){
+  ns=Math.max(8,Math.min(400,ns));
+  const wb=s2w(mx,my);
+  cam.scale=ns;
+  cam.ox=mx-wb.x*cam.scale;cam.oy=my-wb.y*cam.scale;
+  draw();
+}
+
+/* ---------- Auswahl & Historie ---------- */
+function getSel(){return state.furniture.find(f=>f.id===selected);}
+function setSelected(id){selected=id;refreshProps();draw();}
+let history=[],hidx=-1;
+function serialize(){return{walls:state.walls.map(p=>({x:+p.x.toFixed(4),y:+p.y.toFixed(4)})),closed:state.closed,
+  furniture:state.furniture.map(f=>({id:f.id,typ:f.typ,name:f.name,icon:f.icon,x:+f.x.toFixed(4),y:+f.y.toFixed(4),w:+f.w.toFixed(4),h:+f.h.toFixed(4),angle:+f.angle.toFixed(4)})),nextId:state.nextId};}
+function restore(obj){
+  state.walls=(obj.walls||[]).map(p=>({x:p.x,y:p.y}));
+  state.closed=!!obj.closed;
+  state.furniture=(obj.furniture||[]).map(f=>({id:f.id,typ:f.typ,name:f.name,icon:f.icon||(DEF[f.typ]?DEF[f.typ].icon:"▭"),x:f.x,y:f.y,w:f.w,h:f.h,angle:f.angle||0}));
+  state.nextId=obj.nextId||(state.furniture.reduce((m,f)=>Math.max(m,f.id),0)+1);
+  state.drawing=false;state.cursor=null;
+  if(!state.furniture.some(f=>f.id===selected))selected=null;
+  refreshProps();draw();
+}
+function record(){
+  const s=JSON.stringify(serialize());
+  history=history.slice(0,hidx+1);history.push(s);hidx=history.length-1;
+  if(history.length>80){history.shift();hidx--;}
+  autosave();updateUndo();
+}
+function undo(){if(hidx>0){hidx--;restore(JSON.parse(history[hidx]));autosave();updateUndo();}}
+function redo(){if(hidx<history.length-1){hidx++;restore(JSON.parse(history[hidx]));autosave();updateUndo();}}
+function updateUndo(){document.getElementById("btnUndo").disabled=hidx<=0;document.getElementById("btnRedo").disabled=hidx>=history.length-1;}
+function autosave(){lsSet(K_CUR,JSON.stringify(serialize()));}
+
+/* ---------- Möbel ---------- */
+function addFurniture(typ,x,y){
+  const d=DEF[typ];if(!d)return;
+  const f={id:state.nextId++,typ:d.typ,name:d.name,icon:d.icon,x:snapV(x),y:snapV(y),w:d.b/100,h:d.t/100,angle:0};
+  state.furniture.push(f);setSelected(f.id);record();setTab("props");
+}
+
+/* ---------- Pointer / Interaktion ---------- */
+const pointers=new Map();
+let drag=null, pinch=null;
+function evPos(e){const r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};}
+
+canvas.addEventListener("pointerdown",e=>{
+  const p=evPos(e);pointers.set(e.pointerId,p);
+  try{canvas.setPointerCapture(e.pointerId);}catch(_){}
+  if(pointers.size===2){startPinch();drag=null;return;}
+  if(pointers.size===1)singleDown(p.x,p.y);
+});
+canvas.addEventListener("pointermove",e=>{
+  const p=evPos(e);if(pointers.has(e.pointerId))pointers.set(e.pointerId,p);
+  if(pointers.size>=2){doPinch();return;}
+  singleMove(p.x,p.y);
+});
+function endPtr(e){
+  pointers.delete(e.pointerId);
+  if(pointers.size<2)pinch=null;
+  if(pointers.size===0)singleUp();
+}
+canvas.addEventListener("pointerup",endPtr);
+canvas.addEventListener("pointercancel",endPtr);
+canvas.addEventListener("dblclick",()=>{if(mode==="wall"&&state.drawing)closeDrawing();});
+canvas.addEventListener("wheel",e=>{e.preventDefault();const p=evPos(e);const f=e.deltaY<0?1.12:1/1.12;zoomAt(p.x,p.y,cam.scale*f);},{passive:false});
+
+function startPinch(){
+  const a=[...pointers.values()];
+  pinch={startDist:Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y),startScale:cam.scale,
+    w0:s2w((a[0].x+a[1].x)/2,(a[0].y+a[1].y)/2)};
+}
+function doPinch(){
+  if(!pinch)return;const a=[...pointers.values()];if(a.length<2)return;
+  const d=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);
+  const mid={x:(a[0].x+a[1].x)/2,y:(a[0].y+a[1].y)/2};
+  cam.scale=Math.max(8,Math.min(400,pinch.startScale*(d/pinch.startDist)));
+  cam.ox=mid.x-pinch.w0.x*cam.scale;cam.oy=mid.y-pinch.w0.y*cam.scale;
+  draw();
+}
+function addWallPoint(x,y){
+  const wp=snapP(s2w(x,y));
+  if(state.walls.length>=3){const p0=w2s(state.walls[0].x,state.walls[0].y);if(dist(x,y,p0)<16){closeDrawing();return;}}
+  state.walls.push(wp);draw();
+}
+function closeDrawing(){
+  state.drawing=false;
+  if(state.walls.length>=3)state.closed=true;
+  state.cursor=null;setMode("select");record();draw();
+}
+function singleDown(x,y){
+  if(mode==="wall"){addWallPoint(x,y);return;}
+  if(selected!=null){const f=getSel();if(f){const H=handlePos(f);
+    if(dist(x,y,H.rotate)<18){drag={t:"rot"};return;}
+    if(dist(x,y,H.resize)<18){drag={t:"size"};return;}}}
+  const wp=s2w(x,y);
+  const hit=furnitureAt(wp.x,wp.y);
+  if(hit){setSelected(hit.id);drag={t:"move",off:{x:wp.x-hit.x,y:wp.y-hit.y}};}
+  else{setSelected(null);drag={t:"pan",sx:x,sy:y,ox:cam.ox,oy:cam.oy};}
+}
+function singleMove(x,y){
+  if(mode==="wall"){state.cursor=snapP(s2w(x,y));draw();return;}
+  if(!drag)return;
+  const wp=s2w(x,y);const f=getSel();
+  if(drag.t==="pan"){cam.ox=drag.ox+(x-drag.sx);cam.oy=drag.oy+(y-drag.sy);draw();}
+  else if(drag.t==="move"&&f){let nx=wp.x-drag.off.x,ny=wp.y-drag.off.y;nx=snapV(nx);ny=snapV(ny);f.x=nx;f.y=ny;drag.changed=true;draw();refreshProps();}
+  else if(drag.t==="rot"&&f){const c=w2s(f.x,f.y);f.angle=Math.atan2(y-c.y,x-c.x)+Math.PI/2;drag.changed=true;draw();refreshProps();}
+  else if(drag.t==="size"&&f){const la=rot(wp.x-f.x,wp.y-f.y,-f.angle);f.w=Math.max(0.2,Math.abs(la.x)*2);f.h=Math.max(0.2,Math.abs(la.y)*2);drag.changed=true;draw();refreshProps();}
+}
+function singleUp(){
+  if(drag&&drag.changed&&(drag.t==="move"||drag.t==="rot"||drag.t==="size"))record();
+  drag=null;
+}
+function furnitureAt(wx,wy){
+  for(let i=state.furniture.length-1;i>=0;i--){const f=state.furniture[i];const d=rot(wx-f.x,wy-f.y,-f.angle);if(Math.abs(d.x)<=f.w/2&&Math.abs(d.y)<=f.h/2)return f;}
+  return null;
+}
+
+/* ---------- Modus ---------- */
+function setMode(m){
+  mode=m;if(m!=="wall")state.drawing=false;
+  document.getElementById("btnSelect").classList.toggle("an",m==="select");
+  document.getElementById("btnWall").classList.toggle("an",m==="wall");
+  draw();
+}
+
+/* ---------- Info-Overlay ---------- */
+function updateInfo(){
+  const r=roomInfo();const el=document.getElementById("ovInfo");
+  let txt="";
+  if(r)txt="Raum "+r.breite.toFixed(2)+" × "+r.laenge.toFixed(2)+" m · "+r.flaeche.toFixed(2)+" m²";
+  else txt="Kein Raum gezeichnet";
+  txt+=" · "+state.furniture.length+" Möbel";
+  if(mode==="wall")txt+=" · Ecken anklicken";
+  el.textContent=txt;
+}
+
+/* ---------- Eigenschaften-Panel ---------- */
+function refreshProps(){
+  const f=getSel();
+  document.getElementById("propsEmpty").hidden=!!f;
+  document.getElementById("propsForm").hidden=!f;
+  if(!f)return;
+  document.getElementById("propsName").textContent=f.icon+" "+f.name;
+  document.getElementById("pW").value=Math.round(f.w*100);
+  document.getElementById("pH").value=Math.round(f.h*100);
+  let deg=Math.round(f.angle*180/Math.PI)%360;if(deg<0)deg+=360;
+  document.getElementById("pA").value=deg;document.getElementById("pAval").textContent=deg;
+  document.getElementById("pX").value=f.x.toFixed(2);
+  document.getElementById("pY").value=f.y.toFixed(2);
+}
+function bindProp(id,apply){
+  const el=document.getElementById(id);
+  el.addEventListener("input",()=>{const f=getSel();if(!f)return;apply(f,el.value);draw();if(id==="pA")document.getElementById("pAval").textContent=Math.round(getSel().angle*180/Math.PI);});
+  el.addEventListener("change",()=>{if(getSel())record();});
+}
+bindProp("pW",(f,v)=>{f.w=Math.max(0.1,(parseFloat(v)||10)/100);});
+bindProp("pH",(f,v)=>{f.h=Math.max(0.1,(parseFloat(v)||10)/100);});
+bindProp("pA",(f,v)=>{f.angle=(parseFloat(v)||0)*Math.PI/180;});
+bindProp("pX",(f,v)=>{f.x=parseFloat(v)||0;});
+bindProp("pY",(f,v)=>{f.y=parseFloat(v)||0;});
+document.getElementById("pRot").onclick=()=>{const f=getSel();if(!f)return;f.angle+=Math.PI/2;refreshProps();draw();record();};
+document.getElementById("pDup").onclick=()=>{const f=getSel();if(!f)return;const n={...f,id:state.nextId++,x:f.x+0.3,y:f.y+0.3};state.furniture.push(n);setSelected(n.id);record();};
+document.getElementById("pDel").onclick=()=>{const f=getSel();if(!f)return;state.furniture=state.furniture.filter(x=>x.id!==f.id);setSelected(null);record();};
+
+/* ---------- Bibliothek UI ---------- */
+function buildLib(filter){
+  const list=document.getElementById("libList");list.innerHTML="";
+  const f=(filter||"").trim().toLowerCase();
+  BIB.forEach(cat=>{
+    const items=cat.items.filter(i=>!f||i.name.toLowerCase().includes(f));
+    if(!items.length)return;
+    const h=document.createElement("div");h.className="lib-cat";h.textContent=cat.kat;list.appendChild(h);
+    const grid=document.createElement("div");grid.className="lib-grid";
+    items.forEach(i=>{
+      const b=document.createElement("div");b.className="lib-item";b.dataset.typ=i.typ;b.setAttribute("role","button");b.tabIndex=0;
+      b.innerHTML='<span class="ic">'+i.icon+'</span><span>'+i.name+'</span><span class="sz">'+i.b+'×'+i.t+' cm</span>';
+      b.addEventListener("pointerdown",libDown);
+      b.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();const wp=s2w(logicalW/2,logicalH/2);addFurniture(i.typ,wp.x,wp.y);}});
+      grid.appendChild(b);
+    });
+    list.appendChild(grid);
+  });
+  if(!list.children.length)list.innerHTML='<p class="hinweis">Kein Möbel gefunden.</p>';
+}
+document.getElementById("libSearch").addEventListener("input",e=>buildLib(e.target.value));
+
+let libDrag=null,ghost=null;
+function libDown(e){
+  e.preventDefault();
+  libDrag={typ:e.currentTarget.dataset.typ,x:e.clientX,y:e.clientY,moved:false};
+  window.addEventListener("pointermove",libMove);
+  window.addEventListener("pointerup",libUp);
+}
+function libMove(e){
+  if(!libDrag)return;
+  if(!libDrag.moved&&(Math.abs(e.clientX-libDrag.x)>6||Math.abs(e.clientY-libDrag.y)>6))libDrag.moved=true;
+  if(libDrag.moved){
+    if(!ghost){ghost=document.createElement("div");ghost.className="ghost";const d=DEF[libDrag.typ];ghost.textContent=d.icon+" "+d.name;document.body.appendChild(ghost);}
+    ghost.style.left=e.clientX+"px";ghost.style.top=e.clientY+"px";
+  }
+}
+function libUp(e){
+  window.removeEventListener("pointermove",libMove);
+  window.removeEventListener("pointerup",libUp);
+  const d=libDrag;libDrag=null;if(ghost){ghost.remove();ghost=null;}
+  if(!d)return;
+  const r=canvas.getBoundingClientRect();
+  if(d.moved&&e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom){
+    const wp=s2w(e.clientX-r.left,e.clientY-r.top);addFurniture(d.typ,wp.x,wp.y);
+  }else if(!d.moved){
+    const wp=s2w(logicalW/2,logicalH/2);addFurniture(d.typ,wp.x,wp.y);
+  }
+}
+
+/* ---------- Reiter ---------- */
+function setTab(name){
+  document.querySelectorAll('.reiter [role=tab]').forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===name));
+  document.querySelectorAll('[data-panel]').forEach(s=>s.hidden=s.dataset.panel!==name);
+}
+document.querySelectorAll('.reiter [role=tab]').forEach(b=>b.addEventListener("click",()=>setTab(b.dataset.tab)));
+
+/* ---------- Zeichnen-Buttons ---------- */
+document.getElementById("btnRect").onclick=()=>{
+  const w=parseFloat(document.getElementById("recW").value)||5;
+  const l=parseFloat(document.getElementById("recL").value)||4;
+  state.walls=[{x:0,y:0},{x:w,y:0},{x:w,y:l},{x:0,y:l}];
+  state.closed=true;state.drawing=false;setMode("select");fitView();record();draw();
+};
+document.getElementById("btnDraw").onclick=()=>{
+  state.walls=[];state.closed=false;state.drawing=true;state.cursor=null;selected=null;refreshProps();setMode("wall");draw();
+};
+document.getElementById("btnDrawDone").onclick=()=>{if(state.drawing)closeDrawing();};
+document.getElementById("btnUndoPt").onclick=()=>{if(state.drawing&&state.walls.length){state.walls.pop();draw();}};
+document.getElementById("btnClearWalls").onclick=()=>{state.walls=[];state.closed=false;state.drawing=false;setMode("select");record();draw();};
+document.getElementById("snapOn").onchange=e=>{snapOn=e.target.checked;};
+document.getElementById("snapStep").onchange=e=>{snapStep=parseFloat(e.target.value);};
+
+/* ---------- Toolbar ---------- */
+document.getElementById("btnSelect").onclick=()=>setMode("select");
+document.getElementById("btnWall").onclick=()=>{state.drawing=true;if(!state.walls.length)state.closed=false;setMode("wall");};
+document.getElementById("btnUndo").onclick=undo;
+document.getElementById("btnRedo").onclick=redo;
+document.getElementById("btnZoomIn").onclick=()=>zoomAt(logicalW/2,logicalH/2,cam.scale*1.2);
+document.getElementById("btnZoomOut").onclick=()=>zoomAt(logicalW/2,logicalH/2,cam.scale/1.2);
+document.getElementById("btnFit").onclick=()=>{fitView();draw();};
+
+window.addEventListener("keydown",e=>{
+  if(e.target.tagName==="INPUT"||e.target.tagName==="SELECT"||e.target.tagName==="TEXTAREA")return;
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="z"){e.preventDefault();e.shiftKey?redo():undo();return;}
+  if(e.key==="Delete"||e.key==="Backspace"){const f=getSel();if(f){state.furniture=state.furniture.filter(x=>x.id!==f.id);setSelected(null);record();}}
+  if(e.key==="Enter"&&state.drawing)closeDrawing();
+  if(e.key==="Escape"){if(state.drawing){state.drawing=false;state.cursor=null;setMode("select");draw();}else setSelected(null);}
+});
+
+/* ---------- Export / Render in Canvas ---------- */
+function renderPlanToCanvas(data,widthPx){
+  const bb=boundsAll(data)||{x0:0,y0:0,x1:6,y1:4,w:6,h:4};
+  const W=Math.max(400,Math.min(4000,widthPx||1600));
+  const M=W*0.06;
+  const scale=(W-2*M)/Math.max(0.5,bb.w);
+  let H=Math.round(bb.h*scale+2*M);H=Math.max(300,Math.min(4000,H));
+  const cv=document.createElement("canvas");cv.width=W;cv.height=H;
+  const c=cv.getContext("2d");
+  const savedCam={...cam},savedW=logicalW,savedH=logicalH,savedDpr=dpr;
+  cam={scale,ox:M-bb.x0*scale,oy:M-bb.y0*scale};logicalW=W;logicalH=H;
+  C=readColors();
+  c.fillStyle=C.bg;c.fillRect(0,0,W,H);
+  drawGrid(c,0,0,W,H);
+  drawWallsAndLabels(c,{walls:data.walls,closed:data.closed,drawing:false});
+  data.furniture.forEach(f=>drawFurniture(c,f,false));
+  cam=savedCam;logicalW=savedW;logicalH=savedH;dpr=savedDpr;
+  draw();
+  return cv;
+}
+function currentPlanObj(){return serialize();}
+document.getElementById("btnExport").onclick=async()=>{
+  if(!state.walls.length&&!state.furniture.length){document.getElementById("saveMsg").textContent="Erst einen Raum oder Möbel anlegen.";return;}
+  const cv=renderPlanToCanvas(currentPlanObj(),1600);
+  cv.toBlob(b=>{
+    const url=URL.createObjectURL(b);const a=document.createElement("a");
+    const nm=(document.getElementById("planName").value.trim()||"grundriss");
+    a.href=url;a.download=nm+".png";document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),2000);
+    document.getElementById("saveMsg").textContent="Bild exportiert.";
+  },"image/png");
+};
+
+/* ---------- Pläne speichern/laden ---------- */
+function getPlans(){try{return JSON.parse(lsGet(K_PLANS)||"[]");}catch(e){return[];}}
+function setPlans(arr){lsSet(K_PLANS,JSON.stringify(arr));}
+function renderPlans(){
+  const arr=getPlans();const el=document.getElementById("plansList");el.innerHTML="";
+  if(!arr.length){el.innerHTML='<p class="hinweis">Noch keine gespeicherten Pläne.</p>';return;}
+  arr.slice().reverse().forEach(p=>{
+    const row=document.createElement("div");row.className="plan-row";
+    const nm=document.createElement("div");nm.className="nm";nm.textContent=p.name;row.appendChild(nm);
+    const bl=document.createElement("button");bl.className="zweit";bl.textContent="Laden";bl.onclick=()=>{restore(p.plan);fitView();record();setTab("furn");};
+    const bd=document.createElement("button");bd.className="zweit";bd.textContent="Löschen";bd.onclick=()=>{setPlans(getPlans().filter(x=>x.name!==p.name));renderPlans();};
+    row.appendChild(bl);row.appendChild(bd);el.appendChild(row);
+  });
+}
+document.getElementById("btnSave").onclick=()=>{
+  const name=(document.getElementById("planName").value||"").trim();
+  const msg=document.getElementById("saveMsg");
+  if(!name){msg.textContent="Bitte einen Namen eingeben.";msg.className="hinweis fehler";return;}
+  const arr=getPlans().filter(p=>p.name!==name);
+  arr.push({name,ts:Date.now(),plan:serialize()});
+  setPlans(arr);renderPlans();
+  msg.className="hinweis";msg.textContent='„'+name+'" gespeichert.';
+};
+document.getElementById("btnNew").onclick=()=>{
+  state={walls:[],closed:false,furniture:[],nextId:1,drawing:false,cursor:null};selected=null;
+  refreshProps();fitView();record();draw();
+};
+
+/* ---------- KI ---------- */
+function buildKiPayload(){
+  const r=roomInfo();
+  return{
+    raum:r?{breite_m:+r.breite.toFixed(2),laenge_m:+r.laenge.toFixed(2),flaeche_qm:+r.flaeche.toFixed(2)}:{hinweis:"Kein Raum gezeichnet"},
+    moebel:state.furniture.map(f=>({name:f.name,breite_cm:Math.round(f.w*100),tiefe_cm:Math.round(f.h*100),
+      position_m:{x:+f.x.toFixed(2),y:+f.y.toFixed(2)},drehung_grad:Math.round(f.angle*180/Math.PI)}))
+  };
+}
+document.getElementById("btnKi").onclick=async()=>{
+  const btn=document.getElementById("btnKi"),st=document.getElementById("kiStatus"),res=document.getElementById("kiResult");
+  res.innerHTML="";
+  if(!state.furniture.length&&!state.walls.length){st.innerHTML='<span class="fehler">Bitte erst einen Raum zeichnen und Möbel hinzufügen.</span>';return;}
+  if(!(window.helloworld&&helloworld.ki)){st.innerHTML='<span class="fehler">Die KI ist hier nicht verfügbar.</span>';return;}
+  btn.disabled=true;st.innerHTML='<span class="denk">🤔 Deine KI denkt nach …</span>';
+  try{
+    const a=await helloworld.ki("planen",buildKiPayload());
+    st.textContent="";
+    const box=document.createElement("div");box.className="ki-box";
+    if(a.bewertung){const p=document.createElement("p");p.style.margin="0 0 8px";p.textContent=a.bewertung;box.appendChild(p);}
+    if(a.tipps&&a.tipps.length){const h=document.createElement("strong");h.textContent="Tipps";box.appendChild(h);const ul=document.createElement("ul");a.tipps.forEach(t=>{const li=document.createElement("li");li.textContent=t;ul.appendChild(li);});box.appendChild(ul);}
+    if(a.anordnung&&a.anordnung.length){const h=document.createElement("strong");h.style.display="block";h.style.marginTop="10px";h.textContent="Anordnung";box.appendChild(h);const ul=document.createElement("ul");a.anordnung.forEach(o=>{const li=document.createElement("li");li.innerHTML="";const b=document.createElement("b");b.textContent=(o.moebel||"")+": ";li.appendChild(b);li.appendChild(document.createTextNode(o.empfehlung||""));ul.appendChild(li);});box.appendChild(ul);}
+    res.appendChild(box);
+  }catch(err){
+    st.innerHTML='<span class="fehler">'+(err&&err.message?err.message:"Es ist ein Fehler aufgetreten.")+'</span>';
+  }finally{btn.disabled=false;}
+};
+
+/* ---------- Werkzeuge für KIs ---------- */
+function planStats(plan){
+  const walls=(plan.walls||[]).map(p=>({x:p.x,y:p.y}));
+  const closed=!!plan.closed;
+  let breite=0,laenge=0,flaeche=0;
+  if(walls.length>=2){const bb=bboxPts(walls);breite=bb.w;laenge=bb.h;flaeche=closed&&walls.length>=3?polyArea(walls):bb.w*bb.h;}
+  const moebel=(plan.furniture||[]).map(f=>({name:f.name,breite_cm:Math.round(f.w*100),tiefe_cm:Math.round(f.h*100),flaeche_qm:+(f.w*f.h).toFixed(3)}));
+  const belegt=moebel.reduce((s,m)=>s+m.flaeche_qm,0);
+  return{
+    breite_m:+breite.toFixed(2),laenge_m:+laenge.toFixed(2),flaeche_qm:+flaeche.toFixed(2),
+    anzahl_moebel:moebel.length,moebel,
+    belegte_flaeche_qm:+belegt.toFixed(2),
+    freie_flaeche_qm:+Math.max(0,flaeche-belegt).toFixed(2),
+    auslastung_prozent:flaeche>0?Math.round(belegt/flaeche*100):0
+  };
+}
+if(window.helloworld&&helloworld.werkzeug){
+  helloworld.werkzeug("plan_auswerten",async(eingabe)=>{
+    const plan=(eingabe&&eingabe.plan)?eingabe.plan:serialize();
+    if(!plan.walls&&!plan.furniture)throw new Error("Kein gültiger Plan übergeben.");
+    return planStats(plan);
+  });
+  helloworld.werkzeug("plan_bild",async(eingabe)=>{
+    const plan=(eingabe&&eingabe.plan)?eingabe.plan:serialize();
+    if((!plan.walls||!plan.walls.length)&&(!plan.furniture||!plan.furniture.length))throw new Error("Der Plan ist leer – nichts zu zeichnen.");
+    const w=(eingabe&&eingabe.breite_px)?eingabe.breite_px:1600;
+    const cv=renderPlanToCanvas({walls:plan.walls||[],closed:!!plan.closed,furniture:plan.furniture||[]},w);
+    const blob=await new Promise(r=>cv.toBlob(r,"image/png"));
+    return{breite_px:cv.width,hoehe_px:cv.height,dateien:[new File([blob],"grundriss.png",{type:"image/png"})]};
+  });
+}
+
+/* ---------- Start ---------- */
+(function init(){
+  let start=null;
+  const cur=lsGet(K_CUR);
+  if(cur){try{const o=JSON.parse(cur);if((o.walls&&o.walls.length)||(o.furniture&&o.furniture.length))start=o;}catch(e){}}
+  if(start)restore(start);
+  else{state.walls=[{x:0,y:0},{x:5,y:0},{x:5,y:4},{x:0,y:4}];state.closed=true;}
+  history=[JSON.stringify(serialize())];hidx=0;updateUndo();
+  setMode("select");buildLib("");renderPlans();refreshProps();
+  const ro=new ResizeObserver(()=>resize());ro.observe(document.getElementById("cwrap"));
+  resize();
+})();
+</script>
+</body>
+</html>
