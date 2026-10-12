@@ -21,11 +21,13 @@
       </div>
       <div class="hw-leiste-ort"><b id="hwOrtName"></b><small id="hwOrtInfo"></small></div>
       <nav class="hw-leiste-tabs" id="hwLeisteTabs" aria-label="Offene Apps"></nav>
+      <div class="hw-leiste-versionen" id="hwLeisteVersionen" hidden></div>
       <div class="hw-leiste-aktionen" id="hwLeisteAktionen"></div>
       <div class="hw-leiste-mehr" id="hwLeisteMehr" hidden></div>
     </section>`);
   const $l = (id) => document.getElementById(id);
   let offen = false;
+  let versionenOffen = false;
 
   // ---------- Pfeil: antippen öffnet, gedrückt halten + ziehen verschiebt (entlang der Oberkante) ----------
   const pfeil = $l('hwPfeil');
@@ -87,15 +89,25 @@
     $l('hwLeiste').classList.toggle('vorschau', Boolean(o.vorschau));
     $l('hwLeisteStatus').innerHTML = statusChipHtml();
     const tabs = S().tabs?.() || [];
-    $l('hwLeisteTabs').innerHTML = tabs.map((t, i) => `<button type="button" class="hw-tab${t.aktiv ? ' an' : ''}" data-l-tab="${i}" title="${esc(t.kennung)}">${t.symbol || ''}<span>${esc(t.name)}</span><i data-l-tabzu="${i}" role="button" aria-label="${esc(t.name)} schließen">✕</i></button>`).join('')
+    // Ein Tab je App; beim aktiven Tab klappt ▾ die Versionen auf
+    $l('hwLeisteTabs').innerHTML = tabs.map((t, i) => `<button type="button" class="hw-tab${t.aktiv ? ' an' : ''}" data-l-tab="${i}" title="${esc(t.kennung)}${t.version ? ' · ' + t.version : ''}">${t.symbol || ''}<span>${esc(t.name)}</span>${t.version ? `<small>${esc(t.version)}</small>` : ''}${t.aktiv && t.mehrVersionen ? `<em aria-hidden="true">${versionenOffen ? '▴' : '▾'}</em>` : ''}<i data-l-tabzu="${i}" role="button" aria-label="${esc(t.name)} schließen">✕</i></button>`).join('')
       + '<a class="hw-tab neu" href="/" title="Weitere App öffnen">＋</a>';
+    const versionen = versionenOffen ? (S().versionen?.() || []) : [];
+    $l('hwLeisteVersionen').hidden = !versionen.length;
+    $l('hwLeisteVersionen').innerHTML = versionen.length ? `<span class="hinweis">Version:</span>${versionen.map((v) => `<button type="button" class="${v.aktiv ? '' : 'zweit'} klein" data-l-version="${v.id}" title="${esc(v.titel)}" aria-pressed="${v.aktiv}">${esc(v.text)}</button>`).join('')}` : '';
     $l('hwLeisteAktionen').innerHTML = (S().aktionen?.() || []).map((a) => `<button type="button" class="${a.art === 'haupt' ? '' : a.art === 'leise' ? 'leise' : 'zweit'}${a.breit ? ' breit' : ''}" data-l-aktion="${a.id}">${a.text}</button>`).join('');
   }
   $l('hwLeiste').addEventListener('click', async (ev) => {
     const zu = ev.target.closest('[data-l-tabzu]');
     if (zu) { ev.stopPropagation(); S().tabZu?.(Number(zu.dataset.lTabzu)); zeigen(); return; }
     const tab = ev.target.closest('[data-l-tab]');
-    if (tab) { S().tabWahl?.(Number(tab.dataset.lTab)); leisteAuf(false); return; }
+    if (tab) {
+      // Aktiver Tab: Versionen auf-/zuklappen · anderer Tab: dorthin wechseln
+      if (tab.classList.contains('an')) { versionenOffen = !versionenOffen; zeigen(); return; }
+      versionenOffen = false; S().tabWahl?.(Number(tab.dataset.lTab)); leisteAuf(false); return;
+    }
+    const ver = ev.target.closest('[data-l-version]');
+    if (ver) { S().versionWahl?.(ver.dataset.lVersion); versionenOffen = false; leisteAuf(false); return; }
     const a = ev.target.closest('[data-l-aktion]');
     if (!a) return;
     if (a.dataset.lAktion === 'mehr') {

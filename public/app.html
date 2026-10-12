@@ -104,9 +104,17 @@ async function oeffnen(name, opts = {}) {
   const a = await appHolen(k);
   if (!a) return;
   if (!['browser', 'design'].includes(a.typ || 'browser')) { location.href = `/a/${kennung(a)}`; return; }
-  let i = tabs.findIndex((t) => t.art === 'app' && t.slug === a.slug && (t.version || null) === (version || null));
-  if (i < 0) { tabs.push({ art: 'app', kennung: kennung(a), slug: a.slug, version: version || null, app: a, titel: kennung(a) + (version ? '@' + version : '') }); i = tabs.length - 1; tabsSpeichern(); }
-  else if (opts.neu && tabs[i].rahmen) { tabs[i].rahmen.remove(); tabs[i].rahmen = null; tabs[i].baum = null; appCache.delete(a.slug); tabs[i].app = await appHolen(a.slug) || a; }
+  // Eine App = ein Tab. Andere Version derselben App → der Tab wechselt die Version.
+  let i = tabs.findIndex((t) => t.art === 'app' && t.slug === a.slug);
+  if (i < 0) { tabs.push({ art: 'app', kennung: kennung(a), slug: a.slug, version: version || null, app: a, titel: kennung(a) }); i = tabs.length - 1; }
+  else {
+    const t = tabs[i];
+    const andere = (t.version || null) !== (version || null);
+    if ((andere || opts.neu) && t.rahmen) { t.rahmen.remove(); t.rahmen = null; }
+    if (opts.neu) { t.baum = null; appCache.delete(a.slug); t.app = await appHolen(a.slug) || a; }
+    t.version = version || null; t.vorschau = null;
+  }
+  tabsSpeichern();
   $('infoseite').hidden = true; $('flaeche').hidden = false;
   zuletztMerken(kennung(a) + (version ? '@' + version : ''));
   tabZeigen(i);
@@ -241,7 +249,15 @@ async function aktion(id, { schliessen }) {
 window.HW_SEITE = {
   ort, aktionen, aktion, mehrBereich: (el) => appBereich(el),
   kontext: () => { const t = tabs[aktiv]; return t && t.art === 'app' ? { slug: t.slug, kennung: t.kennung, version: t.version } : null; },
-  tabs: () => tabs.map((t, i) => ({ kennung: t.kennung, name: t.titel || t.kennung, aktiv: i === aktiv, symbol: t.app ? symbolHtml(t.app) : '' })),
+  tabs: () => tabs.map((t, i) => ({ kennung: t.kennung, name: t.titel || t.kennung, version: t.version ? `v${t.version.slice(1)}` : '', mehrVersionen: (t.baum?.versionen?.length || t.app?.version || 1) > 1, aktiv: i === aktiv, symbol: t.app ? symbolHtml(t.app) : '' })),
+  // Versionen des aktiven Tabs (zum Wechseln innerhalb desselben Tabs)
+  versionen: () => {
+    const t = tabs[aktiv];
+    if (!t?.baum || t.art !== 'app') return [];
+    const aktuell = t.version || t.baum.standard;
+    return [...t.baum.versionen].sort((x, y) => y.zeit.localeCompare(x.zeit)).map((v) => ({ id: v.id, text: `v${v.id.slice(1)}${v.id === t.baum.standard ? ' ★' : ''}`, titel: v.aenderung, aktiv: v.id === aktuell }));
+  },
+  versionWahl: (id) => { const t = tabs[aktiv]; if (t) oeffnen(`${t.kennung}${id === t.baum?.standard ? '' : '@' + id}`); },
   tabWahl: (i) => { $('infoseite').hidden = true; $('flaeche').hidden = false; tabZeigen(i); },
   tabZu, oeffnen, vorschau, vorschauOeffnen, appBereich,
 };
@@ -299,8 +315,9 @@ addEventListener('message', async (ev) => {
   if (startName && !start && !nurVorschau) { document.body.innerHTML = '<main class="seite"><h1 class="hw-titel" style="margin-top:40px">Nicht gefunden</h1><p><a href="/">← Start</a></p></main>'; return; }
   // Gespeicherte Tabs wiederherstellen (ohne sie schon zu laden – erst beim Antippen)
   for (const g of tabsLaden()) {
+    if (tabs.some((t) => t.slug === g.slug)) continue; // je App nur ein Tab (alte Doppelte zusammenführen)
     const a = await appHolen(g.slug);
-    if (a && ['browser', 'design'].includes(a.typ || 'browser')) tabs.push({ art: 'app', kennung: kennung(a), slug: a.slug, version: g.version || null, app: a, titel: kennung(a) + (g.version ? '@' + g.version : '') });
+    if (a && ['browser', 'design'].includes(a.typ || 'browser')) tabs.push({ art: 'app', kennung: kennung(a), slug: a.slug, version: g.version || null, app: a, titel: kennung(a) });
   }
   const q = new URLSearchParams(location.search);
   if (start && !['browser', 'design'].includes(start.typ || 'browser')) infoseite(start);

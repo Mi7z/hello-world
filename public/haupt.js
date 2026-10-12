@@ -153,13 +153,13 @@ const FILTER = { alle: () => true, apps: (a) => ['browser', 'server'].includes(a
 const aufgeklappt = new Map(); // slug → Filter der Versionen (neueste | beliebteste | alle)
 const baeume = new Map(); // slug → Stammbaum (geladen beim ersten Aufklappen)
 const HAT_BAUM = (a) => ['browser', 'design'].includes(a.typ || 'browser');
-function appZeile(a) {
+function appZeile(a, { offeneVersion = undefined, zuIndex = null } = {}) {
   const offen = aufgeklappt.has(a.slug);
   const versionen = a.version > 1 ? `<span class="app-zeile-zahl" title="${a.version} Versionen">${a.version} V.</span>` : '';
   return `<div class="app-zeile${offen ? ' offen' : ''}" data-zeile="${a.slug}">
     <button type="button" class="app-zeile-kopf" data-zeile-auf="${a.slug}" aria-expanded="${offen}">
-      ${symbolHtml(a)}<b>${esc(kennung(a))}</b><span class="app-zeile-text">${esc(a.beschreibung)}</span>${versionen}<span class="app-zeile-pfeil" aria-hidden="true">${offen ? '▾' : '▸'}</span>
-    </button>
+      ${symbolHtml(a)}<b>${esc(kennung(a))}</b><span class="app-zeile-text">${esc(a.beschreibung)}</span>${offeneVersion !== undefined ? `<span class="app-zeile-zahl offen-in">offen · ${offeneVersion ? 'v' + offeneVersion.slice(1) : 'beste'}</span>` : versionen}<span class="app-zeile-pfeil" aria-hidden="true">${offen ? '▾' : '▸'}</span>
+    </button>${zuIndex !== null ? `<button type="button" class="leise klein tab-zu-zeile" data-tab-zu="${zuIndex}" aria-label="${esc(kennung(a))} schließen">✕</button>` : ''}
     ${offen ? `<div class="app-zeile-inhalt">${appInhalt(a)}</div>` : ''}
   </div>`;
 }
@@ -169,7 +169,7 @@ function appInhalt(a) {
   if (a.werkzeuge?.length) marken.push('<span class="marke">auch für KIs</span>');
   if (a.faehigkeiten?.length) marken.push('<span class="marke">steuert den PC</span>');
   const kopf = `<p class="app-zeile-beschreibung">${esc(a.beschreibung)}</p><div class="karte-fuss">${marken.join('')}</div>
-    <div class="knoepfe links"><a class="knopf klein" href="/a/${kennung(a)}">▶ Öffnen</a>${a.typ === 'design' ? `<button type="button" class="zweit klein" data-design-nutzen="${a.slug}">${designName() === a.slug ? 'Ist aktiv ✓' : '◐ Verwenden'}</button>` : ''}</div>`;
+    <div class="knoepfe links"><a class="knopf klein" href="/a/${kennung(a)}${(() => { const t = offeneTabs().find((x) => x.slug === a.slug); return t?.version ? '@' + t.version : ''; })()}">▶ Öffnen</a>${a.typ === 'design' ? `<button type="button" class="zweit klein" data-design-nutzen="${a.slug}">${designName() === a.slug ? 'Ist aktiv ✓' : '◐ Verwenden'}</button>` : ''}</div>`;
   if (!HAT_BAUM(a)) return kopf;
   const b = baeume.get(a.slug);
   if (!b) { baumLaden(a.slug); return kopf + '<p class="lade">Versionen werden geladen …</p>'; }
@@ -200,9 +200,10 @@ async function baumLaden(slug) {
 function zeigeAlle() {
   const liste = stand.apps.filter(FILTER[filter]);
   $('anzahl').textContent = liste.length;
-  $('alleListe').innerHTML = liste.sort((a, b) => a.slug.localeCompare(b.slug)).map(appZeile).join('') || '<p class="leer">Hier ist noch nichts – mach den Anfang.</p>';
+  $('alleListe').innerHTML = liste.sort((a, b) => a.slug.localeCompare(b.slug)).map((a) => appZeile(a)).join('') || '<p class="leer">Hier ist noch nichts – mach den Anfang.</p>';
+  if (location.hash === '#apps') zeigeMeineApps();
 }
-$('alleListe').addEventListener('click', (ev) => {
+function zeilenKlick(ev) {
   const auf = ev.target.closest('[data-zeile-auf]');
   if (auf) { const s = auf.dataset.zeileAuf; if (aufgeklappt.has(s)) aufgeklappt.delete(s); else aufgeklappt.set(s, 'beliebteste'); zeigeAlle(); return; }
   const f = ev.target.closest('[data-baum-filter]');
@@ -211,7 +212,8 @@ $('alleListe').addEventListener('click', (ev) => {
   if (d) { designWaehlen(d.dataset.designNutzen); zeigeAlle(); return; }
   const v = ev.target.closest('[data-version]');
   if (v) versionFragen(v.dataset.version, v.dataset.id);
-});
+}
+for (const id of ['alleListe', 'offenListe', 'zuletztListe']) $(id).addEventListener('click', zeilenKlick);
 // Kleines Fenster: diese Version öffnen?
 function versionFragen(slug, id) {
   const a = stand.apps.find((x) => x.slug === slug);
@@ -263,7 +265,8 @@ $('suche').addEventListener('submit', (ev) => {
 });
 
 // Hello-World-Fenster auf der Startseite: offene Apps als Tabs, keine aktuelle App
-const offeneTabs = () => { try { return JSON.parse(localStorage.getItem('hw-tabs') || '[]'); } catch { return []; } };
+// Offene Apps – je App nur einmal (alte Doppelte werden zusammengeführt)
+const offeneTabs = () => { try { return JSON.parse(localStorage.getItem('hw-tabs') || '[]').filter((t, i, l) => l.findIndex((x) => x.slug === t.slug) === i); } catch { return []; } };
 window.HW_SEITE = {
   kontext: () => null,
   tabs: () => offeneTabs().map((t) => { const a = stand.apps.find((x) => x.slug === t.slug); return { kennung: t.kennung, name: t.kennung + (t.version ? '@' + t.version : ''), symbol: a ? symbolHtml(a) : '' }; }),
@@ -383,12 +386,9 @@ function zeigeWeitermachen() {
 function zeigeMeineApps() {
   const offen = offeneTabs();
   $('offenAnzahl').textContent = offen.length || '';
-  $('offenListe').innerHTML = offen.map((t, i) => {
-    const a = stand.apps.find((x) => x.slug === t.slug);
-    return a ? karte(a).replace('href="/a/' + kennung(a) + '"', `href="/a/${kennung(a)}${t.version ? '@' + t.version : ''}"`).replace('</a>', `<button type="button" class="leise klein tab-zu" data-tab-zu="${i}" aria-label="Schließen">✕</button></a>`) : '';
-  }).join('') || '<p class="leer">Keine App offen. Öffne eine unter „Start".</p>';
-  const zuletzt = zuletztListe().filter((k) => !offen.some((t) => t.kennung === k.split('@')[0]));
-  $('zuletztListe').innerHTML = zuletzt.map((k) => { const a = stand.apps.find((x) => kennung(x) === k.split('@')[0]); return a ? karte(a) : ''; }).join('') || '<p class="hinweis">Noch nichts.</p>';
+  $('offenListe').innerHTML = offen.map((t, i) => { const a = stand.apps.find((x) => x.slug === t.slug); return a ? appZeile(a, { offeneVersion: t.version || null, zuIndex: i }) : ''; }).join('') || '<p class="leer">Keine App offen. Öffne eine unter „Start".</p>';
+  const zuletzt = [...new Set(zuletztListe().map((k) => k.split('@')[0]))].filter((k) => !offen.some((t) => t.kennung === k));
+  $('zuletztListe').innerHTML = zuletzt.map((k) => { const a = stand.apps.find((x) => kennung(x) === k); return a ? appZeile(a) : ''; }).join('') || '<p class="hinweis">Noch nichts.</p>';
 }
 document.addEventListener('click', (ev) => {
   const z = ev.target.closest('[data-tab-zu]');

@@ -620,3 +620,14 @@ html.hw-layout-laedt body > header.kopf, html.hw-layout-laedt body > main.seite 
 .version-meta { flex: none; font-size: 11px; color: var(--tx3); }
 .versionen { grid-template-columns: minmax(0, 1fr); }
 .version-zeile, .versionen-kopf { min-width: 0; }
+
+.hw-tab small { font-size: 10px; color: var(--tx3); font-weight: 600; }
+.hw-tab em { font-style: normal; color: var(--ak); font-size: 11px; }
+.hw-leiste-versionen { display: flex; gap: 6px; align-items: center; overflow-x: auto; scrollbar-width: none; padding: 2px 0; }
+.hw-leiste-versionen::-webkit-scrollbar { display: none; }
+.hw-leiste-versionen button { flex: none; min-height: 30px; }
+
+#offenListe, #zuletztListe { display: flex; flex-direction: column; gap: 6px; }
+.app-zeile { position: relative; }
+.app-zeile .tab-zu-zeile { position: absolute; top: 8px; right: 30px; min-height: 30px; padding: 2px 8px; }
+.app-zeile-zahl.offen-in { border-color: var(--ak); color: var(--ak); margin-right: 34px; }
