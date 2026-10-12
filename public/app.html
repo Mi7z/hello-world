@@ -205,7 +205,7 @@ function aktionen() {
   const liste = [];
   const offen = offeneVorschau(t);
   if (offen) liste.push({ id: 'vorschauZeigen', text: '▶ Vorschau ansehen', art: 'haupt', breit: true });
-  liste.push({ id: 'verbessern', text: '✎ Verbessern', art: offen ? 'zweit' : 'haupt' });
+  liste.push(STATISCH ? { id: 'programm', text: '✎ Verbessern (im Programm)', art: 'zweit' } : { id: 'verbessern', text: '✎ Verbessern', art: offen ? 'zweit' : 'haupt' });
   if (istDesign(t.app) && designName() !== t.slug) liste.push({ id: 'designNutzen', text: '◐ Design verwenden', art: 'zweit' });
   if (t.baum) liste.push({ id: 'versionen', text: `Versionen (${t.baum.versionen.length})`, art: 'zweit' });
   liste.push({ id: 'mehr', text: '⋯ Mehr', art: 'leise' });
@@ -216,6 +216,7 @@ async function aktion(id, { schliessen }) {
   if (!t) return;
   const job = t.art === 'vorschau' ? t.job : t.vorschau;
   if (id === 'verbessern') return window.hwLeiste.zuChat();
+  if (id === 'programm') { schliessen(); return nurImProgramm('Apps verbessern und erweitern'); }
   if (id === 'versionen') { location.href = `/b/${t.kennung}`; return; }
   if (id === 'designNutzen') { designWaehlen(t.slug); return; }
   if (id === 'vorschauZeigen') { const a = offeneVorschau(t); if (a) { vorschau(await api(`/api/bau/${a.id}`)); schliessen(); } return; }
