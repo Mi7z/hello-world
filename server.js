@@ -498,7 +498,9 @@ const server = http.createServer(async (req, res) => {
 
     // ---------- Apps, die die eigene KI des Nutzers nutzen (siehe appki.js) ----------
     if (url.pathname === '/api/ki/app' && req.method === 'POST') {
-      const d = await body(req);
+      const d = await body(req, 30 * 1024 * 1024);
+      // Bilder für die KI (z. B. Skizze): höchstens 4, je höchstens ~6 MB
+      const bilder = (Array.isArray(d.bilder) ? d.bilder : []).slice(0, 4).filter((b) => /^image\/(png|jpeg|webp|gif)$/.test(b?.typ) && typeof b.base64 === 'string' && b.base64.length < 8e6).map((b) => ({ typ: b.typ, base64: b.base64 }));
       const ki = kiAusAnfrage(d.ki);
       if (!darf(ki)) return json(res, 403, { fehler: '„Claude auf diesem PC" geht nur im Heimnetz. Verbinde unter Hello World → Mehr → Deine KI einen eigenen Schlüssel.' });
       let html = null, name = 'App';
@@ -517,7 +519,7 @@ const server = http.createServer(async (req, res) => {
       if (!html) return json(res, 404, { fehler: 'App nicht gefunden' });
       const { erklaerung } = appki.kiErklaerungAus(html);
       if (!erklaerung) return json(res, 400, { fehler: 'Diese App hat keine KI-Aufgaben festgelegt.' });
-      return json(res, 200, appki.starten({ ki, erklaerung, app: name, aufgabe: String(d.aufgabe || ''), eingabe: d.eingabe, adresse: req.socket.remoteAddress }));
+      return json(res, 200, appki.starten({ ki, erklaerung, app: name, aufgabe: String(d.aufgabe || ''), eingabe: d.eingabe, adresse: req.socket.remoteAddress, bilder }));
     }
     const appKiStand = url.pathname.match(/^\/api\/ki\/app\/([a-f0-9]+)$/);
     if (appKiStand && req.method === 'GET') return json(res, 200, appki.stand(appKiStand[1]));

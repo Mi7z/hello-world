@@ -43,7 +43,7 @@ const auftraege = new Map();
 const zaehler = new Map(); // Anfragen pro Adresse und Minute
 setInterval(() => { for (const [id, a] of auftraege) if (Date.now() - a.seit > 30 * 60e3) auftraege.delete(id); zaehler.clear(); }, 60e3);
 
-export function starten({ ki, erklaerung, app, aufgabe, eingabe, adresse }) {
+export function starten({ ki, erklaerung, app, aufgabe, eingabe, adresse, bilder = [] }) {
   const a = erklaerung?.aufgaben?.[aufgabe];
   if (!a) throw Object.assign(new Error(`Diese App hat keine KI-Aufgabe „${aufgabe}" festgelegt.`), { status: 400 });
   const text = JSON.stringify(eingabe ?? null);
@@ -54,7 +54,7 @@ export function starten({ ki, erklaerung, app, aufgabe, eingabe, adresse }) {
   const id = crypto.randomBytes(9).toString('hex');
   const auftrag = { status: 'laeuft', seit: Date.now() };
   auftraege.set(id, auftrag);
-  kiJson(ki, SYSTEM(app, erklaerung.zweck, a.anweisung), `Daten:\n${text}`, streng(a.schema))
+  kiJson(ki, SYSTEM(app, erklaerung.zweck, a.anweisung) + (bilder.length ? `\n- Zu dieser Aufgabe gehören ${bilder.length} Bild(er) vom Nutzer – werte sie genau aus.` : ''), `Daten:\n${text}`, streng(a.schema), { bilder })
     .then((ergebnis) => Object.assign(auftrag, { status: 'fertig', ergebnis }))
     .catch((err) => Object.assign(auftrag, { status: 'fehler', fehler: String(err.message || err).slice(0, 300) }));
   return { id };
@@ -77,6 +77,7 @@ Diese App nutzt die EIGENE KI des Nutzers (über Hello World). So geht es:
   } }
 </script>
 2. Aufruf (der Baustein ist automatisch vorhanden, nicht selbst definieren): const antwort = await helloworld.ki('einordnen', { text: eingabe.value });
+   Mit Bildern (z. B. Foto einer Skizze, eines Dokuments): await helloworld.ki('skizze_lesen', { hinweis: '…' }, { bilder: [dataUrl] }) – bis zu 4 Bilder als data:-URL (image/png oder image/jpeg, vorher auf höchstens ~1600 px verkleinern). Die KI des Nutzers sieht die Bilder.
    → liefert ein Objekt genau im Schema-Format. Es kann dauern (bis zu einer Minute): zeige solange „Deine KI denkt nach …" und sperre den Knopf.
    → Bei Ablehnung oder Fehler wirft der Aufruf einen Fehler (err.message ist eine verständliche Meldung) – zeige sie freundlich an.
 3. Die App pflegt die Antwort selbst ein (z. B. in eine Liste, Tabelle oder in localStorage) – die KI liefert nur Daten, nie HTML.

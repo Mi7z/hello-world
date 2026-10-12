@@ -29,7 +29,7 @@ async function modellVon(a, schluessel) {
   return wahl;
 }
 
-async function einmal(a, schluessel, system, frage, schema) {
+async function einmal(a, schluessel, system, frage, schema, bilder = []) {
   const modell = await modellVon(a, schluessel);
   const sys = schema
     ? `${system}\n\nAntworte AUSSCHLIESSLICH mit gültigem JSON (ohne Erklärung, ohne Markdown) genau nach diesem JSON-Schema:\n${JSON.stringify(schema)}`
@@ -37,7 +37,7 @@ async function einmal(a, schluessel, system, frage, schema) {
   const res = await fetch(`${basis(a)}/chat/completions`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${schluessel}`, 'Content-Type': 'application/json', 'HTTP-Referer': 'https://github.com/Mi7z/hello-world', 'X-Title': 'Hello World' },
-    body: JSON.stringify({ model: modell, messages: [{ role: 'system', content: sys }, { role: 'user', content: frage }], temperature: 0.4, max_tokens: 32000 }),
+    body: JSON.stringify({ model: modell, messages: [{ role: 'system', content: sys }, { role: 'user', content: bilder.length ? [{ type: 'text', text: frage }, ...bilder.slice(0, 4).map((b) => ({ type: 'image_url', image_url: { url: `data:${b.typ || 'image/png'};base64,${b.base64}` } }))] : frage }], temperature: 0.4, max_tokens: 32000 }),
     signal: AbortSignal.timeout(6 * 60e3),
   });
   if (!res.ok) {
@@ -51,7 +51,7 @@ async function einmal(a, schluessel, system, frage, schema) {
 }
 
 // schluessel = { gemini: '…', groq: '…', … } – nur eingetragene Anbieter werden benutzt
-export async function freiFragen(schluessel, system, frage, schema = null) {
+export async function freiFragen(schluessel, system, frage, schema = null, { bilder = [] } = {}) {
   const liste = ANBIETER.filter((a) => typeof schluessel?.[a.id] === 'string' && schluessel[a.id].trim());
   if (!liste.length) throw new Error('Keine kostenlose KI eingerichtet – trage unter „Deine KI" mindestens einen Gratis-Schlüssel ein.');
   const fehler = [];
@@ -60,7 +60,7 @@ export async function freiFragen(schluessel, system, frage, schema = null) {
     const merk = a.id + s.slice(-6);
     if ((pause.get(merk) || 0) > Date.now()) { fehler.push(`${a.name}: gerade am Limit`); continue; }
     try {
-      const r = await einmal(a, s, system, frage, schema);
+      const r = await einmal(a, s, system, frage, schema, bilder);
       console.log(`Kostenlose KI: ${r.anbieter} (${r.modell})`);
       return r.text;
     } catch (err) {

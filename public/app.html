@@ -296,7 +296,7 @@ addEventListener('message', async (ev) => {
     const q = t.art === 'vorschau' ? { auftrag: t.auftrag, kennung: t.titel, adresse: `/api/bau/${t.auftrag}/vorschau` }
       : t.vorschau ? { auftrag: t.vorschau.id, kennung: t.kennung, adresse: `/api/bau/${t.vorschau.id}/vorschau` }
       : { slug: t.slug, version: t.version, kennung: t.kennung, adresse: quelle(t) };
-    try { antworten({ ok: true, ergebnis: await appKiAusfuehren(q, String(d.aufgabe), d.eingabe ?? {}) }); }
+    try { antworten({ ok: true, ergebnis: await appKiAusfuehren(q, String(d.aufgabe), d.eingabe ?? {}, d.bilder || []) }); }
     catch (err) { antworten({ ok: false, fehler: err.message }); }
     return;
   }

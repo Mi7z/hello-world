@@ -240,6 +240,9 @@ Antwort-Format:
 </script>
 ```
 
+Mit Bildern (Skizze, Foto, Dokument): `await helloworld.ki('skizze_lesen', { hinweis }, { bilder: [dataUrl] })` –
+bis zu 4 Bilder; die KI des Nutzers (Claude Code, Codex, Gemini, eigener Schlüssel, Gratis-KI) sieht sie.
+
 Aufruf: `const antwort = await helloworld.ki('sortieren', { text })` – liefert ein
 Objekt genau im Schema-Format; die App pflegt es selbst ein (die KI liefert nur
 Daten, nie HTML). Hello World fragt den Nutzer einmal pro App um Erlaubnis und

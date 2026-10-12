@@ -278,7 +278,16 @@ function helferHinweis() {
 // ---------- Apps mit eigener KI: helloworld.ki(aufgabe, eingabe) ----------
 // quelle = { slug, version, auftrag, kennung, adresse } – adresse = woher die App-Datei kommt
 const kiErlaubnisse = () => { try { return JSON.parse(localStorage.getItem('hw-ki-erlaubt') || '{}'); } catch { return {}; } };
-async function appKiAusfuehren(quelle, aufgabe, eingabe) {
+// Bilder aus der App (data:-URLs oder Blobs) für die KI vorbereiten
+async function bilderVorbereiten(liste = []) {
+  const raus = [];
+  for (const b of (Array.isArray(liste) ? liste : []).slice(0, 4)) {
+    if (typeof b === 'string') { const m = b.match(/^data:(image\/[a-z]+);base64,(.+)$/); if (m) raus.push({ typ: m[1], base64: m[2] }); }
+    else if (b instanceof Blob) { const url = await new Promise((r) => { const f = new FileReader(); f.onload = () => r(f.result); f.readAsDataURL(b); }); const m = String(url).match(/^data:(image\/[a-z]+);base64,(.+)$/); if (m) raus.push({ typ: m[1], base64: m[2] }); }
+  }
+  return raus;
+}
+async function appKiAusfuehren(quelle, aufgabe, eingabe, bilderRoh = []) {
   const ki = kiEinstellung();
   if (!ki) { kiFehltHinweis(); throw new Error('Keine KI verbunden.'); }
   const schluessel = quelle.auftrag ? `vorschau:${quelle.auftrag}` : quelle.slug;
@@ -289,7 +298,8 @@ async function appKiAusfuehren(quelle, aufgabe, eingabe) {
     if (!(await kiErlaubnisFragen(quelle.kennung, zweck, ki))) throw new Error('Du hast die KI-Nutzung abgelehnt.');
     localStorage.setItem('hw-ki-erlaubt', JSON.stringify({ ...kiErlaubnisse(), [schluessel]: true }));
   }
-  const { id } = await api('/api/ki/app', { method: 'POST', body: JSON.stringify({ slug: quelle.slug, version: quelle.version, auftrag: quelle.auftrag, aufgabe, eingabe, ki: kiFuerAuftrag() }) });
+  const bilder = await bilderVorbereiten(bilderRoh);
+  const { id } = await api('/api/ki/app', { method: 'POST', body: JSON.stringify({ slug: quelle.slug, version: quelle.version, auftrag: quelle.auftrag, aufgabe, eingabe, bilder, ki: kiFuerAuftrag() }) });
   for (let i = 0; i < 400; i++) {
     await new Promise((r) => setTimeout(r, i < 5 ? 1000 : 2000));
     let st;

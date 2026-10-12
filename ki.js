@@ -59,12 +59,29 @@ function ausfuehren(pfad, args, eingabe, zeitlimit) {
   });
 }
 
-export async function claudeFragen(system, frage, schema = null, zeitlimit = 900e3, { web = false } = {}) {
-  // Nur für die Vorbilder-Recherche: Websuche erlaubt (keine anderen Werkzeuge, kein Dateizugriff)
-  const werkzeuge = web ? ['--tools', 'WebSearch,WebFetch', '--allowedTools', 'WebSearch,WebFetch'] : ['--tools', ''];
+// Bilder (für Apps mit eigener KI, z. B. Skizze erkennen) als Dateien in einem eigenen Ordner
+function bilderAblegen(bilder = []) {
+  if (!bilder.length) return null;
+  const ordner = fs.mkdtempSync(path.join(os.tmpdir(), 'hw-bilder-'));
+  const pfade = bilder.slice(0, 4).map((b, i) => {
+    const endung = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif' }[b.typ] || 'png';
+    const p = path.join(ordner, `bild-${i + 1}.${endung}`);
+    fs.writeFileSync(p, Buffer.from(b.base64, 'base64'));
+    return p;
+  });
+  return { ordner, pfade, weg: () => fs.rmSync(ordner, { recursive: true, force: true }) };
+}
+
+export async function claudeFragen(system, frage, schema = null, zeitlimit = 900e3, { web = false, bilder = [] } = {}) {
+  // Websuche nur für die Vorbilder-Recherche; Bilder: nur Lesen des Bilder-Ordners erlaubt
+  const ablage = bilderAblegen(bilder);
+  const werkzeuge = web ? ['--tools', 'WebSearch,WebFetch', '--allowedTools', 'WebSearch,WebFetch']
+    : ablage ? ['--tools', 'Read', '--allowedTools', 'Read', '--add-dir', ablage.ordner] : ['--tools', ''];
   const args = ['-p', '--system-prompt', system, ...werkzeuge, '--strict-mcp-config', '--setting-sources', '', '--no-session-persistence', '--output-format', 'json'];
   if (schema) args.push('--json-schema', JSON.stringify(schema)); // erzwingt gültiges JSON
-  const { aus } = await ausfuehren(programmFinden('claude') || '/usr/bin/claude', args, frage, zeitlimit);
+  if (ablage) frage = `Sieh dir zuerst diese Bilder an (mit dem Read-Werkzeug öffnen): ${ablage.pfade.join(', ')}\n\n${frage}`;
+  let aus;
+  try { ({ aus } = await ausfuehren(programmFinden('claude') || '/usr/bin/claude', args, frage, zeitlimit)); } finally { ablage?.weg(); }
   let r;
   try { r = JSON.parse(aus); } catch { throw new Error('Claude hat nicht geantwortet'); }
   if (r.is_error) throw new Error(String(r.result || 'Claude-Fehler').slice(0, 300));
@@ -73,29 +90,33 @@ export async function claudeFragen(system, frage, schema = null, zeitlimit = 900
 
 const OHNE_WERKZEUGE = 'WICHTIG: Benutze keine Werkzeuge, führe keine Befehle aus und lies keine Dateien. Antworte ausschließlich mit Text.';
 
-async function codexFragen(system, frage, schema = null, zeitlimit = 900e3) {
+async function codexFragen(system, frage, schema = null, zeitlimit = 900e3, { bilder = [] } = {}) {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'hw-codex-'));
+  const ablage = bilderAblegen(bilder);
   try {
     const ergebnis = path.join(tmp, 'antwort.txt');
     const args = ['exec', '--sandbox', 'read-only', '--skip-git-repo-check', '--ephemeral', '--color', 'never', '-C', arbeitsordner(), '-o', ergebnis];
     if (schema) { fs.writeFileSync(path.join(tmp, 'schema.json'), JSON.stringify(schema)); args.push('--output-schema', path.join(tmp, 'schema.json')); }
+    for (const p of ablage?.pfade || []) args.push('-i', p);
     args.push('-');
     const eingabe = `${system}\n\n${OHNE_WERKZEUGE}${schema ? '\nAntworte NUR mit gültigem JSON nach dem vorgegebenen Schema.' : ''}\n\n---\n\n${frage}`;
     const { fehler, code } = await ausfuehren(programmFinden('codex'), args, eingabe, zeitlimit);
     const text = fs.existsSync(ergebnis) ? fs.readFileSync(ergebnis, 'utf8') : '';
     if (!text.trim()) {
       // Manche Schemas mag Codex nicht – dann ohne Schema nochmal (das JSON prüft kiJson)
-      if (schema) return codexFragen(system + `\n\nAntworte AUSSCHLIESSLICH mit gültigem JSON nach diesem Schema:\n${JSON.stringify(schema)}`, frage, null, zeitlimit);
+      if (schema) return codexFragen(system + `\n\nAntworte AUSSCHLIESSLICH mit gültigem JSON nach diesem Schema:\n${JSON.stringify(schema)}`, frage, null, zeitlimit, { bilder });
       throw new Error(`Codex hat nicht geantwortet${code ? ` (${fehler.trim().split('\n').at(-1)?.slice(0, 200) || code})` : ''}`);
     }
     return text;
-  } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
+  } finally { fs.rmSync(tmp, { recursive: true, force: true }); ablage?.weg(); }
 }
 
-async function geminiFragen(system, frage, schema = null, zeitlimit = 900e3) {
-  const args = ['-p', 'Bearbeite die Aufgabe aus der Eingabe genau wie beschrieben.', '--output-format', 'json', '--approval-mode', 'default'];
+async function geminiFragen(system, frage, schema = null, zeitlimit = 900e3, { bilder = [] } = {}) {
+  const ablage = bilderAblegen(bilder);
+  const args = ['-p', `Bearbeite die Aufgabe aus der Eingabe genau wie beschrieben.${ablage ? ' Bilder: ' + ablage.pfade.map((p) => '@' + p).join(' ') : ''}`, '--output-format', 'json', '--approval-mode', 'default'];
   const eingabe = `${system}\n\n${OHNE_WERKZEUGE}${schema ? `\nAntworte AUSSCHLIESSLICH mit gültigem JSON nach diesem Schema:\n${JSON.stringify(schema)}` : ''}\n\n---\n\n${frage}`;
-  const { aus, fehler } = await ausfuehren(programmFinden('gemini'), args, eingabe, zeitlimit);
+  let aus, fehler;
+  try { ({ aus, fehler } = await ausfuehren(programmFinden('gemini'), args, eingabe, zeitlimit)); } finally { ablage?.weg(); }
   try {
     const r = JSON.parse(aus);
     if (r.error) throw new Error(String(r.error.message || r.error).slice(0, 300));
@@ -107,22 +128,23 @@ async function geminiFragen(system, frage, schema = null, zeitlimit = 900e3) {
 }
 
 // Welches Programm? Gewähltes, sonst das erste gefundene (Claude zuerst)
-function programmFragen(ki, system, frage, schema) {
+function programmFragen(ki, system, frage, schema, opts = {}) {
   const id = ki?.programm && programmFinden(ki.programm) ? ki.programm : gefundeneProgramme()[0]?.id;
   if (!id) throw new Error('Auf diesem Rechner ist kein KI-Programm (Claude Code, Codex, Gemini CLI) installiert.');
-  return { claude: claudeFragen, codex: codexFragen, gemini: geminiFragen }[id](system, frage, schema);
+  if (id === 'claude') return claudeFragen(system, frage, schema, 900e3, opts);
+  return { codex: codexFragen, gemini: geminiFragen }[id](system, frage, schema, 900e3, opts);
 }
 
 // ki = { art: 'lokal', programm: 'claude'|'codex'|'gemini' }, { art: 'anthropic', schluessel, modell } oder { art: 'frei', schluessel: { gemini, groq, … } }
-export async function kiFragen(ki, system, frage, schema = null) {
-  if (!ki || ki.art === 'lokal') return programmFragen(ki, system, frage, schema);
-  if (ki.art === 'frei') return freiFragen(ki.schluessel, system, frage, schema);
+export async function kiFragen(ki, system, frage, schema = null, opts = {}) {
+  if (!ki || ki.art === 'lokal') return programmFragen(ki, system, frage, schema, opts);
+  if (ki.art === 'frei') return freiFragen(ki.schluessel, system, frage, schema, opts);
   const client = new Anthropic({ apiKey: ki.schluessel });
   const stream = client.messages.stream({
     model: ki.modell || 'claude-opus-5',
     max_tokens: 64000,
     system,
-    messages: [{ role: 'user', content: frage }],
+    messages: [{ role: 'user', content: opts.bilder?.length ? [...opts.bilder.slice(0, 4).map((b) => ({ type: 'image', source: { type: 'base64', media_type: b.typ || 'image/png', data: b.base64 } })), { type: 'text', text: frage }] : frage }],
     ...(schema ? { output_config: { format: { type: 'json_schema', schema } } } : {}),
   });
   const antwort = await stream.finalMessage();
@@ -130,8 +152,8 @@ export async function kiFragen(ki, system, frage, schema = null) {
   return antwort.content.filter((b) => b.type === 'text').map((b) => b.text).join('');
 }
 
-export async function kiJson(ki, system, frage, schema) {
-  const text = await kiFragen(ki, system, frage, schema);
+export async function kiJson(ki, system, frage, schema, opts = {}) {
+  const text = await kiFragen(ki, system, frage, schema, opts);
   const lesen = (t) => { const m = t.match(/\{[\s\S]*\}/); if (!m) throw new Error('Keine verwertbare Antwort der KI'); return JSON.parse(m[0]); };
   try { return lesen(text); } catch {
     return lesen(await kiFragen(ki, 'Du reparierst kaputtes JSON. Gib NUR das korrigierte, gültige JSON zurück, ohne Erklärung.', text));
