@@ -6,3 +6,4 @@ eingang/*
 daten/
 ausgang/*
 !ausgang/.gitkeep
+seite

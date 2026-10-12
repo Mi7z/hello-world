@@ -39,7 +39,8 @@
       <section class="flaeche">
         <h3 id="wunschTitel">Verbessern oder erweitern</h3>
         <p class="hinweis" id="wunschHinweis">Beschreibe, was anders werden soll. Deine KI baut es, du siehst vorher eine Vorschau.</p>
-        <form id="wunschForm" autocomplete="off">
+        <div data-nur-statisch><button type="button" class="zweit" onclick="nurImProgramm('Verbessern und erweitern')">Im Programm verbessern …</button></div>
+        <form id="wunschForm" autocomplete="off" data-nur-server>
           <textarea id="wunsch" rows="3" placeholder="z. B. Füge einen Farbeimer zum Ausfüllen hinzu"></textarea>
           <button type="submit" id="wunschKnopf">Los geht's</button>
         </form>
@@ -68,7 +69,7 @@
           <a class="knopf zweit klein" id="baumLink" href="#" hidden>Versionen</a>
           <button type="button" class="zweit klein" id="codeKnopf">Code ansehen</button>
           <button type="button" class="zweit klein" id="linkKnopf">Link kopieren</button>
-          <button type="button" class="zweit klein" data-anmelde-knopf>Anmelden</button>
+          <button type="button" class="zweit klein" data-anmelde-knopf data-nur-server>Anmelden</button>
         </div>
       </section>
     </div>
@@ -79,7 +80,7 @@
 <div id="infoseite" hidden>
   <header class="kopf">
     <a href="/" class="logo"><span class="logo-zeichen" aria-hidden="true">hw</span><span>Hello World</span></a>
-    <div class="kopf-rechts"><button type="button" class="konto" data-anmelde-knopf>Anmelden</button></div>
+    <div class="kopf-rechts" data-nur-server><button type="button" class="konto" data-anmelde-knopf>Anmelden</button></div>
   </header>
   <main class="seite" style="max-width:820px">
     <a class="zurueck" href="/">Zurück</a>
@@ -104,7 +105,8 @@
 
 <script src="/kern.js"></script>
 <script>
-const [slugRoh, versionAusAdresse] = decodeURIComponent(location.pathname.split('/')[2] || '').split('@');
+// Adresse: /a/app.name[@v2] – ohne Server: app.html?e=app.name[@v2]
+const [slugRoh, versionAusAdresse] = decodeURIComponent(new URLSearchParams(location.search).get('e') || location.pathname.split('/')[2] || '').split('@');
 let version = versionAusAdresse || null; // geöffnete Version (null = beste Distribution)
 let stammbaum = null;
 let app = null, stand = null;
@@ -140,7 +142,7 @@ const mitZeit = (u) => `${u}${u.includes('?') ? '&' : '?'}t=${Date.now()}`;
 
 async function vollbild() {
   $('vollbild').hidden = false;
-  $('rahmen').src = appQuelle();
+  rahmenSetzen($('rahmen'), appQuelle());
   $('mSymbol').outerHTML = symbolHtml(app).replace('class="symbol', 'id="mSymbol" class="symbol');
   $('mDesignKnoepfe').hidden = !istDesign();
   if (istDesign()) {
@@ -153,7 +155,7 @@ async function vollbild() {
     const v = stammbaum.versionen.find((x) => x.id === (version || stammbaum.standard));
     if (v) {
       $('mVersion').textContent = `Version ${v.id.slice(1)} · von ${autorText(v.autor)} · ${sterneText(v.wertung)}`;
-      $('wunschHinweis').textContent = `Deine Änderung wird eine neue Version (ab Version ${v.id.slice(1)}) – mit deinem Namen. Du siehst vorher eine Vorschau.`;
+      $('wunschHinweis').textContent = STATISCH ? 'Verbessern und erweitern geht im Hello-World-Programm – mit deiner eigenen oder einer kostenlosen KI.' : `Deine Änderung wird eine neue Version (ab Version ${v.id.slice(1)}) – mit deinem Namen. Du siehst vorher eine Vorschau.`;
       $('baumLink').href = `/b/${kennung(app)}`;
       $('baumLink').hidden = false;
       $('baumLink').textContent = `Versionen (${stammbaum.versionen.length})`;
@@ -187,7 +189,7 @@ $('miniDesigns').addEventListener('click', (ev) => {
   designWaehlen(b.dataset.design);
   miniDesigns();
   designKnopf();
-  if (!istDesign() && !$('rahmen').dataset.auftrag) $('rahmen').src = appQuelle();
+  if (!istDesign() && !$('rahmen').dataset.auftrag) rahmenSetzen($('rahmen'), appQuelle());
 });
 function designKnopf() {
   if (!istDesign()) return;
@@ -282,7 +284,7 @@ function darstellen(a) {
 
 function zurueckZumOriginal() {
   delete $('rahmen').dataset.auftrag;
-  $('rahmen').src = mitZeit(appQuelle());
+  rahmenSetzen($('rahmen'), mitZeit(appQuelle()));
   $('vorschauBand').hidden = true;
   $('vorschauKnoepfe').hidden = true;
 }
@@ -323,6 +325,7 @@ addEventListener('message', async (ev) => {
   const d = ev.data;
   if (!d || !['faehigkeit', 'ki'].includes(d.hwSdk) || ev.source !== $('rahmen').contentWindow) return;
   const antworten = (x) => $('rahmen').contentWindow.postMessage({ hwAntwort: true, id: d.id, ...x }, '*');
+  if (STATISCH) return antworten({ ok: false, fehler: d.hwSdk === 'ki' ? 'Diese App rechnet mit deiner KI – das geht im Hello-World-Programm am PC.' : 'Das steuert deinen Computer und geht im Hello-World-Programm am PC.' });
   if (d.hwSdk === 'ki') {
     const vorschau = Boolean($('rahmen').dataset.auftrag);
     const quelle = vorschau ? { auftrag: aktuell, kennung: kennung(app), adresse: `/api/bau/${aktuell}/vorschau` } : { slug: app.slug, version, kennung: kennung(app), adresse: appQuelle() };
@@ -336,7 +339,7 @@ addEventListener('message', async (ev) => {
   catch (err) { antworten({ ok: false, fehler: err.message }); }
 });
 
-ichLaden().catch(() => {}).finally(laden);
+if (STATISCH) laden(); else ichLaden().catch(() => {}).finally(laden);
 </script>
 </body>
 </html>

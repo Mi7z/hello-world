@@ -112,7 +112,7 @@ function beschreibung(slug) {
   $('bVerwenden').textContent = istDesign && designName() === a.slug ? 'Ist aktiv ✓' : 'Verwenden';
   $('bVerwenden').onclick = () => { designWaehlen(a.slug); $('beschreibungDialog').close(); zeigeAlle(); zeigeDesigns(); };
   $('bVorschau').hidden = !istDesign;
-  if (istDesign) $('bVorschau').src = `/muster?design=${a.slug}`;
+  if (istDesign) rahmenSetzen($('bVorschau'), `/muster?design=${a.slug}`);
   $('bDistributionen').innerHTML = '';
   $('bBaum').hidden = true;
   $('beschreibungDialog').showModal();
@@ -176,7 +176,8 @@ $('suche').addEventListener('submit', async (ev) => {
   };
   zeigen(lokal, true);
   $('treffer').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  // 2. die KI versteht den Wunsch, auch bei ganz anderem Wortlaut
+  // 2. die KI versteht den Wunsch, auch bei ganz anderem Wortlaut (braucht den Server)
+  if (STATISCH) return zeigen(lokal, false);
   try {
     const { treffer } = await api('/api/suche', { method: 'POST', body: JSON.stringify({ anfrage }) });
     if (nummer !== suchNummer) return;
@@ -197,6 +198,7 @@ $('suche').addEventListener('submit', async (ev) => {
 let aktuell = null; // laufender Auftrag (id)
 
 async function bauen(anfrage) {
+  if (STATISCH) return nurImProgramm();
   if (!kiEinstellung()) { kiDialog(); return; }
   try {
     const a = await auftragStarten({ anfrage });
@@ -367,11 +369,12 @@ bereich(location.hash.slice(1), false);
   zeigeKiErlaubnisse();
   zeigeAlle();
   zeigeDesigns();
-  ichLaden().catch(() => {}).finally(() => { zeigeKonto(); zeigeGeraete(); });
-  setInterval(zeigeGeraete, 30000);
+  if (!STATISCH) {
+    ichLaden().catch(() => {}).finally(() => { zeigeKonto(); zeigeGeraete(); });
+    setInterval(zeigeGeraete, 30000);
+  }
   fetch('/api/installieren').then((r) => r.text()).then((t) => { $('installText').textContent = t; });
-  zeigeAuftraege();
-  setInterval(zeigeAuftraege, 15000);
+  if (!STATISCH) { zeigeAuftraege(); setInterval(zeigeAuftraege, 15000); }
   const offen = localStorage.getItem('hw-auftrag');
   if (offen && location.hash === '#auftraege') zeigeAuftrag(offen);
   else if (offen) { aktuell = offen; $('bau').hidden = false; auftragVerfolgen(offen, darstellen); }

@@ -10,8 +10,10 @@
 
 ## Herunterladen
 
-Hello World gibt es als eigenes Programm für **Windows, Mac und Linux**:
-[Neueste Version herunterladen](https://github.com/Mi7z/hello-world/releases/latest).
+- **Windows, Mac, Linux:** eigenes Programm – [neueste Version herunterladen](https://github.com/Mi7z/hello-world/releases/latest).
+- **Android:** `HelloWorld-Android.apk` von derselben Seite.
+- **iPhone und alle Handys:** Web-App [mi7z.github.io/hello-world](https://mi7z.github.io/hello-world/) öffnen und „Zum Home-Bildschirm" wählen.
+
 Öffnen, Wunsch eintippen – gibt es das Werkzeug schon, öffnet es sich, sonst
 baut deine KI es. Als KI geht Claude auf deinem PC, ein eigener Schlüssel oder
 **kostenlose KIs** (Gratis-Konten bei Gemini, OpenRouter, Groq, Cerebras, Mistral).

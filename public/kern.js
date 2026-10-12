@@ -6,6 +6,10 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 const PRAEFIX = { browser: 'app', server: 'server', skill: 'skill', mcp: 'mcp', design: 'design' };
 const kennung = (a) => `${PRAEFIX[a.typ || 'browser']}.${a.slug}`;
 
+// Ohne Server (GitHub Pages / Android-App): Einstellungen aus statisch.js
+const STATISCH = window.HW_STATISCH || null;
+const PROGRAMM_LINK = 'https://github.com/Mi7z/hello-world/releases/latest';
+
 // ---------- Designs ----------
 // Gewähltes Design (gilt für Hello World und alle Apps); design.js lädt es beim Start
 const designName = () => new URLSearchParams(location.search).get('design') || localStorage.getItem('hw-design') || 'klar';
@@ -316,5 +320,41 @@ function kiFehltHinweis() {
   if (!dlg) { dlg = document.createElement('dialog'); dlg.id = 'hwKiFehlt'; dlg.className = 'blatt'; document.body.appendChild(dlg); }
   dlg.innerHTML = `<div class="blatt-inhalt"><h2>Eigene KI nötig</h2><p>Diese App rechnet mit <b>deiner eigenen KI</b>. Verbinde sie einmal in Hello World – zu Hause z. B. „Claude auf diesem PC", unterwegs mit einem eigenen Schlüssel.</p><div class="knoepfe"><button type="button" class="leise" id="hwKiFehltZu">Schließen</button><a class="knopf" href="/#mehr">KI verbinden</a></div></div>`;
   dlg.querySelector('#hwKiFehltZu').onclick = () => dlg.close();
+  dlg.showModal();
+}
+
+// ---------- App in einen Rahmen laden ----------
+// Mit Server liefert er die App samt Sicherheitsregel und Design. Ohne Server
+// (Web-App, Android) setzt Hello World das selbst zusammen.
+async function rahmenSetzen(el, url) {
+  if (!STATISCH) { el.src = url; return; }
+  const b = STATISCH.basis;
+  const u = new URL(url, location.href);
+  let datei, design = u.searchParams.get('design') || designName();
+  if (u.pathname === b + 'muster') {
+    datei = b + 'muster.html';
+    if (u.searchParams.get('version')) design += '@' + u.searchParams.get('version');
+  } else {
+    const m = u.pathname.slice(b.length).match(/^apps\/([a-z0-9-]+)\/(?:v\/(v\d+)\/)?/);
+    if (!m) { el.src = url; return; }
+    datei = m[2] ? `${b}apps/${m[1]}/versionen/${m[2]}.html` : `${b}apps/${m[1]}/index.html`;
+  }
+  const [html, css] = await Promise.all([
+    fetch(datei).then((r) => (r.ok ? r.text() : '<p>Nicht gefunden</p>')),
+    fetch(`${b}api/design/${design.replace(/[^a-z0-9.@-]/g, '')}.css`).then((r) => (r.ok ? r.text() : '')).catch(() => ''),
+  ]);
+  const kopf = `<meta http-equiv="Content-Security-Policy" content="${esc(STATISCH.csp)}">${STATISCH.sdk}`;
+  let seite = /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, (x) => x + kopf) : kopf + html;
+  const stil = `<style id="hw-design">${css.replace(/<\/style/gi, '')}</style>`;
+  seite = /<\/head>/i.test(seite) ? seite.replace(/<\/head>/i, stil + '</head>') : stil + seite;
+  el.removeAttribute('src');
+  el.srcdoc = seite;
+}
+// Hinweis, wenn etwas nur im Programm geht
+function nurImProgramm(was = 'Neues bauen und verbessern') {
+  let dlg = document.getElementById('hwNurProgramm');
+  if (!dlg) { dlg = document.createElement('dialog'); dlg.id = 'hwNurProgramm'; dlg.className = 'blatt'; document.body.appendChild(dlg); }
+  dlg.innerHTML = `<div class="blatt-inhalt"><h2>Im Programm möglich</h2><p>${esc(was)} geht mit dem <b>Hello-World-Programm</b> für Windows, Mac und Linux – kostenlos, mit deiner eigenen oder kostenlosen KI. Was dort entsteht, ist danach auch hier für alle da.</p><div class="knoepfe"><button type="button" class="leise" id="hwNurZu">Schließen</button><a class="knopf" href="${PROGRAMM_LINK}" target="_blank" rel="noopener">Programm herunterladen</a></div></div>`;
+  dlg.querySelector('#hwNurZu').onclick = () => dlg.close();
   dlg.showModal();
 }

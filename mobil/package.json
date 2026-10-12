@@ -1,0 +1,16 @@
+{
+  "name": "hello-world-mobil",
+  "private": true,
+  "description": "Hello World als Android-App (Capacitor). Inhalt: die Fassung ohne Server aus werkzeuge/statisch.js",
+  "scripts": {
+    "inhalt": "node ../werkzeuge/statisch.js www --basis /"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.5.3",
+    "@capacitor/core": "8.5.3"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "3.0.5",
+    "@capacitor/cli": "8.5.3"
+  }
+}

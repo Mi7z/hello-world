@@ -14,11 +14,12 @@
   <a href="#entdecken" class="logo" aria-label="Hello World – Entdecken"><span class="logo-zeichen" aria-hidden="true">hw</span><span>Hello World</span></a>
   <nav class="nav" id="nav" aria-label="Bereiche">
     <a href="#entdecken" data-ziel="entdecken"><span class="nav-zeichen" aria-hidden="true">⌕</span>Entdecken</a>
-    <a href="#auftraege" data-ziel="auftraege"><span class="nav-zeichen" aria-hidden="true">⚒</span>Aufträge<span class="zahl" id="auftragZahl" hidden></span></a>
-    <a href="#geraete" data-ziel="geraete"><span class="nav-zeichen" aria-hidden="true">⌂</span>Geräte</a>
+    <a href="#auftraege" data-ziel="auftraege" data-nur-server><span class="nav-zeichen" aria-hidden="true">⚒</span>Aufträge<span class="zahl" id="auftragZahl" hidden></span></a>
+    <a href="#geraete" data-ziel="geraete" data-nur-server><span class="nav-zeichen" aria-hidden="true">⌂</span>Geräte</a>
     <a href="#mehr" data-ziel="mehr"><span class="nav-zeichen" aria-hidden="true">☰</span>Mehr</a>
+    <a href="https://github.com/Mi7z/hello-world/releases/latest" target="_blank" rel="noopener" data-nur-statisch><span class="nav-zeichen" aria-hidden="true">⬇</span>Programm</a>
   </nav>
-  <div class="kopf-rechts">
+  <div class="kopf-rechts" data-nur-server>
     <button type="button" class="konto" data-anmelde-knopf>Anmelden</button>
   </div>
 </header>
@@ -147,7 +148,7 @@ Benachrichtigung zeigen.</pre></details>
       <h3>Aussehen</h3>
       <p class="hinweis">Gilt für Hello World und alle Apps. Designs sind Einträge wie Apps – jeder kann neue bauen oder vorhandene weiterentwickeln.</p>
       <div class="design-raster" id="designWahl"></div>
-      <form id="designForm" autocomplete="off" style="margin-top:16px">
+      <form id="designForm" autocomplete="off" style="margin-top:16px" data-nur-server>
         <label for="designWunsch">Eigenes Design bauen lassen</label>
         <div class="suche" style="box-shadow:none">
           <input id="designWunsch" placeholder="z. B. Pastell, verspielt, runde Ecken">
@@ -157,7 +158,12 @@ Benachrichtigung zeigen.</pre></details>
     </section>
 
     <div class="zweispaltig" style="margin-top:14px">
-      <section class="flaeche">
+      <section class="flaeche" data-nur-statisch>
+        <h3>Neues bauen</h3>
+        <p class="hinweis">Neue Apps und Designs baust du mit dem kostenlosen <b>Hello-World-Programm</b> für Windows, Mac und Linux – mit deiner eigenen KI oder kostenlosen KIs. Danach sind sie hier für alle da.</p>
+        <div class="knoepfe links"><a class="knopf" href="https://github.com/Mi7z/hello-world/releases/latest" target="_blank" rel="noopener">Programm herunterladen</a></div>
+      </section>
+      <section class="flaeche" data-nur-server>
         <h3>Konto &amp; KI</h3>
         <div class="liste-zeile"><div><b>Konto</b><span class="hinweis" id="kontoText">Nicht angemeldet</span></div><button type="button" class="zweit klein" data-anmelde-knopf>Anmelden</button></div>
         <div class="liste-zeile"><div><b>Deine KI</b><span class="hinweis" id="kiName">nicht verbunden</span></div><button type="button" class="zweit klein" id="kiKnopf">Ändern</button></div>

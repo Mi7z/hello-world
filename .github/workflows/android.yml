@@ -1,0 +1,54 @@
+# Baut die Android-App (APK zum Herunterladen) bei jedem Versions-Tag – kostenlos auf GitHub.
+name: Android-App bauen
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Inhalt und Android-Projekt
+        working-directory: mobil
+        run: |
+          npm ci --no-audit --no-fund
+          npm run inhalt
+          npx cap add android
+          npx capacitor-assets generate --android --iconBackgroundColor '#3b5bdb' --splashBackgroundColor '#f6f5f2' || echo "Symbole: Standard bleibt"
+          npx cap sync android
+          VERSION="${GITHUB_REF_NAME#v}"; case "$VERSION" in [0-9]*) ;; *) VERSION="0.0.${{ github.run_number }}";; esac
+          sed -i "s/versionCode 1$/versionCode ${{ github.run_number }}/; s/versionName \"1.0\"/versionName \"$VERSION\"/" android/app/build.gradle
+          grep -n "versionCode\|versionName" android/app/build.gradle
+      - name: APK bauen
+        working-directory: mobil/android
+        run: ./gradlew assembleRelease --no-daemon
+      - name: Unterschreiben
+        env:
+          KS: ${{ secrets.ANDROID_KEYSTORE }}
+          KS_PW: ${{ secrets.ANDROID_KEYSTORE_PASSWORT }}
+        run: |
+          BT=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
+          echo "$KS" | base64 -d > unterschrift.p12
+          $BT/zipalign -p -f 4 mobil/android/app/build/outputs/apk/release/app-release-unsigned.apk ausgerichtet.apk
+          mkdir -p fertig
+          $BT/apksigner sign --ks unterschrift.p12 --ks-type PKCS12 --ks-pass env:KS_PW --out fertig/HelloWorld-Android.apk ausgerichtet.apk
+          $BT/apksigner verify fertig/HelloWorld-Android.apk
+          rm unterschrift.p12
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hello-world-android
+          path: fertig/HelloWorld-Android.apk
+      - uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: fertig/HelloWorld-Android.apk

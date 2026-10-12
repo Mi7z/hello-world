@@ -12,7 +12,7 @@
 <body>
 <header class="kopf">
   <a href="/" class="logo"><span class="logo-zeichen" aria-hidden="true">hw</span><span>Hello World</span></a>
-  <div class="kopf-rechts"><button type="button" class="konto" data-anmelde-knopf>Anmelden</button></div>
+  <div class="kopf-rechts" data-nur-server><button type="button" class="konto" data-anmelde-knopf>Anmelden</button></div>
 </header>
 <main class="seite" style="max-width:900px">
   <a class="zurueck" id="zurueck" href="/">Zurück</a>
@@ -33,7 +33,7 @@
 
 <script src="/kern.js"></script>
 <script>
-const slugRoh = decodeURIComponent(location.pathname.split('/')[2] || '');
+const slugRoh = decodeURIComponent(new URLSearchParams(location.search).get('e') || location.pathname.split('/')[2] || '');
 let daten = null, gewaehlt = null;
 
 async function laden() {
@@ -74,11 +74,11 @@ function zeigen(id) {
     <div class="hinweis">von ${esc(autorText(v.autor))} · ${new Date(v.zeit).toLocaleString('de-DE')} · ${eltern}${v.kinder.length ? ` · ${v.kinder.length} Weiterentwicklung(en)` : ''}</div>
     <p>${esc(v.aenderung)}</p>
     ${v.eigenarten.length ? `<ul class="eigenarten">${v.eigenarten.map((e) => `<li>+ ${esc(e.text)} <span class="leise-text">${esc(autorText(e.autor))}</span></li>`).join('')}</ul>` : ''}
-    <div class="hinweis" style="margin-top:12px">${ich ? 'Deine Bewertung:' : 'Zum Bewerten bitte anmelden:'}</div>
-    <div class="sterne" id="sterne">${[1, 2, 3, 4, 5].map((n) => `<button type="button" class="${(v.wertung.meine || 0) >= n ? 'an' : ''}" data-sterne="${n}" aria-label="${n} Sterne">★</button>`).join('')}</div>
+    <div class="hinweis" style="margin-top:12px" data-nur-server>${ich ? 'Deine Bewertung:' : 'Zum Bewerten bitte anmelden:'}</div>
+    <div class="sterne" id="sterne" data-nur-server>${[1, 2, 3, 4, 5].map((n) => `<button type="button" class="${(v.wertung.meine || 0) >= n ? 'an' : ''}" data-sterne="${n}" aria-label="${n} Sterne">★</button>`).join('')}</div>
     <div class="knoepfe links">
       <a class="knopf" href="/a/${kennung(app)}@${v.id}">Öffnen</a>
-      <a class="knopf zweit" href="/a/${kennung(app)}@${v.id}?weiter=1">Daran weiterarbeiten</a>
+      <a class="knopf zweit" href="/a/${kennung(app)}@${v.id}?weiter=1" data-nur-server>Daran weiterarbeiten</a>
     </div>`;
 }
 
@@ -94,7 +94,7 @@ $('info').addEventListener('click', async (ev) => {
 });
 document.addEventListener('hw-angemeldet', laden);
 
-ichLaden().then(laden);
+if (STATISCH) laden(); else ichLaden().then(laden);
 </script>
 </body>
 </html>

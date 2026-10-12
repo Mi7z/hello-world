@@ -54,3 +54,5 @@ jobs:
             - **Windows:** `.exe` herunterladen und starten. Windows warnt evtl. „unbekannter Herausgeber" → „Weitere Informationen" → „Trotzdem ausführen".
             - **Mac:** `.dmg` öffnen und Hello World in „Programme" ziehen. Beim ersten Start Rechtsklick → „Öffnen".
             - **Linux:** `.AppImage` herunterladen, ausführbar machen und starten.
+            - **Android:** `HelloWorld-Android.apk` auf dem Handy herunterladen und öffnen (einmal „Installation aus dieser Quelle erlauben").
+            - **iPhone & alle Handys:** Web-App https://mi7z.github.io/hello-world/ öffnen → Teilen → „Zum Home-Bildschirm".

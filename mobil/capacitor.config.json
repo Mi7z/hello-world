@@ -1,0 +1,6 @@
+{
+  "appId": "world.hello.app",
+  "appName": "Hello World",
+  "webDir": "www",
+  "android": { "backgroundColor": "#f6f5f2" }
+}
