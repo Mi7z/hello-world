@@ -43,70 +43,80 @@ body.app{display:flex;flex-direction:column;height:100vh;height:100dvh;max-width
 @media (min-width:900px){body.app{padding:20px 28px;max-width:none}.app-inhalt.spalten{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:stretch}}
 
 /* App-spezifisch */
-.mal-layout{display:flex;flex-direction:column;gap:10px;min-height:0}
-.werkzeugleiste{flex:none;padding:10px;margin:0;max-height:44vh;overflow:auto}
-.wz-ueber{font-size:13px;font-weight:650;color:var(--tx2);margin:0 0 7px}
+.app-kopf p.unter{color:var(--tx2)}
+.mal-layout{display:flex;flex-direction:column;gap:10px}
+.werkzeug{flex:none;padding:12px}
+.werkzeug h2{margin:0 0 6px;font-size:14px;color:var(--tx3);text-transform:uppercase;letter-spacing:.04em}
+.werkzeug .block{margin-top:10px}
+.werkzeug .block:first-child{margin-top:0}
+
 .wz-raster{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
-.wz-raster button{padding:7px 4px;min-height:48px;font-size:12px;flex-direction:column;gap:3px;line-height:1.1;text-align:center}
+.wz-raster button{padding:7px 3px;min-height:52px;flex-direction:column;gap:3px;font-size:11px;line-height:1.15;text-align:center}
 .wz-raster button .ic{font-size:18px}
-.steuer{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-top:12px}
+
+.einstellungen{align-items:flex-end}
 .feld{display:flex;flex-direction:column;gap:3px}
-.feld label{margin:0}
-.farbe-feld input[type=color]{width:54px;height:44px;padding:4px;cursor:pointer;min-height:44px}
-.staerke-feld{flex:1;min-width:150px}
+.feld label{margin:0;font-size:12px}
+.farbe-feld input[type=color]{width:52px;height:44px;padding:4px;cursor:pointer}
+.staerke-feld{flex:1;min-width:140px}
+.staerke-feld .zeile{flex-wrap:nowrap;gap:8px}
 .staerke-feld input[type=range]{min-height:auto;padding:0;background:none;border:0}
-.staerke-wert{min-width:48px;text-align:right;font-variant-numeric:tabular-nums;font-size:14px}
-.aktiv{background:var(--ak);color:#fff;border-color:var(--ak)}
-.gefuellt-feld{display:flex;align-items:center;gap:8px;margin-top:12px}
+.staerke-wert{min-width:42px;text-align:right;font-variant-numeric:tabular-nums;font-size:13px;color:var(--tx2)}
+
+.aktiv{background:var(--ak)!important;color:var(--ak-tx)!important;border-color:var(--ak)!important}
+
+.gefuellt-feld{display:flex;align-items:center;gap:8px}
 .gefuellt-feld input[type=checkbox]{width:20px;height:20px;min-height:0;padding:0}
-.gefuellt-feld label{margin:0}
-#textOptionen label{margin-top:10px}
+.gefuellt-feld label{margin:0;font-size:14px;color:var(--tx)}
 
-.flaeche{flex:1;min-height:0;min-width:0;position:relative;display:flex}
-#leinwandWrap{flex:1;min-height:0;min-width:0;overflow:auto;display:flex;background:var(--fl2);border:1px solid var(--li);border-radius:var(--r);padding:12px}
-#leinwandBox{margin:auto}
-canvas{display:block;width:100%;height:auto;background:#fff;box-shadow:var(--schatten);cursor:crosshair;touch-action:none}
+#textOptionen input[type=text]{min-height:42px}
+#textOptionen label{margin:8px 0 4px}
 
-.zoomleiste{position:absolute;left:14px;bottom:14px;display:flex;align-items:center;gap:4px;background:var(--fl);border:1px solid var(--li);border-radius:var(--r-klein);padding:4px;box-shadow:var(--schatten)}
-.zoomleiste button{min-height:38px;padding:7px 11px;background:var(--fl2);color:var(--tx);border-color:var(--li);font-size:17px}
-.zoom-wert{min-width:52px;text-align:center;font-size:13px;font-variant-numeric:tabular-nums;color:var(--tx2)}
-.app-fuss .meldung{flex:1;min-width:140px;margin:0}
-.app-fuss button{min-height:44px;padding:10px 14px;font-size:14px}
+.flaeche{flex:1;min-height:0;display:flex;flex-direction:column;gap:8px}
+.zoom-leiste{flex:none;gap:6px}
+.zoom-leiste button{min-height:40px;padding:8px 12px;font-size:16px}
+.zoom-leiste .zoom-wert{min-width:66px;text-align:center;font-variant-numeric:tabular-nums;font-weight:650;font-size:14px}
+
+#leinwandBox{flex:1;min-height:0;background:var(--fl2);border:1px solid var(--li);border-radius:var(--r);overflow:auto;overscroll-behavior:contain}
+#leinwandInner{box-sizing:border-box;min-width:100%;min-height:100%;padding:16px;display:flex;align-items:center;justify-content:center}
+canvas{display:block;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.18);cursor:crosshair;touch-action:none;image-rendering:auto}
+
+.app-fuss #meldung{flex:1 1 100%;margin:0}
+@media (min-width:600px){.app-fuss #meldung{flex:1 1 auto;order:-1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
 
 @media (min-width:900px){
-  .mal-layout{flex-direction:row;align-items:stretch}
-  .werkzeugleiste{width:280px;flex:none;max-height:none;height:100%}
+  .app-inhalt.mal-layout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:16px;align-items:stretch}
+  .werkzeug{overflow:auto}
   .wz-raster{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .wz-raster button{flex-direction:row;font-size:14px}
-  .steuer{flex-direction:column;align-items:stretch}
-  .farbstaerke-zeile{display:flex;gap:10px}
-  .flaeche{flex:1}
+  .wz-raster button{flex-direction:row;font-size:13px;min-height:46px;padding:8px}
 }
 </style>
 </head>
 <body class="app">
 <header class="app-kopf">
   <h1>🎨 Paintboard</h1>
-  <p class="unter">Malen, füllen, Formen &amp; Text – alles im Blick, ohne Scrollen.</p>
+  <p class="unter">Malen, Formen, Text, Füllen & Zoom – alles bleibt in deinem Browser.</p>
 </header>
 
 <main class="app-inhalt mal-layout">
-
-  <aside class="karte werkzeugleiste scroll">
-    <p class="wz-ueber">Werkzeuge</p>
-    <div class="wz-raster">
-      <button type="button" id="wz-pinsel" class="aktiv"><span class="ic">✏️</span>Pinsel</button>
-      <button type="button" id="wz-radierer" class="zweit"><span class="ic">🧽</span>Radierer</button>
-      <button type="button" id="wz-fuellen" class="zweit"><span class="ic">🪣</span>Füllen</button>
-      <button type="button" id="wz-linie" class="zweit"><span class="ic">╱</span>Linie</button>
-      <button type="button" id="wz-rechteck" class="zweit"><span class="ic">▭</span>Rechteck</button>
-      <button type="button" id="wz-kreis" class="zweit"><span class="ic">◯</span>Kreis</button>
-      <button type="button" id="wz-text" class="zweit"><span class="ic">T</span>Text</button>
-      <button type="button" id="wz-ausschneiden" class="zweit"><span class="ic">✂️</span>Ausschnitt</button>
+  <aside class="karte werkzeug scroll">
+    <div class="block">
+      <h2>Werkzeug</h2>
+      <div class="wz-raster">
+        <button type="button" id="wz-pinsel" class="aktiv"><span class="ic">✏️</span><span>Pinsel</span></button>
+        <button type="button" id="wz-radierer" class="zweit"><span class="ic">🧽</span><span>Radierer</span></button>
+        <button type="button" id="wz-fuellen" class="zweit"><span class="ic">🪣</span><span>Füllen</span></button>
+        <button type="button" id="wz-linie" class="zweit"><span class="ic">╱</span><span>Linie</span></button>
+        <button type="button" id="wz-rechteck" class="zweit"><span class="ic">▭</span><span>Rechteck</span></button>
+        <button type="button" id="wz-kreis" class="zweit"><span class="ic">◯</span><span>Kreis</span></button>
+        <button type="button" id="wz-text" class="zweit"><span class="ic">T</span><span>Text</span></button>
+        <button type="button" id="wz-ausschneiden" class="zweit"><span class="ic">✂️</span><span>Ausschn.</span></button>
+      </div>
     </div>
 
-    <div class="steuer">
-      <div class="farbstaerke-zeile">
+    <div class="block">
+      <h2>Farbe & Stärke</h2>
+      <div class="zeile einstellungen">
         <div class="feld farbe-feld">
           <label for="farbe">Farbe</label>
           <input type="color" id="farbe" value="#1f8a5b" aria-label="Farbe wählen">
@@ -115,58 +125,60 @@ canvas{display:block;width:100%;height:auto;background:#fff;box-shadow:var(--sch
           <label for="hgFarbe">Hintergrund</label>
           <input type="color" id="hgFarbe" value="#ffffff" aria-label="Hintergrundfarbe wählen">
         </div>
-      </div>
-      <div class="feld staerke-feld">
-        <label for="staerke">Pinsel-/Strichstärke</label>
-        <div class="zeile">
-          <input type="range" id="staerke" min="1" max="60" value="8" aria-label="Pinselstärke">
-          <span class="staerke-wert" id="staerkeWert">8&nbsp;px</span>
+        <div class="feld staerke-feld">
+          <label for="staerke">Pinsel-/Strichstärke</label>
+          <div class="zeile">
+            <input type="range" id="staerke" min="1" max="60" value="8" aria-label="Pinselstärke">
+            <span class="staerke-wert" id="staerkeWert">8&nbsp;px</span>
+          </div>
         </div>
       </div>
     </div>
 
-    <div class="gefuellt-feld" id="formOptionen" hidden>
-      <input type="checkbox" id="gefuellt">
-      <label for="gefuellt">Form ausfüllen (sonst nur Umriss)</label>
-    </div>
-
-    <div id="textOptionen" hidden>
-      <label for="textEingabe">Text</label>
-      <input type="text" id="textEingabe" placeholder="Hallo Welt" maxlength="120">
-      <label for="textGroesse">Schriftgröße</label>
-      <div class="zeile">
-        <input type="range" id="textGroesse" min="10" max="200" value="40" aria-label="Schriftgröße">
-        <span class="staerke-wert" id="textGroesseWert">40&nbsp;px</span>
+    <div class="block" id="optionenBlock">
+      <div class="gefuellt-feld" id="formOptionen" hidden>
+        <input type="checkbox" id="gefuellt">
+        <label for="gefuellt">Form ausfüllen (sonst nur Umriss)</label>
       </div>
-      <p class="hinweis" style="margin:8px 0 0">Text eingeben, dann auf die Leinwand klicken, um ihn zu platzieren.</p>
-    </div>
 
-    <p class="hinweis" id="fuellHinweis" hidden style="margin-top:12px">Klicke auf eine Fläche, um sie mit der aktuellen Farbe zu füllen.</p>
-    <p class="hinweis" id="schneidHinweis" hidden style="margin-top:12px">Ziehe ein Rechteck auf – der Bereich wird mit der Hintergrundfarbe gefüllt.</p>
+      <div id="textOptionen" hidden>
+        <label for="textEingabe">Text</label>
+        <input type="text" id="textEingabe" placeholder="Hallo Welt" maxlength="120">
+        <label for="textGroesse">Schriftgröße</label>
+        <div class="zeile">
+          <input type="range" id="textGroesse" min="10" max="200" value="40" aria-label="Schriftgröße">
+          <span class="staerke-wert" id="textGroesseWert">40&nbsp;px</span>
+        </div>
+        <p class="hinweis" style="margin:8px 0 0">Text eintippen, dann auf die Leinwand klicken.</p>
+      </div>
+
+      <p class="hinweis" id="fuellHinweis" hidden>Klicke auf eine Fläche, um sie mit der aktuellen Farbe zu füllen.</p>
+      <p class="hinweis" id="schneidHinweis" hidden>Ziehe ein Rechteck auf – der Bereich wird mit der Hintergrundfarbe gefüllt.</p>
+    </div>
   </aside>
 
   <section class="flaeche">
-    <div id="leinwandWrap" class="scroll">
-      <div id="leinwandBox">
+    <div class="zoom-leiste zeile">
+      <button type="button" id="zoomAus" class="zweit" aria-label="Verkleinern">−</button>
+      <span class="zoom-wert" id="zoomWert">100&nbsp;%</span>
+      <button type="button" id="zoomEin" class="zweit" aria-label="Vergrößern">+</button>
+      <button type="button" id="zoomFit" class="zweit">🔍 Anpassen</button>
+      <button type="button" id="zoomEins" class="zweit">1:1</button>
+    </div>
+    <div id="leinwandBox">
+      <div id="leinwandInner">
         <canvas id="leinwand" width="700" height="500" aria-label="Zeichenfläche"></canvas>
       </div>
     </div>
-    <div class="zoomleiste" role="group" aria-label="Zoom">
-      <button type="button" id="zoomRaus" aria-label="Verkleinern">−</button>
-      <span class="zoom-wert" id="zoomWert">100&nbsp;%</span>
-      <button type="button" id="zoomRein" aria-label="Vergrößern">+</button>
-      <button type="button" id="zoomFit" aria-label="Einpassen" title="Einpassen">⤢</button>
-    </div>
   </section>
-
 </main>
 
 <footer class="app-fuss">
   <button type="button" id="zurueckBtn" class="zweit" disabled>↩️ Zurück</button>
-  <button type="button" id="wiederBtn" class="zweit" disabled>↪️ Vor</button>
+  <button type="button" id="wiederBtn" class="zweit" disabled>↪️ Wiederholen</button>
   <button type="button" id="loeschenBtn" class="zweit">🗑️ Löschen</button>
-  <button type="button" id="speichernBtn">💾 PNG speichern</button>
-  <p class="hinweis meldung" id="meldung">Wähle ein Werkzeug und leg los. Mit dem Zoom unten links kannst du vergrößern.</p>
+  <button type="button" id="speichernBtn">💾 Als PNG speichern</button>
+  <span class="hinweis" id="meldung">Tipp: Werkzeug wählen und loslegen. Zum Zoomen die Leiste über der Leinwand nutzen.</span>
 </footer>
 
 <script>
@@ -175,7 +187,6 @@ canvas{display:block;width:100%;height:auto;background:#fff;box-shadow:var(--sch
   var FONT = 'ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace';
   var canvas = document.getElementById("leinwand");
   var ctx = canvas.getContext("2d");
-  var leinwandWrap = document.getElementById("leinwandWrap");
   var leinwandBox = document.getElementById("leinwandBox");
   var farbe = document.getElementById("farbe");
   var hgFarbe = document.getElementById("hgFarbe");
@@ -194,9 +205,10 @@ canvas{display:block;width:100%;height:auto;background:#fff;box-shadow:var(--sch
   var loeschenBtn = document.getElementById("loeschenBtn");
   var speichernBtn = document.getElementById("speichernBtn");
   var meldung = document.getElementById("meldung");
-  var zoomRein = document.getElementById("zoomRein");
-  var zoomRaus = document.getElementById("zoomRaus");
+  var zoomAus = document.getElementById("zoomAus");
+  var zoomEin = document.getElementById("zoomEin");
   var zoomFit = document.getElementById("zoomFit");
+  var zoomEins = document.getElementById("zoomEins");
   var zoomWert = document.getElementById("zoomWert");
 
   var werkzeuge = {
@@ -220,46 +232,52 @@ canvas{display:block;width:100%;height:auto;background:#fff;box-shadow:var(--sch
   var aktuelleHg = "#ffffff";
 
   /* ---------- Zoom ---------- */
-  var zoom = 1;        // relativ zur Einpassung
-  var fitWidth = 700;  // Anzeige-Breite bei Einpassung
+  var anzeigeScale = 1;
+  var fitModus = true;
+  var MIN_S = 0.1, MAX_S = 8;
 
-  function fitBerechnen(){
-    var pad = 24;
-    var cw = leinwandWrap.clientWidth - pad;
-    var ch = leinwandWrap.clientHeight - pad;
-    if(cw < 40) cw = 40;
-    if(ch < 40) ch = 40;
-    var ar = canvas.width / canvas.height;
-    var w = cw, h = cw / ar;
-    if(h > ch){ h = ch; w = ch * ar; }
-    fitWidth = w;
+  function zoomAnzeigen(){
+    zoomWert.innerHTML = Math.round(anzeigeScale * 100) + "&nbsp;%";
   }
-
   function zoomAnwenden(){
-    fitBerechnen();
-    var w = Math.round(fitWidth * zoom);
-    leinwandBox.style.width = w + "px";
-    zoomWert.innerHTML = Math.round(zoom * 100) + "&nbsp;%";
+    canvas.style.width = (canvas.width * anzeigeScale) + "px";
+    canvas.style.height = (canvas.height * anzeigeScale) + "px";
+    zoomAnzeigen();
   }
-
-  function zoomSetzen(z){
-    zoom = Math.min(8, Math.max(0.2, z));
+  function anpassen(){
+    var r = leinwandBox.getBoundingClientRect();
+    var pad = 36;
+    var breite = Math.max(40, r.width - pad);
+    var hoehe = Math.max(40, r.height - pad);
+    var s = Math.min(breite / canvas.width, hoehe / canvas.height);
+    anzeigeScale = Math.max(MIN_S, Math.min(MAX_S, s));
+    fitModus = true;
     zoomAnwenden();
   }
+  function zoomSetzen(neu, keinFit){
+    anzeigeScale = Math.max(MIN_S, Math.min(MAX_S, neu));
+    if(keinFit !== false) fitModus = false;
+    zoomAnwenden();
+  }
+  zoomEin.addEventListener("click", function(){ zoomSetzen(anzeigeScale * 1.25); });
+  zoomAus.addEventListener("click", function(){ zoomSetzen(anzeigeScale * 0.8); });
+  zoomEins.addEventListener("click", function(){ zoomSetzen(1); });
+  zoomFit.addEventListener("click", function(){ anpassen(); });
 
-  zoomRein.addEventListener("click", function(){ zoomSetzen(zoom * 1.25); });
-  zoomRaus.addEventListener("click", function(){ zoomSetzen(zoom / 1.25); });
-  zoomFit.addEventListener("click", function(){ zoom = 1; zoomAnwenden(); sagen("Ansicht eingepasst.", false); });
-
-  leinwandWrap.addEventListener("wheel", function(e){
-    if(!e.ctrlKey) return; // normales Scrollen = Verschieben
-    e.preventDefault();
-    zoomSetzen(zoom * (e.deltaY < 0 ? 1.1 : 0.9));
+  leinwandBox.addEventListener("wheel", function(ev){
+    if(!ev.ctrlKey) return;
+    ev.preventDefault();
+    zoomSetzen(ev.deltaY < 0 ? anzeigeScale * 1.1 : anzeigeScale * 0.9);
   }, {passive:false});
 
-  window.addEventListener("resize", zoomAnwenden);
+  if(window.ResizeObserver){
+    var ro = new ResizeObserver(function(){ if(fitModus) anpassen(); });
+    ro.observe(leinwandBox);
+  } else {
+    window.addEventListener("resize", function(){ if(fitModus) anpassen(); });
+  }
 
-  /* ---------- Hilfen ---------- */
+  /* ---------- Grundfunktionen ---------- */
   function istForm(w){ return w === "linie" || w === "rechteck" || w === "kreis"; }
   function brauchtVorschau(w){ return istForm(w) || w === "ausschneiden"; }
 
@@ -283,15 +301,13 @@ canvas{display:block;width:100%;height:auto;background:#fff;box-shadow:var(--sch
       knoepfeAktualisieren();
     }catch(e){}
   }
-
   function knoepfeAktualisieren(){
     zurueckBtn.disabled = verlauf.length === 0;
     wiederBtn.disabled = zukunft.length === 0;
   }
-
   function sagen(text, fehler){
     meldung.textContent = text;
-    meldung.className = fehler ? "hinweis meldung fehler" : "hinweis meldung";
+    meldung.className = fehler ? "hinweis fehler" : "hinweis";
   }
 
   function pos(ev){
@@ -434,8 +450,7 @@ canvas{display:block;width:100%;height:auto;background:#fff;box-shadow:var(--sch
       ctx.beginPath();
       ctx.moveTo(startX, startY);
       ctx.lineTo(p.x, p.y);
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
+      ctx.lineCap = "round"; ctx.lineJoin = "round";
       ctx.lineWidth = strichBreite();
       ctx.strokeStyle = (werkzeug === "radierer") ? aktuelleHg : farbe.value;
       ctx.stroke();
@@ -485,7 +500,6 @@ canvas{display:block;width:100%;height:auto;background:#fff;box-shadow:var(--sch
     else if(name === "radierer") canvas.style.cursor = "cell";
     else if(name === "fuellen") canvas.style.cursor = "pointer";
     else canvas.style.cursor = "crosshair";
-    zoomAnwenden();
   }
 
   Object.keys(werkzeuge).forEach(function(name){
@@ -526,7 +540,6 @@ canvas{display:block;width:100%;height:auto;background:#fff;box-shadow:var(--sch
     knoepfeAktualisieren();
     sagen("Letzter Schritt rückgängig gemacht.", false);
   });
-
   wiederBtn.addEventListener("click", function(){
     if(zukunft.length === 0) return;
     verlauf.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
@@ -534,13 +547,11 @@ canvas{display:block;width:100%;height:auto;background:#fff;box-shadow:var(--sch
     knoepfeAktualisieren();
     sagen("Schritt wiederhergestellt.", false);
   });
-
   loeschenBtn.addEventListener("click", function(){
     zustandSichern();
     hintergrund();
     sagen("Zeichenfläche geleert.", false);
   });
-
   speichernBtn.addEventListener("click", function(){
     try{
       canvas.toBlob(function(blob){
@@ -556,14 +567,17 @@ canvas{display:block;width:100%;height:auto;background:#fff;box-shadow:var(--sch
         setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
         sagen("Bild als „" + name + "“ gespeichert.", false);
       }, "image/png");
-    }catch(e){ sagen("Beim Speichern ist ein Fehler aufgetreten.", true); }
+    }catch(e){
+      sagen("Beim Speichern ist ein Fehler aufgetreten.", true);
+    }
   });
 
   knoepfeAktualisieren();
-  // Zoom nach dem Layout einmessen
-  zoomAnwenden();
-  requestAnimationFrame(zoomAnwenden);
-  window.addEventListener("load", zoomAnwenden);
+
+  // Zoom erst setzen, wenn Layout steht
+  function initZoom(){ anpassen(); }
+  if(document.readyState === "complete") requestAnimationFrame(initZoom);
+  else window.addEventListener("load", function(){ requestAnimationFrame(initZoom); });
 })();
 </script>
 </body>

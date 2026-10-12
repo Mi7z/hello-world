@@ -39,6 +39,16 @@
       },
       "zeit": "2026-10-12T12:47:47.859Z",
       "aenderung": "Vollbild-Layout mit fester Zeichenfläche, logisch angeordneten Werkzeugleisten und Zoom ohne Scrollen"
+    },
+    {
+      "id": "v5",
+      "eltern": "v3",
+      "autor": {
+        "login": "Mi7z",
+        "name": "Mi7z"
+      },
+      "zeit": "2026-10-12T13:46:08.501Z",
+      "aenderung": "Vollbild-Layout mit fester Zeichenfläche, logisch angeordneten Werkzeugleisten (Menü/Seitenleiste) und Zoom-Funktion"
     }
   ]
 }

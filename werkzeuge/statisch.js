@@ -118,7 +118,7 @@ document.documentElement.classList.add('hw-statisch');
 // Web-App: Symbol, Name, ohne Internet benutzbar
 schreiben('manifest.webmanifest', JSON.stringify({
   name: 'Hello World', short_name: 'Hello World', description: 'Die freie App-Wolke',
-  start_url: basis, scope: basis, display: 'standalone', background_color: '#f6f5f2', theme_color: '#3b5bdb',
+  start_url: basis, scope: basis, display: 'standalone', background_color: '#0b0e0c', theme_color: '#0b0e0c',
   icons: [{ src: `${basis}icon-512.png`, sizes: '512x512', type: 'image/png', purpose: 'any maskable' }, { src: `${basis}icon.svg`, sizes: 'any', type: 'image/svg+xml' }],
 }, null, 2));
 schreiben('sw.js', `// Offline: einmal geöffnete Seiten und Apps bleiben verfügbar (erst Netz, sonst Speicher)

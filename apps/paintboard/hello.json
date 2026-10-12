@@ -1,12 +1,13 @@
 {
   "titel": "Paintboard",
-  "beschreibung": "Ein einfaches Zeichenprogramm im Browser, mit dem du frei malst, Formen, Linien und Text einfügst, Flächen füllst, radierst oder ausschneidest – und dein Bild als PNG speicherst. Funktioniert direkt im Browser wie Paint, ganz ohne Installation.",
+  "beschreibung": "Ein einfaches Malprogramm direkt im Browser: Du zeichnest frei, fügst Formen, Linien und Text ein, füllst Flächen mit Farbe, radierst oder schneidest Bereiche aus – und speicherst dein Bild als PNG. Funktioniert wie Paint, ganz ohne Installation.",
   "kategorie": "bild",
   "funktionen": [
     "Frei zeichnen auf einer Leinwand und das Bild als PNG speichern",
     "Formen (z. B. Rechteck, Kreis, Linie) und Textfelder auf der Leinwand einfügen",
     "Hintergrundfarbe wählen sowie Werkzeuge zum Füllen (Farbeimer) und Ausschneiden von Bereichen",
-    "Vollbild-Layout mit fester Zeichenfläche, logisch angeordneten Werkzeugleisten und Zoom ohne Scrollen"
+    "Vollbild-Layout mit fester Zeichenfläche, logisch angeordneten Werkzeugleisten und Zoom ohne Scrollen",
+    "Vollbild-Layout mit fester Zeichenfläche, logisch angeordneten Werkzeugleisten (Menü/Seitenleiste) und Zoom-Funktion"
   ],
   "tags": [
     "malen",
@@ -18,7 +19,7 @@
   "anfrage": "Ich brauche ein Tool wie paint",
   "ki": "Claude",
   "erstellt": "2026-10-11T19:15:43.937Z",
-  "version": 4,
+  "version": 5,
   "typ": "browser",
   "hinweise": [],
   "aliase": [
@@ -43,29 +44,36 @@
       "ki": "Claude",
       "version": "v4",
       "autor": "Mi7z"
+    },
+    {
+      "zeit": "2026-10-12T13:46:08.522Z",
+      "anfrage": "Das soll eine vollbild App sein. Also ich will nicht zwischen tools und so scrollen, sondern ich will, dass das logisch aufgebaut ist. Also vielleicht mit einem Menü oder sonstiges und dass man zeichenfläche immer einen festen Platz hat und die tools dann so logisch platziert bzw. Implementiert werd",
+      "ki": "Claude",
+      "version": "v5",
+      "autor": "Mi7z"
     }
   ],
   "beispiele": [
-    "Ich möchte schnell etwas malen",
-    "wie kann ich ein Bild zeichnen",
-    "Paint im Browser ohne Installation",
-    "freihand zeichnen und als PNG speichern",
-    "ich brauche ein einfaches Malprogramm",
-    "Rechteck und Kreis auf einer Leinwand einfügen",
-    "Text in ein Bild schreiben",
+    "Ich möchte schnell etwas zeichnen im Browser",
+    "wie kann ich ein Bild malen ohne Programm zu installieren",
+    "Paint online nutzen",
+    "etwas skizzieren und als PNG speichern",
+    "Formen und Linien zeichnen",
+    "Rechteck und Kreis malen",
+    "Text in ein Bild einfügen",
     "Fläche mit Farbe füllen Farbeimer",
-    "etwas skizzieren online",
-    "ich will mit Pinsel und Farben malen",
-    "Bereich ausschneiden und mit Hintergrund füllen",
-    "radieren rückgängig machen zeichnung",
-    "eine Zeichnung erstellen und herunterladen",
-    "online drawing tool in the browser",
-    "I need a simple paint app",
-    "draw and export as PNG",
-    "make a quick sketch online",
-    "Linie und Formen zeichnen",
-    "Logo oder Skizze schnell malen",
-    "zeichenfläche mit zoom zum malen"
+    "freihand zeichnen mit der Maus",
+    "ich brauche eine Zeichenfläche zum Kritzeln",
+    "einfaches Grafikprogramm zum Malen",
+    "Skizze machen und herunterladen",
+    "radieren und Bereiche ausschneiden",
+    "a simple drawing app in the browser",
+    "draw and save as png",
+    "online paint tool free",
+    "I need a canvas to sketch something",
+    "digital whiteboard zum malen",
+    "Zeichnung erstellen mit Pinsel",
+    "Bild malen mit verschiedenen Farben"
   ],
   "stichworte": [
     "malen",
@@ -73,6 +81,8 @@
     "paint",
     "draw",
     "drawing",
+    "zeichenprogramm",
+    "malprogramm",
     "pinsel",
     "brush",
     "skizze",
@@ -82,11 +92,7 @@
     "png",
     "bild",
     "image",
-    "picture",
-    "farbe",
-    "color",
-    "radierer",
-    "eraser",
+    "grafik",
     "formen",
     "shapes",
     "rechteck",
@@ -94,12 +100,16 @@
     "linie",
     "text",
     "füllen",
-    "farbeimer",
     "fill",
-    "zoom",
+    "farbeimer",
+    "radierer",
+    "eraser",
     "ausschneiden",
-    "malprogramm"
+    "zoom",
+    "whiteboard",
+    "kritzeln",
+    "online"
   ],
-  "beschreibungStand": "2026-10-12T12:48:00.982Z",
+  "beschreibungStand": "2026-10-12T13:46:21.270Z",
   "symbol": "🎨"
 }

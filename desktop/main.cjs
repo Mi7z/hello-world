@@ -58,7 +58,7 @@ async function dienstStarten() {
 function fensterOeffnen() {
   fenster = new BrowserWindow({
     width: 1280, height: 860, minWidth: 360, minHeight: 500,
-    title: 'Hello World', show: !process.env.HW_TESTBILD, backgroundColor: '#f6f5f2', autoHideMenuBar: true,
+    title: 'Hello World', show: !process.env.HW_TESTBILD, backgroundColor: '#0b0e0c', autoHideMenuBar: true,
     icon: path.join(KERN, 'public', 'icon-512.png'),
     webPreferences: { contextIsolation: true, sandbox: true },
   });

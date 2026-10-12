@@ -12,7 +12,7 @@ const PROGRAMM_LINK = 'https://github.com/Mi7z/hello-world/releases/latest';
 
 // ---------- Designs ----------
 // Gewähltes Design (gilt für Hello World und alle Apps); design.js lädt es beim Start
-const designName = () => new URLSearchParams(location.search).get('design') || localStorage.getItem('hw-design') || 'klar';
+const designName = () => new URLSearchParams(location.search).get('design') || localStorage.getItem('hw-design') || 'terminal';
 function designWaehlen(name) {
   localStorage.setItem('hw-design', name);
   const link = document.getElementById('hwDesign');
@@ -379,3 +379,35 @@ async function appInstallieren() {
   dlg.querySelector('#hwInstZu').onclick = () => dlg.close();
   dlg.showModal();
 }
+
+// ---------- Bau-Ablauf als Zeitleiste (links → rechts), Schritte antippbar ----------
+const ABLAUF = [['pruefen', 'Prüfen'], ['github', 'Open Source'], ['vorbilder', 'Vorbilder'], ['bauen', 'Bauen'], ['test', 'Testen'], ['fertig', 'Vorschau']];
+const ablaufWahl = new Map(); // Auftrag → aufgeklappter Schritt
+function ablaufHtml(a) {
+  const st = a.schritte || {};
+  const schritte = ABLAUF.filter(([k]) => k in st && !(k === 'github' && (a.zielSlug || a.typ === 'design')) && !(k === 'vorbilder' && a.typ === 'design'));
+  const offen = ablaufWahl.has(a.id) ? ablaufWahl.get(a.id) : null;
+  const ZEICHEN = { ok: '✓', nein: '!', laeuft: '' };
+  const leiste = schritte.map(([k, t], i) => `<button type="button" class="ablauf-schritt ${st[k] || 'offen'}${k === offen ? ' gewaehlt' : ''}" data-ablauf="${a.id}" data-ablauf-schritt="${k}" aria-expanded="${k === offen}" title="${esc(t)}: antippen für Details">
+      <span class="ablauf-punkt">${st[k] in ZEICHEN ? ZEICHEN[st[k]] : i + 1}</span><span class="ablauf-name">${t}</span></button>`).join('');
+  let detail = '';
+  if (offen) {
+    const text = a.schrittText?.[offen] || { ok: 'Erledigt.', laeuft: 'Läuft gerade …', nein: 'Hier gab es ein Problem.' }[st[offen]] || 'Kommt noch.';
+    const mehr = {
+      pruefen: a.plan ? `<p><b>Plan:</b> ${esc(a.plan)}</p>` : '',
+      github: a.quelle ? `<p>Baut auf <b>${esc(a.quelle.repo)}</b> auf (${esc(a.quelle.lizenz)}).</p>` : '',
+      vorbilder: a.vorbilder ? `<div class="ablauf-notiz">${markdown(a.vorbilder)}</div>` : '',
+      test: a.probleme?.length ? `<ul>${a.probleme.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : '',
+      fertig: a.meldung && a.status !== 'laeuft' ? `<p>${esc(a.meldung)}</p>` : '',
+    }[offen] || '';
+    detail = `<div class="ablauf-detail"><b>${esc(ABLAUF.find(([k]) => k === offen)[1])}</b> · ${esc(text)}${mehr}</div>`;
+  }
+  return `<div class="ablauf"><div class="ablauf-leiste">${leiste}</div>${detail}</div>`;
+}
+document.addEventListener('click', (ev) => {
+  const b = ev.target.closest('[data-ablauf]');
+  if (!b) return;
+  const id = b.dataset.ablauf, k = b.dataset.ablaufSchritt;
+  if (ablaufWahl.get(id) === k) ablaufWahl.delete(id); else ablaufWahl.set(id, k);
+  document.dispatchEvent(new CustomEvent('hw-ablauf', { detail: id }));
+});

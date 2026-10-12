@@ -57,9 +57,9 @@ function ausHeimnetz(req) {
 // ---------- Designs ----------
 // CSS eines Designs (beste Distribution oder bestimmte Version); Standard: design.klar
 function designCss(name, version) {
-  [name, version = version] = String(name || 'klar').split('@'); // „klar@v2" = bestimmte Version
-  const slug = aufloesen(String(name || 'klar')) || 'klar';
-  const e = katalogLaden().find((a) => a.slug === slug && a.typ === 'design') || katalogLaden().find((a) => a.slug === 'klar');
+  [name, version = version] = String(name || 'terminal').split('@'); // „klar@v2" = bestimmte Version
+  const slug = aufloesen(String(name || 'terminal')) || 'terminal';
+  const e = katalogLaden().find((a) => a.slug === slug && a.typ === 'design') || katalogLaden().find((a) => a.slug === 'terminal');
   if (!e) return '';
   const datei = version && /^v\d+$/.test(version) ? baum.versionsDatei(e.slug, version) : path.join(APPS, e.slug, 'design.css');
   try { return fs.readFileSync(datei, 'utf8'); } catch { return ''; }

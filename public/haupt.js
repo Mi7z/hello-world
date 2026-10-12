@@ -188,6 +188,9 @@ window.HW_SEITE = {
 
 // ---------- Neu bauen: der PC arbeitet, die Seite zeigt nur den Stand ----------
 let aktuell = null; // laufender Auftrag (id)
+let letzterAuftrag = null;
+$('bauAnfrage').addEventListener('click', () => $('bauAnfrage').classList.toggle('ganz'));
+document.addEventListener('hw-ablauf', (ev) => { if (letzterAuftrag && ev.detail === letzterAuftrag.id) $('ablauf').innerHTML = ablaufHtml(letzterAuftrag); });
 
 async function bauen(anfrage) {
   if (STATISCH) return nurImProgramm();
@@ -220,9 +223,8 @@ function darstellen(a) {
   $('bauTitel').textContent = a.titelAnzeige || 'neuer Auftrag';
   $('bauAnfrage').textContent = a.anfrage ? `„${a.anfrage}"` : '';
   const design = a.typ === 'design';
-  const github = document.querySelector('#schritte [data-schritt="github"]');
-  if (github) github.hidden = design;
-  schritteZeigen(document, a);
+  letzterAuftrag = a;
+  $('ablauf').innerHTML = ablaufHtml(a);
   let html = esc(a.meldung || '');
   if (a.status === 'vorhanden' && a.ergebnis?.kennung) html += `<div class="knoepfe"><a class="knopf" href="/a/${a.ergebnis.kennung}">Öffnen</a></div>`;
   if (a.status === 'fehler' || a.status === 'abgebrochen') html += `${a.probleme?.length ? `<ul>${a.probleme.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}<div class="knoepfe"><button type="button" id="neuStarten">Nochmal versuchen</button></div>`;
@@ -303,7 +305,7 @@ $('auftragListe').addEventListener('click', (ev) => {
 
 // ---------- Aussehen ----------
 function zeigeDesigns() {
-  const designs = stand.apps.filter((a) => a.typ === 'design').sort((a, b) => (a.slug === 'klar' ? -1 : b.slug === 'klar' ? 1 : a.slug.localeCompare(b.slug)));
+  const designs = stand.apps.filter((a) => a.typ === 'design').sort((a, b) => (a.slug === 'terminal' ? -1 : b.slug === 'terminal' ? 1 : a.slug.localeCompare(b.slug)));
   $('designWahl').innerHTML = designs.map((d) => {
     const f = d.farben?.[0] || {};
     const aktiv = d.slug === designName();
@@ -410,7 +412,7 @@ bereich(location.hash.slice(1), false);
   // Erster Start: gefundenes KI-Programm automatisch nehmen (z. B. Claude Code)
   if (!kiEinstellung() && stand.lokaleKi) localStorage.setItem('hw-ki', JSON.stringify({ art: 'lokal', programm: stand.kiProgramme?.[0]?.id }));
   // Gewähltes Design gibt es nicht mehr? Zurück zum Standard
-  if (!stand.apps.some((a) => a.typ === 'design' && a.slug === designName().split('@')[0])) designWaehlen('klar');
+  if (!stand.apps.some((a) => a.typ === 'design' && a.slug === designName().split('@')[0])) designWaehlen('terminal');
   zeigeKi();
   zeigeKiErlaubnisse();
   zeigeAlle();

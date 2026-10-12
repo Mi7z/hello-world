@@ -158,7 +158,7 @@ Es läuft auf dem Rechner des Nutzers, Hello World betreibt es nicht.
 Ein Design (`"typ": "design"`) ist ein Eintrag wie eine App: Ordner `apps/<name>/`
 mit `hello.json` und **`design.css`**. Der Nutzer wählt es unter „Mehr → Aussehen"
 oder im helloworld-Menü jeder App; es gilt dann für Hello World und alle Apps.
-Standard ist `design.klar` (hell/dunkel automatisch), dazu z. B. `design.terminal`.
+Standard ist `design.terminal`, dazu z. B. `design.klar` (hell/dunkel automatisch).
 
 Pflicht in `design.css`: ein Block `:root:root { … }` mit **allen** Bausteinen:
 `--bg` Hintergrund · `--fl` Fläche/Karte · `--fl2` zweite Fläche (Eingabefelder) ·

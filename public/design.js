@@ -2,6 +2,6 @@
 // ?design=name in der Adresse zeigt ein Design nur zum Anschauen (wird nicht gespeichert).
 (function () {
   var probe = new URLSearchParams(location.search).get('design');
-  var name = (probe || localStorage.getItem('hw-design') || 'klar').replace(/[^a-z0-9.@-]/g, '');
+  var name = (probe || localStorage.getItem('hw-design') || 'terminal').replace(/[^a-z0-9.@-]/g, '');
   document.write('<link rel="stylesheet" id="hwDesign" href="/api/design/' + name + '.css">');
 })();
