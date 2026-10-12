@@ -29,6 +29,16 @@
       },
       "zeit": "2026-10-12T18:43:14.272Z",
       "aenderung": "Handskizze als Bild hochladen und daraus Grundriss erkennen, Wände mit einstellbarem Winkelraster einrasten und Wandlängen präzise feinjustieren."
+    },
+    {
+      "id": "v4",
+      "eltern": "v3",
+      "autor": {
+        "login": "Mi7z",
+        "name": "Mi7z"
+      },
+      "zeit": "2026-10-12T19:35:18.942Z",
+      "aenderung": "An allen Wänden dauerhaft Winkel und Wandlängen anzeigen und Wände per Antippen durch einen neuen, frei verschiebbaren Eckpunkt teilen."
     }
   ]
 }

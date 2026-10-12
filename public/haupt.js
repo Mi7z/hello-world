@@ -149,10 +149,91 @@ $('beschreibungDialog').addEventListener('click', (ev) => { if (ev.target === $(
 
 let filter = 'alle';
 const FILTER = { alle: () => true, apps: (a) => ['browser', 'server'].includes(a.typ || 'browser'), design: (a) => a.typ === 'design', skill: (a) => a.typ === 'skill', mcp: (a) => a.typ === 'mcp' };
+// ---------- Alle Einträge: je App eine Zeile, aufklappbar mit Versionsbaum ----------
+const aufgeklappt = new Map(); // slug → Filter der Versionen (neueste | beliebteste | alle)
+const baeume = new Map(); // slug → Stammbaum (geladen beim ersten Aufklappen)
+const HAT_BAUM = (a) => ['browser', 'design'].includes(a.typ || 'browser');
+function appZeile(a) {
+  const offen = aufgeklappt.has(a.slug);
+  const versionen = a.version > 1 ? `<span class="app-zeile-zahl" title="${a.version} Versionen">${a.version} V.</span>` : '';
+  return `<div class="app-zeile${offen ? ' offen' : ''}" data-zeile="${a.slug}">
+    <button type="button" class="app-zeile-kopf" data-zeile-auf="${a.slug}" aria-expanded="${offen}">
+      ${symbolHtml(a)}<b>${esc(kennung(a))}</b><span class="app-zeile-text">${esc(a.beschreibung)}</span>${versionen}<span class="app-zeile-pfeil" aria-hidden="true">${offen ? '▾' : '▸'}</span>
+    </button>
+    ${offen ? `<div class="app-zeile-inhalt">${appInhalt(a)}</div>` : ''}
+  </div>`;
+}
+function appInhalt(a) {
+  const marken = [`<span class="marke">${TYP_NAME[a.typ || 'browser']}</span>`];
+  if (a.eigeneKi) marken.push('<span class="marke">nutzt deine KI</span>');
+  if (a.werkzeuge?.length) marken.push('<span class="marke">auch für KIs</span>');
+  if (a.faehigkeiten?.length) marken.push('<span class="marke">steuert den PC</span>');
+  const kopf = `<p class="app-zeile-beschreibung">${esc(a.beschreibung)}</p><div class="karte-fuss">${marken.join('')}</div>
+    <div class="knoepfe links"><a class="knopf klein" href="/a/${kennung(a)}">▶ Öffnen</a>${a.typ === 'design' ? `<button type="button" class="zweit klein" data-design-nutzen="${a.slug}">${designName() === a.slug ? 'Ist aktiv ✓' : '◐ Verwenden'}</button>` : ''}</div>`;
+  if (!HAT_BAUM(a)) return kopf;
+  const b = baeume.get(a.slug);
+  if (!b) { baumLaden(a.slug); return kopf + '<p class="lade">Versionen werden geladen …</p>'; }
+  const f = aufgeklappt.get(a.slug) || 'beliebteste';
+  const chips = ['neueste', 'beliebteste', 'alle'].map((x) => `<button type="button" data-baum-filter="${a.slug}" data-wert="${x}" aria-pressed="${x === f}">${x[0].toUpperCase() + x.slice(1)}</button>`).join('');
+  let liste = [];
+  if (f === 'alle') {
+    // Baum wie „tree": ├─ └─ │
+    const nachId = Object.fromEntries(b.versionen.map((v) => [v.id, v]));
+    const gehen = (v, vorne, letzter, wurzel) => {
+      liste.push({ v, ast: wurzel ? '' : `${vorne}${letzter ? '└─ ' : '├─ '}` });
+      v.kinder.forEach((k, i) => gehen(nachId[k], wurzel ? '' : `${vorne}${letzter ? '   ' : '│  '}`, i === v.kinder.length - 1, false));
+    };
+    b.versionen.filter((v) => !v.eltern).forEach((w) => gehen(w, '', true, true));
+  } else {
+    const sortiert = [...b.versionen].sort(f === 'neueste' ? (x, y) => y.zeit.localeCompare(x.zeit) : (x, y) => (y.wertung.punkte || 0) - (x.wertung.punkte || 0) || y.zeit.localeCompare(x.zeit));
+    liste = sortiert.slice(0, 5).map((v) => ({ v, ast: '' }));
+  }
+  const zeilen = liste.map(({ v, ast }) => `<button type="button" class="version-zeile${v.id === b.standard ? ' beste' : ''}" data-version="${a.slug}" data-id="${v.id}">
+      ${ast ? `<span class="version-ast">${esc(ast)}</span>` : ''}<b>v${v.id.slice(1)}</b><span class="version-text">${esc(v.aenderung)}</span><span class="version-meta">${v.wertung.schnitt ? `★${String(v.wertung.schnitt).replace('.', ',')} · ` : ''}${new Date(v.zeit).toLocaleDateString('de-DE', { day: 'numeric', month: 'numeric' })}</span>
+    </button>`).join('');
+  return `${kopf}<div class="versionen"><div class="versionen-kopf"><b>Versionen</b><span class="anzahl">${b.versionen.length}</span><div class="chips klein">${chips}</div></div>${zeilen}</div>`;
+}
+async function baumLaden(slug) {
+  try { baeume.set(slug, await api(`/api/stammbaum/${slug}`)); } catch { baeume.set(slug, { versionen: [], distributionen: [] }); }
+  zeigeAlle();
+}
 function zeigeAlle() {
   const liste = stand.apps.filter(FILTER[filter]);
   $('anzahl').textContent = liste.length;
-  $('alleListe').innerHTML = liste.sort((a, b) => a.slug.localeCompare(b.slug)).map((a) => karte(a)).join('') || '<p class="leer">Hier ist noch nichts – mach den Anfang.</p>';
+  $('alleListe').innerHTML = liste.sort((a, b) => a.slug.localeCompare(b.slug)).map(appZeile).join('') || '<p class="leer">Hier ist noch nichts – mach den Anfang.</p>';
+}
+$('alleListe').addEventListener('click', (ev) => {
+  const auf = ev.target.closest('[data-zeile-auf]');
+  if (auf) { const s = auf.dataset.zeileAuf; if (aufgeklappt.has(s)) aufgeklappt.delete(s); else aufgeklappt.set(s, 'beliebteste'); zeigeAlle(); return; }
+  const f = ev.target.closest('[data-baum-filter]');
+  if (f) { aufgeklappt.set(f.dataset.baumFilter, f.dataset.wert); zeigeAlle(); return; }
+  const d = ev.target.closest('[data-design-nutzen]');
+  if (d) { designWaehlen(d.dataset.designNutzen); zeigeAlle(); return; }
+  const v = ev.target.closest('[data-version]');
+  if (v) versionFragen(v.dataset.version, v.dataset.id);
+});
+// Kleines Fenster: diese Version öffnen?
+function versionFragen(slug, id) {
+  const a = stand.apps.find((x) => x.slug === slug);
+  const v = baeume.get(slug)?.versionen.find((x) => x.id === id);
+  if (!a || !v) return;
+  let dlg = $('versionDialog');
+  if (!dlg) { dlg = document.createElement('dialog'); dlg.id = 'versionDialog'; dlg.className = 'blatt'; document.body.appendChild(dlg); }
+  const beste = baeume.get(slug).standard === id;
+  dlg.innerHTML = `<div class="blatt-inhalt">
+    <div class="blatt-kopf">${symbolHtml(a)}<h2>${esc(kennung(a))} · v${id.slice(1)}</h2><span class="hinweis">${beste ? '★ beste Version · ' : ''}von ${esc(autorText(v.autor))} · ${new Date(v.zeit).toLocaleDateString('de-DE')} · ${sterneText(v.wertung)}</span></div>
+    <p>${esc(v.aenderung)}</p>
+    ${v.eigenarten.length ? `<ul class="funktionen">${v.eigenarten.map((e) => `<li>${esc(e.text)}</li>`).join('')}</ul>` : ''}
+    <p class="hinweis">${v.kinder.length ? `${v.kinder.length} Weiterentwicklung(en) davon` : 'Ein Zweig-Ende – die neueste Fassung dieses Zweigs.'}</p>
+    <div class="knoepfe blatt-fuss">
+      <button type="button" class="leise" id="vAbbrechen">Abbrechen</button>
+      ${STATISCH ? '' : `<a class="knopf zweit" href="/a/${kennung(a)}@${id}?weiter=1">✎ Daran weiterarbeiten</a>`}
+      <a class="knopf" href="/a/${kennung(a)}@${id}">▶ Öffnen</a>
+    </div>
+  </div>`;
+  dlg.querySelector('#vAbbrechen').onclick = () => dlg.close();
+  dlg.onclick = (e) => { if (e.target === dlg) dlg.close(); };
+  dlg.showModal();
 }
 $('filter').addEventListener('click', (ev) => {
   const b = ev.target.closest('[data-filter]');

@@ -3,20 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Raumplaner – zeichnen & Skizze importieren</title>
+<title>Raumplaner – zeichnen, Maße & Skizze importieren</title>
 <script type="application/json" id="hw-werkzeuge">
 { "werkzeuge": {
   "grundriss_bild": {
-    "beschreibung": "Erzeugt ein PNG-Bild des aktuellen Grundrisses mit Wänden, Türen/Öffnungen und Möbeln.",
+    "beschreibung": "Erzeugt ein PNG-Bild des aktuellen Grundrisses mit Wänden, Längen- und Winkelangaben, Türen/Öffnungen und Möbeln.",
     "dateien": "keine",
     "eingabe": { "type": "object", "properties": {} },
     "ausgabe": "PNG-Datei des Grundrisses"
   },
   "grundriss_masse": {
-    "beschreibung": "Liefert die Grundfläche und die Längen aller Wände des aktuellen Grundrisses in Metern.",
+    "beschreibung": "Liefert die Grundfläche, die Längen aller Wände (in Metern) und die Innenwinkel an allen Ecken (in Grad) des aktuellen Grundrisses.",
     "dateien": "keine",
     "eingabe": { "type": "object", "properties": {} },
-    "ausgabe": "Objekt mit flaeche_qm und wandlaengen_m (Liste)"
+    "ausgabe": "Objekt mit flaeche_qm, wandlaengen_m (Liste) und winkel_grad (Liste)"
   },
   "skizze_erkennen": {
     "beschreibung": "Erkennt aus dem Bild einer handgezeichneten Grundriss-Skizze (geschlossener Umriss) die Raumform und liefert die Eckpunkte. Optional kann eine Gesamtbreite in Metern zum Skalieren angegeben werden.",
@@ -67,7 +67,7 @@ body.app{display:flex;flex-direction:column;height:100vh;height:100dvh;max-width
 .panel h2{margin-top:0}
 .gitter{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
 .gitter button{min-height:44px;font-size:14px;padding:8px}
-.app-fuss button{flex:1;min-width:58px;flex-direction:column;gap:3px;padding:8px 4px;font-size:11px;min-height:50px;line-height:1.1}
+.app-fuss button{flex:1;min-width:52px;flex-direction:column;gap:3px;padding:8px 4px;font-size:11px;min-height:50px;line-height:1.1}
 .app-fuss button .ic{font-size:18px}
 .app-fuss button[aria-pressed=true]{background:var(--ak);color:var(--ak-tx);border-color:var(--ak)}
 .app-fuss button:not([aria-pressed=true]){background:var(--fl2);color:var(--tx);border-color:var(--li)}
@@ -107,6 +107,7 @@ body.app{display:flex;flex-direction:column;height:100vh;height:100dvh;max-width
 <footer class="app-fuss">
   <button id="mSelect" data-mode="select" aria-pressed="true"><span class="ic">✋</span>Auswahl</button>
   <button id="mWall" data-mode="wall"><span class="ic">✏️</span>Wände</button>
+  <button id="mSplit" data-mode="split"><span class="ic">✂️</span>Teilen</button>
   <button id="mDoor" data-mode="door"><span class="ic">🚪</span>Tür</button>
   <button id="mWindow" data-mode="window"><span class="ic">🪟</span>Fenster</button>
   <button id="mOpen" data-mode="opening"><span class="ic">⬚</span>Durchgang</button>
@@ -167,7 +168,8 @@ body.app{display:flex;flex-direction:column;height:100vh;height:100dvh;max-width
   </select>
   <p class="hinweis" style="margin:6px 0 0">Neue Wände rasten auf diesen Winkel ein. Gilt auch beim Ziehen von Ecken und beim Drehen von Möbeln.</p>
   <label class="zeile" style="margin-top:12px"><input id="ckGrid" type="checkbox" checked> &nbsp;An 5-cm-Raster einrasten</label>
-  <label class="zeile"><input id="ckDims" type="checkbox" checked> &nbsp;Maße anzeigen</label>
+  <label class="zeile"><input id="ckDims" type="checkbox" checked> &nbsp;Wandlängen anzeigen</label>
+  <label class="zeile"><input id="ckAng" type="checkbox" checked> &nbsp;Winkel an den Ecken anzeigen</label>
   <div class="zeile" style="margin-top:14px"><button id="bCenter" class="zweit" style="flex:1">Ansicht zentrieren</button></div>
   <div class="zeile"><button id="bClear" class="zweit" style="flex:1">Alles löschen</button></div>
   <div class="zeile" style="margin-top:10px"><button id="setClose" style="flex:1">Fertig</button></div>
@@ -198,7 +200,7 @@ const state={
   furniture:[],
   thickness:0.2
 };
-let unit="m", angleStep=15, gridSnap=true, showDims=true;
+let unit="m", angleStep=15, gridSnap=true, showDims=true, showAngles=true;
 let sel=null;
 let mode="select";
 let scale=60, offsetX=0, offsetY=0;
@@ -234,12 +236,30 @@ function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y);}
 function fmtLen(m){return unit==="cm"? (m*100).toFixed(0)+" cm" : m.toFixed(2)+" m";}
 function segCount(){const n=state.walls.length;return n<2?0:(state.closed?n:n-1);}
 function getSeg(i){const n=state.walls.length;return {a:state.walls[i], b:state.walls[(i+1)%n]};}
-function area(){const w=state.walls;if(!state.closed||w.length<3)return 0;let s=0;for(let i=0;i<w.length;i++){const j=(i+1)%w.length;s+=w[i].x*w[j].y-w[j].x*w[i].y;}return Math.abs(s)/2;}
+function signedArea(){const w=state.walls;let s=0;for(let i=0;i<w.length;i++){const j=(i+1)%w.length;s+=w[i].x*w[j].y-w[j].x*w[i].y;}return s/2;}
+function area(){return Math.abs(signedArea())>0&&state.closed&&state.walls.length>=3?Math.abs(signedArea()):0;}
+function interiorAngles(){
+  const w=state.walls,n=w.length; if(!state.closed||n<3)return [];
+  const ccw=signedArea()>0; const out=[];
+  for(let i=0;i<n;i++){
+    const prev=w[(i-1+n)%n],cur=w[i],next=w[(i+1)%n];
+    const A={x:prev.x-cur.x,y:prev.y-cur.y},B={x:next.x-cur.x,y:next.y-cur.y};
+    const la=Math.hypot(A.x,A.y),lb=Math.hypot(B.x,B.y);
+    if(la<1e-6||lb<1e-6){out.push(0);continue;}
+    let cos=(A.x*B.x+A.y*B.y)/(la*lb);cos=Math.max(-1,Math.min(1,cos));
+    let th=Math.acos(cos)*180/PI;
+    const e1={x:cur.x-prev.x,y:cur.y-prev.y},e2={x:next.x-cur.x,y:next.y-cur.y};
+    const crossE=e1.x*e2.y-e1.y*e2.x;
+    const reflex=ccw?crossE<0:crossE>0;
+    out.push(reflex?360-th:th);
+  }
+  return out;
+}
 
 /* ---------- Zeichnen ---------- */
 function drawScene(x,o){
   const col={bg:o.bg, grid:V("--li"), wall:V("--tx"), dim:V("--tx2"),
-    fFill:V("--ak2"), fStroke:V("--ak"), ak:V("--ak"), akTx:V("--ak-tx"),
+    fFill:V("--ak2"), fStroke:V("--ak"), ak:V("--ak"), ak2:V("--ak2"), akTx:V("--ak-tx"),
     sel:V("--ak"), door:V("--tx3"), fl:V("--fl")};
   x.save();
   x.fillStyle=col.bg; x.fillRect(0,0,o.w,o.h);
@@ -309,7 +329,7 @@ function drawScene(x,o){
     const sct=segCount();
     for(let i=0;i<sct;i++){
       const {a,b}=getSeg(i); const d={x:b.x-a.x,y:b.y-a.y}; const L=Math.hypot(d.x,d.y);
-      if(L<0.01)continue;
+      if(L<0.01||L*sc<24)continue;
       const u={x:d.x/L,y:d.y/L}; const pr={x:-u.y,y:u.x};
       const mid={x:(a.x+b.x)/2,y:(a.y+b.y)/2};
       const cen=centroid();
@@ -320,6 +340,30 @@ function drawScene(x,o){
       const tw=x.measureText(t).width;
       x.fillStyle=col.bg; x.globalAlpha=.85; x.fillRect(lp.x-tw/2-4,lp.y-9,tw+8,18); x.globalAlpha=1;
       x.fillStyle=col.dim; x.fillText(t,lp.x,lp.y);
+    }
+  }
+  if(o.angles && state.closed && n>=3){
+    const angs=interiorAngles();
+    const cen=centroid();
+    x.font="700 11px "+V("--schrift"); x.textAlign="center"; x.textBaseline="middle";
+    for(let i=0;i<n;i++){
+      const prev=state.walls[(i-1+n)%n],cur=state.walls[i],next=state.walls[(i+1)%n];
+      const A={x:prev.x-cur.x,y:prev.y-cur.y},B={x:next.x-cur.x,y:next.y-cur.y};
+      const la=Math.hypot(A.x,A.y),lb=Math.hypot(B.x,B.y);
+      if(la<0.01||lb<0.01)continue;
+      if(la*sc<26||lb*sc<26)continue;
+      let bis={x:A.x/la+B.x/lb,y:A.y/la+B.y/lb};let bl=Math.hypot(bis.x,bis.y);
+      if(bl>0.001){bis={x:bis.x/bl,y:bis.y/bl};}
+      else{const dd={x:cen.x-cur.x,y:cen.y-cur.y};const dl=Math.hypot(dd.x,dd.y)||1;bis={x:dd.x/dl,y:dd.y/dl};}
+      const toC={x:cen.x-cur.x,y:cen.y-cur.y};
+      if(bis.x*toC.x+bis.y*toC.y<0){bis={x:-bis.x,y:-bis.y};}
+      const off=0.42;
+      const lp=w2s({x:cur.x+bis.x*off,y:cur.y+bis.y*off});
+      const t=Math.round(angs[i])+"°";
+      const tw=x.measureText(t).width;
+      x.fillStyle=col.ak2; x.globalAlpha=.95;
+      x.fillRect(lp.x-tw/2-4,lp.y-8,tw+8,16); x.globalAlpha=1;
+      x.fillStyle=col.ak; x.fillText(t,lp.x,lp.y);
     }
   }
   if(o.sel && n>=1){
@@ -374,7 +418,7 @@ function render(){
   const dpr=Math.min(window.devicePixelRatio||1,2.5);
   const w=cwrap.clientWidth, h=cwrap.clientHeight;
   ctx.setTransform(dpr,0,0,dpr,0,0);
-  drawScene(ctx,{w,h,scale,ox:offsetX,oy:offsetY,grid:true,dims:showDims,sel:true,bg:V("--bg")});
+  drawScene(ctx,{w,h,scale,ox:offsetX,oy:offsetY,grid:true,dims:showDims,angles:showAngles,sel:true,bg:V("--bg")});
   refreshInfo();
 }
 
@@ -394,6 +438,7 @@ function refreshInfo(){
     (mode==="door"?' · Tippe auf eine Wand für eine Tür':
      mode==="window"?' · Tippe auf eine Wand für ein Fenster':
      mode==="opening"?' · Tippe auf eine Wand für einen Durchgang':
+     mode==="split"?' · Tippe auf eine Wand, um dort einen Eckpunkt einzufügen':
      mode==="wall"?' · Tippe, um einen neuen Raum zu zeichnen (Winkelraster '+(angleStep>0?angleStep+'°':'aus')+')':'');
 }
 
@@ -415,6 +460,8 @@ function refreshProps(){
     const uu = unit==="cm"?"cm":"m";
     const val = unit==="cm"? (L*100).toFixed(0) : L.toFixed(2);
     const stp = unit==="cm"? "1":"0.01";
+    const angs=interiorAngles();
+    const angTxt=(state.closed&&angs.length)?('<p class="hinweis" style="margin:6px 0 0">Innenwinkel an dieser Ecke: <b style="color:var(--ak)">'+Math.round(angs[sel.idx])+'°</b></p>'):'';
     html='<h2>Ecke</h2>'+
       '<label>Länge der vorherigen Wand ('+uu+')</label>'+
       '<div class="zeile" style="flex-wrap:nowrap">'+
@@ -422,7 +469,8 @@ function refreshProps(){
         '<input id="pLen" type="number" min="0" step="'+stp+'" value="'+val+'" style="flex:1;min-width:0">'+
         '<button id="pLenP" class="zweit" style="flex:none;width:44px;padding:8px">+</button>'+
       '</div>'+
-      '<p class="hinweis" style="margin:8px 0 0">Mit − / + fein justieren oder Länge direkt eingeben. Ecke ziehen ändert die Form; Doppeltippen auf eine Wand fügt eine Ecke ein.</p>'+
+      angTxt+
+      '<p class="hinweis" style="margin:8px 0 0">Ecke ziehen ändert die Form; mit dem Modus „Teilen" oder per Doppeltippen auf eine Wand fügst du eine neue Ecke ein.</p>'+
       '<div class="zeile" style="margin-top:12px">'+
       (n>3?'<button id="pDel" class="zweit">Ecke löschen</button>':'')+'</div>';
   } else if(sel.type==="opening"){
@@ -500,6 +548,31 @@ function validateOpenings(){
   const sc=segCount();
   state.openings=state.openings.filter(o=>o.seg<sc);
   state.openings.forEach(clampOpening);
+}
+
+/* ---------- Eckpunkt einfügen (Wand teilen) ---------- */
+function insertNode(seg,t,proj){
+  const idx=seg+1;
+  state.walls.splice(idx,0,{x:snapV(proj.x),y:snapV(proj.y)});
+  state.openings.forEach(op=>{
+    if(op.seg>seg){op.seg++;}
+    else if(op.seg===seg){
+      if(op.t<=t){ op.t = t>1e-6? op.t/t : 0; }
+      else { op.seg=seg+1; op.t=(op.t-t)/((1-t)||1); }
+    }
+  });
+  validateOpenings();
+  return idx;
+}
+function splitWall(w){
+  if(segCount()<1){flash("Zeichne zuerst einen geschlossenen Raum.");return;}
+  const ns=nearestSegment(w);
+  if(!ns||ns.dist*scale>40){flash("Tippe näher an eine Wand.");return;}
+  const idx=insertNode(ns.seg,ns.t,ns.proj);
+  sel={type:"corner",idx};
+  setMode("select");
+  commit(); refreshProps();
+  flash("Eckpunkt eingefügt – jetzt frei verschieben.");
 }
 
 /* ---------- Historie ---------- */
@@ -588,13 +661,14 @@ cv.addEventListener("pointerdown",e=>{
   lastTap={t:now,x:p.x,y:p.y};
 
   if(mode==="door"||mode==="window"||mode==="opening"){placeOpening(w,mode);return;}
+  if(mode==="split"){splitWall(w);return;}
   if(mode==="wall"){wallClick(w,p);return;}
 
   if(isDbl){
     const ns=nearestSegment(w);
-    if(ns && ns.dist*scale<30 && state.walls.length>=2){
-      state.walls.splice((ns.seg+1)%(state.closed?state.walls.length+0:state.walls.length)===0?ns.seg+1:ns.seg+1,0,{x:snapV(ns.proj.x),y:snapV(ns.proj.y)});
-      sel={type:"corner",idx:ns.seg+1}; validateOpenings(); commit(); refreshProps(); return;
+    if(ns && ns.dist*scale<30 && segCount()>=1){
+      const idx=insertNode(ns.seg,ns.t,ns.proj);
+      sel={type:"corner",idx}; commit(); refreshProps(); return;
     }
   }
   const h=hitTest(p,w);
@@ -713,12 +787,14 @@ function syncSettings(){
   document.getElementById("selAngle").value=String(angleStep);
   document.getElementById("ckGrid").checked=gridSnap;
   document.getElementById("ckDims").checked=showDims;
+  document.getElementById("ckAng").checked=showAngles;
 }
 document.getElementById("selUnit").onchange=e=>{unit=e.target.value;render();refreshProps();};
 document.getElementById("inThick").onchange=e=>{let v=parseFloat(e.target.value);if(v>0){state.thickness=Math.max(0.05,Math.min(1,v));commit();}};
 document.getElementById("selAngle").onchange=e=>{angleStep=parseFloat(e.target.value)||0;refreshInfo();};
 document.getElementById("ckGrid").onchange=e=>gridSnap=e.target.checked;
 document.getElementById("ckDims").onchange=e=>{showDims=e.target.checked;render();};
+document.getElementById("ckAng").onchange=e=>{showAngles=e.target.checked;render();};
 document.getElementById("bCenter").onclick=()=>{fitView();render();};
 document.getElementById("bClear").onclick=()=>{state.walls=[{x:0,y:0},{x:4,y:0},{x:4,y:3},{x:0,y:3}];state.closed=true;state.openings=[];state.furniture=[];state.drawing=false;sel=null;hidePanels();fitView();commit();refreshProps();};
 
@@ -989,7 +1065,7 @@ function renderToCanvas(mult){
   const sScale=scale,sox=offsetX,soy=offsetY;
   scale=pxpm;offsetX=(-b.minx+pad)*pxpm;offsetY=(-b.miny+pad)*pxpm;
   const sSel=sel;sel=null;
-  drawScene(g,{w,h,scale,ox:offsetX,oy:offsetY,grid:false,dims:showDims,sel:false,bg:V("--bg")});
+  drawScene(g,{w,h,scale,ox:offsetX,oy:offsetY,grid:false,dims:showDims,angles:showAngles,sel:false,bg:V("--bg")});
   scale=sScale;offsetX=sox;offsetY=soy;sel=sSel;
   return c;
 }
@@ -1012,7 +1088,8 @@ if(window.helloworld && helloworld.werkzeug){
   helloworld.werkzeug("grundriss_masse",async()=>{
     const sc=segCount();const laengen=[];
     for(let i=0;i<sc;i++){const {a,b}=getSeg(i);laengen.push(+dist(a,b).toFixed(3));}
-    return{flaeche_qm:+area().toFixed(3),wandlaengen_m:laengen,anzahl_oeffnungen:state.openings.length,anzahl_moebel:state.furniture.length};
+    const winkel=interiorAngles().map(a=>+a.toFixed(1));
+    return{flaeche_qm:+area().toFixed(3),wandlaengen_m:laengen,winkel_grad:winkel,anzahl_oeffnungen:state.openings.length,anzahl_moebel:state.furniture.length};
   });
   helloworld.werkzeug("skizze_erkennen",async(eingabe,dateien)=>{
     if(!dateien||!dateien.length) throw new Error("Bitte ein Bild der Skizze übergeben.");

@@ -1,0 +1,1119 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Raumplaner – zeichnen, Maße & Skizze importieren</title>
+<script type="application/json" id="hw-werkzeuge">
+{ "werkzeuge": {
+  "grundriss_bild": {
+    "beschreibung": "Erzeugt ein PNG-Bild des aktuellen Grundrisses mit Wänden, Längen- und Winkelangaben, Türen/Öffnungen und Möbeln.",
+    "dateien": "keine",
+    "eingabe": { "type": "object", "properties": {} },
+    "ausgabe": "PNG-Datei des Grundrisses"
+  },
+  "grundriss_masse": {
+    "beschreibung": "Liefert die Grundfläche, die Längen aller Wände (in Metern) und die Innenwinkel an allen Ecken (in Grad) des aktuellen Grundrisses.",
+    "dateien": "keine",
+    "eingabe": { "type": "object", "properties": {} },
+    "ausgabe": "Objekt mit flaeche_qm, wandlaengen_m (Liste) und winkel_grad (Liste)"
+  },
+  "skizze_erkennen": {
+    "beschreibung": "Erkennt aus dem Bild einer handgezeichneten Grundriss-Skizze (geschlossener Umriss) die Raumform und liefert die Eckpunkte. Optional kann eine Gesamtbreite in Metern zum Skalieren angegeben werden.",
+    "dateien": "eine",
+    "eingabe": { "type": "object", "properties": {
+      "breite_m": { "type": "number", "description": "Reale Gesamtbreite des Raums in Metern zum Skalieren (Standard 5)." },
+      "ausrichten": { "type": "boolean", "description": "Wände an 0/90° ausrichten (Standard true)." }
+    } },
+    "ausgabe": "Objekt mit ecken (Liste x,y in Metern) und anzahl_ecken"
+  }
+} }
+</script>
+<style>
+:where(:root){color-scheme:light dark;--bg:#f6f5f2;--fl:#fff;--fl2:#f1efea;--li:#e6e3dc;--li2:#d3cfc6;--tx:#1d1c1a;--tx2:#5d5a55;--tx3:#918d86;--ak:#3b5bdb;--ak2:#e9eeff;--ak-tx:#fff;--rot:#d9480f;--gelb:#d68c00;--gruen:#2b8a3e;--r:16px;--r-klein:10px;--schrift:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--schrift-titel:var(--schrift);--mono:ui-monospace,Menlo,Consolas,monospace;--schatten:0 1px 2px rgba(0,0,0,.05),0 8px 24px rgba(0,0,0,.06)}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--bg);color:var(--tx);font:16px/1.55 var(--schrift);padding:20px 16px 40px;max-width:760px;margin:0 auto;-webkit-font-smoothing:antialiased}
+h1{font:700 24px/1.2 var(--schrift-titel);margin:6px 0 6px;letter-spacing:-.01em}h2{font:650 18px/1.3 var(--schrift-titel);margin:18px 0 8px}
+p.unter{color:var(--tx2);margin:0 0 20px}
+.karte{background:var(--fl);border:1px solid var(--li);border-radius:var(--r);padding:18px;margin-bottom:14px;box-shadow:var(--schatten)}
+button,.knopf{font:600 15px/1 var(--schrift);border:1px solid var(--ak);border-radius:var(--r-klein);padding:12px 18px;min-height:46px;background:var(--ak);color:var(--ak-tx);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:filter .15s,transform .05s}
+button:hover,.knopf:hover{filter:brightness(1.07)}button:active,.knopf:active{transform:translateY(1px)}
+button.zweit,.knopf.zweit{background:var(--fl2);color:var(--tx);border-color:var(--li)}
+button:disabled{opacity:.45;cursor:default;filter:none}
+input,select,textarea{font:16px/1.4 var(--schrift);color:var(--tx);background:var(--fl2);border:1px solid var(--li);border-radius:var(--r-klein);padding:11px 13px;min-height:46px;width:100%;caret-color:var(--ak)}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--ak);outline-offset:-1px;border-color:transparent}
+input[type=range]{padding:0;min-height:32px;accent-color:var(--ak)}input[type=color]{padding:4px;min-height:46px}input[type=checkbox],input[type=radio]{width:auto;min-height:auto;accent-color:var(--ak)}
+label{display:block;font-size:14px;color:var(--tx2);margin:12px 0 6px;font-weight:500}
+.zeile{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.spalten{display:grid;gap:14px}
+.hinweis{font-size:14px;color:var(--tx2)}.fehler{color:var(--rot)}
+a{color:var(--ak)}
+[hidden]{display:none!important}
+:focus-visible{outline:2px solid var(--ak);outline-offset:2px}
+body.app{display:flex;flex-direction:column;height:100vh;height:100dvh;max-width:none;margin:0;padding:10px 12px calc(10px + env(safe-area-inset-bottom));overflow:hidden;gap:8px}
+.app-kopf{flex:none;display:flex;align-items:center;gap:8px;flex-wrap:wrap}.app-kopf h1{font-size:20px;margin:0}
+.app-inhalt{flex:1;min-height:0;display:flex;flex-direction:column;gap:10px}
+.app-fuss{flex:none;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.fuellt{flex:1;min-height:0}
+
+.ikn{min-height:42px;padding:8px 12px;font-size:14px}
+.ikn.zweit{background:var(--fl2);color:var(--tx);border-color:var(--li)}
+#cwrap{position:relative;overflow:hidden;padding:0}
+#cv{display:block;width:100%;height:100%;touch-action:none;border-radius:var(--r)}
+#info{position:absolute;left:10px;top:10px;z-index:2;background:var(--fl);border:1px solid var(--li);border-radius:var(--r-klein);padding:8px 10px;box-shadow:var(--schatten);font-size:13px;color:var(--tx2);max-width:60%}
+#info b{color:var(--tx)}
+#props{position:absolute;z-index:4;background:var(--fl);border:1px solid var(--li);border-radius:var(--r);box-shadow:var(--schatten);padding:14px;overflow:auto;overscroll-behavior:contain}
+.panel{position:absolute;z-index:6;left:50%;top:50%;transform:translate(-50%,-50%);width:min(360px,94%);max-height:90%;overflow:auto;background:var(--fl);border:1px solid var(--li);border-radius:var(--r);box-shadow:var(--schatten);padding:16px}
+.panel h2{margin-top:0}
+.gitter{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.gitter button{min-height:44px;font-size:14px;padding:8px}
+.app-fuss button{flex:1;min-width:52px;flex-direction:column;gap:3px;padding:8px 4px;font-size:11px;min-height:50px;line-height:1.1}
+.app-fuss button .ic{font-size:18px}
+.app-fuss button[aria-pressed=true]{background:var(--ak);color:var(--ak-tx);border-color:var(--ak)}
+.app-fuss button:not([aria-pressed=true]){background:var(--fl2);color:var(--tx);border-color:var(--li)}
+#props h2{margin:0 0 6px;font-size:16px}
+#props label{margin:8px 0 4px}
+#props .zeile button{flex:1}
+@media (max-width:620px){
+  #props{left:8px;right:8px;bottom:8px;max-height:46%}
+}
+@media (min-width:621px){
+  #props{right:12px;top:12px;width:250px;max-height:calc(100% - 24px)}
+}
+</style>
+</head>
+<body class="app">
+<header class="app-kopf">
+  <h1>🏠 Raumplaner</h1>
+  <div class="zeile" style="margin-left:auto">
+    <button id="bUndo" class="ikn zweit" title="Rückgängig">↶</button>
+    <button id="bRedo" class="ikn zweit" title="Wiederholen">↷</button>
+    <button id="bImport" class="ikn zweit" title="Skizze importieren">📷 Skizze</button>
+    <button id="bTpl" class="ikn zweit" title="Vorlagen">📐 Vorlagen</button>
+    <button id="bGear" class="ikn zweit" title="Einstellungen">⚙</button>
+    <button id="bSave" class="ikn zweit" title="Speichern">💾</button>
+    <button id="bImg" class="ikn" title="Als Bild speichern">🖼 Bild</button>
+  </div>
+</header>
+
+<main class="app-inhalt">
+  <div id="cwrap" class="karte fuellt">
+    <canvas id="cv"></canvas>
+    <div id="info"></div>
+    <div id="props" hidden></div>
+  </div>
+</main>
+
+<footer class="app-fuss">
+  <button id="mSelect" data-mode="select" aria-pressed="true"><span class="ic">✋</span>Auswahl</button>
+  <button id="mWall" data-mode="wall"><span class="ic">✏️</span>Wände</button>
+  <button id="mSplit" data-mode="split"><span class="ic">✂️</span>Teilen</button>
+  <button id="mDoor" data-mode="door"><span class="ic">🚪</span>Tür</button>
+  <button id="mWindow" data-mode="window"><span class="ic">🪟</span>Fenster</button>
+  <button id="mOpen" data-mode="opening"><span class="ic">⬚</span>Durchgang</button>
+  <button id="mFurn"><span class="ic">🛋️</span>Möbel</button>
+</footer>
+
+<!-- Vorlagen -->
+<div id="tpl" class="panel" hidden>
+  <h2>Vorlage wählen</h2>
+  <p class="hinweis">Ersetzt den aktuellen Grundriss. Möbel bleiben erhalten.</p>
+  <div class="gitter">
+    <button class="zweit" data-tpl="rect">▭ Rechteck</button>
+    <button class="zweit" data-tpl="l">⌐ L-Form</button>
+    <button class="zweit" data-tpl="u">⊔ U-Form</button>
+    <button class="zweit" data-tpl="t">⊤ T-Form</button>
+    <button class="zweit" data-tpl="bay">⬠ Erker</button>
+    <button class="zweit" data-tpl="niche">⊓ Nische</button>
+  </div>
+  <div class="zeile" style="margin-top:14px"><button id="tplClose" class="zweit" style="flex:1">Schließen</button></div>
+</div>
+
+<!-- Skizze importieren -->
+<div id="imp" class="panel" hidden>
+  <h2>📷 Skizze importieren</h2>
+  <p class="hinweis">Lade ein Foto deiner handgezeichneten Raumskizze (als geschlossener Umriss gemalt). Der Umriss wird automatisch als bearbeitbare Wände erkannt – danach kannst du jede Ecke feinjustieren.</p>
+  <label for="impFile">Bild wählen (JPG oder PNG)</label>
+  <input id="impFile" type="file" accept="image/png,image/jpeg,image/*">
+  <div id="impMsg" class="hinweis" style="margin-top:8px"></div>
+  <canvas id="impCv" width="320" height="200" style="width:100%;height:auto;margin-top:10px;border:1px solid var(--li);border-radius:var(--r-klein);background:var(--fl2)" hidden></canvas>
+  <div id="impOpts" hidden>
+    <label for="impSens">Empfindlichkeit der Linienerkennung</label>
+    <input id="impSens" type="range" min="-60" max="60" step="5" value="0">
+    <label class="zeile" style="margin-top:10px"><input id="impOrtho" type="checkbox" checked> &nbsp;Wände an 0/90° ausrichten</label>
+    <label for="impWidth">Gesamtbreite des Raums</label>
+    <div class="zeile" style="flex-wrap:nowrap"><input id="impWidth" type="number" min="0.3" step="0.1" value="5" style="flex:1;min-width:0"><span id="impWUnit" class="hinweis" style="flex:none">m</span></div>
+  </div>
+  <div class="zeile" style="margin-top:14px;flex-wrap:nowrap">
+    <button id="impApply" style="flex:1" disabled>Übernehmen</button>
+    <button id="impClose" class="zweit" style="flex:none">Schließen</button>
+  </div>
+</div>
+
+<!-- Einstellungen -->
+<div id="settings" class="panel" hidden>
+  <h2>Einstellungen</h2>
+  <label for="selUnit">Einheit der Maße</label>
+  <select id="selUnit"><option value="m">Meter (m)</option><option value="cm">Zentimeter (cm)</option></select>
+  <label for="inThick">Wanddicke (Meter)</label>
+  <input id="inThick" type="number" min="0.05" max="1" step="0.01" value="0.2">
+  <label for="selAngle">Winkelraster beim Zeichnen</label>
+  <select id="selAngle">
+    <option value="0">Aus (frei)</option>
+    <option value="5">5°</option>
+    <option value="15" selected>15°</option>
+    <option value="30">30°</option>
+    <option value="45">45°</option>
+    <option value="90">90° (rechtwinklig)</option>
+  </select>
+  <p class="hinweis" style="margin:6px 0 0">Neue Wände rasten auf diesen Winkel ein. Gilt auch beim Ziehen von Ecken und beim Drehen von Möbeln.</p>
+  <label class="zeile" style="margin-top:12px"><input id="ckGrid" type="checkbox" checked> &nbsp;An 5-cm-Raster einrasten</label>
+  <label class="zeile"><input id="ckDims" type="checkbox" checked> &nbsp;Wandlängen anzeigen</label>
+  <label class="zeile"><input id="ckAng" type="checkbox" checked> &nbsp;Winkel an den Ecken anzeigen</label>
+  <div class="zeile" style="margin-top:14px"><button id="bCenter" class="zweit" style="flex:1">Ansicht zentrieren</button></div>
+  <div class="zeile"><button id="bClear" class="zweit" style="flex:1">Alles löschen</button></div>
+  <div class="zeile" style="margin-top:10px"><button id="setClose" style="flex:1">Fertig</button></div>
+</div>
+
+<!-- Möbel-Bibliothek -->
+<div id="lib" class="panel" hidden>
+  <h2>Möbel hinzufügen</h2>
+  <p class="hinweis">Tippe ein Möbelstück an – es erscheint in der Mitte und kann dann verschoben, gedreht und angepasst werden.</p>
+  <div class="gitter" id="libGrid"></div>
+  <div class="zeile" style="margin-top:14px"><button id="libClose" class="zweit" style="flex:1">Schließen</button></div>
+</div>
+
+<a id="dl" hidden></a>
+
+<script>
+"use strict";
+/* ---------- Status & Speicher ---------- */
+const K_CUR="roomplanner_cur_v2";
+function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+
+const state={
+  walls:[{x:0,y:0},{x:5,y:0},{x:5,y:4},{x:0,y:4}],
+  closed:true,
+  drawing:false,
+  openings:[],
+  furniture:[],
+  thickness:0.2
+};
+let unit="m", angleStep=15, gridSnap=true, showDims=true, showAngles=true;
+let sel=null;
+let mode="select";
+let scale=60, offsetX=0, offsetY=0;
+let previewPt=null;
+
+const cv=document.getElementById("cv");
+const ctx=cv.getContext("2d");
+const cwrap=document.getElementById("cwrap");
+const info=document.getElementById("info");
+const props=document.getElementById("props");
+
+const GRID=0.05;
+const LIB=[
+ {n:"Bett 1,40",w:1.4,h:2.0},{n:"Bett 1,80",w:1.8,h:2.0},
+ {n:"Sofa",w:2.0,h:0.9},{n:"Sessel",w:0.8,h:0.8},
+ {n:"Esstisch",w:1.6,h:0.9},{n:"Stuhl",w:0.45,h:0.45},
+ {n:"Schrank",w:1.2,h:0.6},{n:"Regal",w:0.8,h:0.3},
+ {n:"Kühlschrank",w:0.6,h:0.6},{n:"Herd",w:0.6,h:0.6},
+ {n:"Spüle",w:1.0,h:0.6},{n:"WC",w:0.4,h:0.6},
+ {n:"Waschbecken",w:0.6,h:0.5},{n:"Dusche",w:0.9,h:0.9},
+ {n:"Badewanne",w:1.7,h:0.75},{n:"Schreibtisch",w:1.4,h:0.7},
+ {n:"TV",w:1.2,h:0.12}
+];
+
+/* ---------- Hilfen ---------- */
+const PI=Math.PI;
+function V(n){return getComputedStyle(document.body).getPropertyValue(n).trim()||"#888";}
+function W2S(p){return {x:p.x*scale+offsetX, y:p.y*scale+offsetY};}
+function toWorld(p){return {x:(p.x-offsetX)/scale, y:(p.y-offsetY)/scale};}
+function snapV(v){return gridSnap? Math.round(v/GRID)*GRID : Math.round(v*1000)/1000;}
+function r3(v){return Math.round(v*1000)/1000;}
+function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y);}
+function fmtLen(m){return unit==="cm"? (m*100).toFixed(0)+" cm" : m.toFixed(2)+" m";}
+function segCount(){const n=state.walls.length;return n<2?0:(state.closed?n:n-1);}
+function getSeg(i){const n=state.walls.length;return {a:state.walls[i], b:state.walls[(i+1)%n]};}
+function signedArea(){const w=state.walls;let s=0;for(let i=0;i<w.length;i++){const j=(i+1)%w.length;s+=w[i].x*w[j].y-w[j].x*w[i].y;}return s/2;}
+function area(){return Math.abs(signedArea())>0&&state.closed&&state.walls.length>=3?Math.abs(signedArea()):0;}
+function interiorAngles(){
+  const w=state.walls,n=w.length; if(!state.closed||n<3)return [];
+  const ccw=signedArea()>0; const out=[];
+  for(let i=0;i<n;i++){
+    const prev=w[(i-1+n)%n],cur=w[i],next=w[(i+1)%n];
+    const A={x:prev.x-cur.x,y:prev.y-cur.y},B={x:next.x-cur.x,y:next.y-cur.y};
+    const la=Math.hypot(A.x,A.y),lb=Math.hypot(B.x,B.y);
+    if(la<1e-6||lb<1e-6){out.push(0);continue;}
+    let cos=(A.x*B.x+A.y*B.y)/(la*lb);cos=Math.max(-1,Math.min(1,cos));
+    let th=Math.acos(cos)*180/PI;
+    const e1={x:cur.x-prev.x,y:cur.y-prev.y},e2={x:next.x-cur.x,y:next.y-cur.y};
+    const crossE=e1.x*e2.y-e1.y*e2.x;
+    const reflex=ccw?crossE<0:crossE>0;
+    out.push(reflex?360-th:th);
+  }
+  return out;
+}
+
+/* ---------- Zeichnen ---------- */
+function drawScene(x,o){
+  const col={bg:o.bg, grid:V("--li"), wall:V("--tx"), dim:V("--tx2"),
+    fFill:V("--ak2"), fStroke:V("--ak"), ak:V("--ak"), ak2:V("--ak2"), akTx:V("--ak-tx"),
+    sel:V("--ak"), door:V("--tx3"), fl:V("--fl")};
+  x.save();
+  x.fillStyle=col.bg; x.fillRect(0,0,o.w,o.h);
+  const sc=o.scale, ox=o.ox, oy=o.oy;
+  const w2s=p=>({x:p.x*sc+ox,y:p.y*sc+oy});
+  if(o.grid){
+    const left=(0-ox)/sc, right=(o.w-ox)/sc, top=(0-oy)/sc, bot=(o.h-oy)/sc;
+    x.lineWidth=1; x.strokeStyle=col.grid; x.globalAlpha=.6;
+    const step=1;
+    for(let gx=Math.floor(left);gx<=Math.ceil(right);gx+=step){const s=w2s({x:gx,y:0});x.beginPath();x.moveTo(s.x,0);x.lineTo(s.x,o.h);x.stroke();}
+    for(let gy=Math.floor(top);gy<=Math.ceil(bot);gy+=step){const s=w2s({x:0,y:gy});x.beginPath();x.moveTo(0,s.y);x.lineTo(o.w,s.y);x.stroke();}
+    x.globalAlpha=1;
+  }
+  const n=state.walls.length;
+  const thickPx=state.thickness*sc;
+  if(state.closed && n>=3){
+    x.beginPath();
+    state.walls.forEach((p,i)=>{const s=w2s(p); i?x.lineTo(s.x,s.y):x.moveTo(s.x,s.y);});
+    x.closePath(); x.fillStyle=col.fl; x.globalAlpha=.55; x.fill(); x.globalAlpha=1;
+  }
+  if(n>=2){
+    x.lineWidth=Math.max(3,thickPx); x.strokeStyle=col.wall;
+    x.lineJoin="round"; x.lineCap="round";
+    x.beginPath();
+    state.walls.forEach((p,i)=>{const s=w2s(p); i?x.lineTo(s.x,s.y):x.moveTo(s.x,s.y);});
+    if(state.closed)x.closePath();
+    x.stroke();
+  }
+  if(state.drawing && previewPt && n>=1){
+    const s=w2s(state.walls[n-1]); const p=w2s(previewPt);
+    x.lineWidth=2; x.strokeStyle=col.ak; x.setLineDash([6,6]);
+    x.beginPath();x.moveTo(s.x,s.y);x.lineTo(p.x,p.y);x.stroke();x.setLineDash([]);
+  }
+  const sc2=segCount();
+  state.openings.forEach((op,idx)=>{
+    if(op.seg>=sc2)return;
+    const {a,b}=getSeg(op.seg); const d={x:b.x-a.x,y:b.y-a.y}; const L=Math.hypot(d.x,d.y)||1;
+    const u={x:d.x/L,y:d.y/L}; const pr={x:-u.y,y:u.x};
+    const c={x:a.x+d.x*op.t, y:a.y+d.y*op.t};
+    const half=Math.min(op.width,L)/2;
+    const c1={x:c.x-u.x*half,y:c.y-u.y*half}, c2={x:c.x+u.x*half,y:c.y+u.y*half};
+    const hw=state.thickness/2+0.015;
+    const q=[{x:c1.x+pr.x*hw,y:c1.y+pr.y*hw},{x:c2.x+pr.x*hw,y:c2.y+pr.y*hw},{x:c2.x-pr.x*hw,y:c2.y-pr.y*hw},{x:c1.x-pr.x*hw,y:c1.y-pr.y*hw}];
+    x.fillStyle=col.bg; x.beginPath(); q.forEach((p,i)=>{const s=w2s(p);i?x.lineTo(s.x,s.y):x.moveTo(s.x,s.y);}); x.closePath(); x.fill();
+    x.lineWidth=Math.max(2,state.thickness*sc); x.strokeStyle=col.wall; x.lineCap="butt";
+    [c1,c2].forEach(c0=>{const p1=w2s({x:c0.x+pr.x*(state.thickness/2),y:c0.y+pr.y*(state.thickness/2)});const p2=w2s({x:c0.x-pr.x*(state.thickness/2),y:c0.y-pr.y*(state.thickness/2)});x.beginPath();x.moveTo(p1.x,p1.y);x.lineTo(p2.x,p2.y);x.stroke();});
+    if(op.type==="door"){
+      const hinge=w2s(c1); const R=op.width*sc;
+      const aPerp=Math.atan2(pr.y,pr.x), aDir=Math.atan2(u.y,u.x);
+      let dd=aDir-aPerp; while(dd>PI)dd-=2*PI; while(dd<-PI)dd+=2*PI;
+      x.strokeStyle=col.door; x.lineWidth=1.5; x.setLineDash([4,4]);
+      x.beginPath();for(let k=0;k<=12;k++){const an=aPerp+dd*k/12;const px=hinge.x+R*Math.cos(an),py=hinge.y+R*Math.sin(an);k?x.lineTo(px,py):x.moveTo(px,py);}x.stroke();x.setLineDash([]);
+      x.beginPath();x.moveTo(hinge.x,hinge.y);x.lineTo(hinge.x+R*Math.cos(aPerp),hinge.y+R*Math.sin(aPerp));x.stroke();
+    } else if(op.type==="window"){
+      const p1=w2s(c1),p2=w2s(c2);
+      x.strokeStyle=col.ak; x.lineWidth=2;
+      x.beginPath();x.moveTo(p1.x,p1.y);x.lineTo(p2.x,p2.y);x.stroke();
+    }
+    if(o.sel && sel && sel.type==="opening" && sel.idx===idx){
+      const sc1=w2s(c1),scx=w2s(c2);
+      x.strokeStyle=col.sel;x.lineWidth=2;
+      [sc1,scx].forEach(p=>{x.beginPath();x.arc(p.x,p.y,7,0,2*PI);x.stroke();});
+    }
+  });
+  if(o.dims && n>=2){
+    x.font="600 12px "+V("--schrift"); x.textAlign="center"; x.textBaseline="middle";
+    const sct=segCount();
+    for(let i=0;i<sct;i++){
+      const {a,b}=getSeg(i); const d={x:b.x-a.x,y:b.y-a.y}; const L=Math.hypot(d.x,d.y);
+      if(L<0.01||L*sc<24)continue;
+      const u={x:d.x/L,y:d.y/L}; const pr={x:-u.y,y:u.x};
+      const mid={x:(a.x+b.x)/2,y:(a.y+b.y)/2};
+      const cen=centroid();
+      let dir=(pr.x*(mid.x-cen.x)+pr.y*(mid.y-cen.y))>=0?1:-1;
+      const off=0.28;
+      const lp=w2s({x:mid.x+pr.x*off*dir,y:mid.y+pr.y*off*dir});
+      const t=fmtLen(L);
+      const tw=x.measureText(t).width;
+      x.fillStyle=col.bg; x.globalAlpha=.85; x.fillRect(lp.x-tw/2-4,lp.y-9,tw+8,18); x.globalAlpha=1;
+      x.fillStyle=col.dim; x.fillText(t,lp.x,lp.y);
+    }
+  }
+  if(o.angles && state.closed && n>=3){
+    const angs=interiorAngles();
+    const cen=centroid();
+    x.font="700 11px "+V("--schrift"); x.textAlign="center"; x.textBaseline="middle";
+    for(let i=0;i<n;i++){
+      const prev=state.walls[(i-1+n)%n],cur=state.walls[i],next=state.walls[(i+1)%n];
+      const A={x:prev.x-cur.x,y:prev.y-cur.y},B={x:next.x-cur.x,y:next.y-cur.y};
+      const la=Math.hypot(A.x,A.y),lb=Math.hypot(B.x,B.y);
+      if(la<0.01||lb<0.01)continue;
+      if(la*sc<26||lb*sc<26)continue;
+      let bis={x:A.x/la+B.x/lb,y:A.y/la+B.y/lb};let bl=Math.hypot(bis.x,bis.y);
+      if(bl>0.001){bis={x:bis.x/bl,y:bis.y/bl};}
+      else{const dd={x:cen.x-cur.x,y:cen.y-cur.y};const dl=Math.hypot(dd.x,dd.y)||1;bis={x:dd.x/dl,y:dd.y/dl};}
+      const toC={x:cen.x-cur.x,y:cen.y-cur.y};
+      if(bis.x*toC.x+bis.y*toC.y<0){bis={x:-bis.x,y:-bis.y};}
+      const off=0.42;
+      const lp=w2s({x:cur.x+bis.x*off,y:cur.y+bis.y*off});
+      const t=Math.round(angs[i])+"°";
+      const tw=x.measureText(t).width;
+      x.fillStyle=col.ak2; x.globalAlpha=.95;
+      x.fillRect(lp.x-tw/2-4,lp.y-8,tw+8,16); x.globalAlpha=1;
+      x.fillStyle=col.ak; x.fillText(t,lp.x,lp.y);
+    }
+  }
+  if(o.sel && n>=1){
+    for(let i=0;i<n;i++){
+      const s=w2s(state.walls[i]);
+      const on= sel&&sel.type==="corner"&&sel.idx===i;
+      x.fillStyle= on?col.sel:col.fl; x.strokeStyle=col.sel; x.lineWidth=2;
+      x.beginPath();x.arc(s.x,s.y, on?8:6,0,2*PI);x.fill();x.stroke();
+    }
+  }
+  x.textAlign="center"; x.textBaseline="middle";
+  state.furniture.forEach((f,idx)=>{
+    const c=w2s({x:f.x,y:f.y}); const wpx=f.w*sc, hpx=f.h*sc;
+    x.save(); x.translate(c.x,c.y); x.rotate(f.rot*PI/180);
+    x.fillStyle=col.fFill; x.strokeStyle=col.fStroke; x.lineWidth=2;
+    x.beginPath();x.rect(-wpx/2,-hpx/2,wpx,hpx);x.fill();x.stroke();
+    x.beginPath();x.moveTo(-wpx/2,-hpx/2);x.lineTo(wpx/2,-hpx/2);x.lineWidth=3;x.strokeStyle=col.fStroke;x.stroke();
+    const fs=Math.max(9,Math.min(13,hpx*0.4));
+    x.fillStyle=col.wall; x.font="500 "+fs+"px "+V("--schrift");
+    if(wpx>30&&hpx>16)x.fillText(f.n, 0,0, wpx-6);
+    x.restore();
+    if(o.sel && sel && sel.type==="furniture" && sel.idx===idx){
+      const h=furnHandles(f,w2s);
+      x.strokeStyle=col.sel; x.lineWidth=2; x.setLineDash([5,4]);
+      const cor=furnCorners(f,w2s);
+      x.beginPath();cor.forEach((p,i)=>i?x.lineTo(p.x,p.y):x.moveTo(p.x,p.y));x.closePath();x.stroke();x.setLineDash([]);
+      x.fillStyle=col.sel;
+      x.beginPath();x.arc(h.rot.x,h.rot.y,8,0,2*PI);x.fill();
+      x.fillStyle=col.fl;x.strokeStyle=col.sel;
+      x.beginPath();x.rect(h.size.x-7,h.size.y-7,14,14);x.fill();x.stroke();
+      x.strokeStyle=col.sel;
+      x.beginPath();x.moveTo(h.rot.x,h.rot.y);x.lineTo(h.top.x,h.top.y);x.stroke();
+    }
+  });
+  x.restore();
+}
+function centroid(){const w=state.walls;if(!w.length)return{x:0,y:0};let sx=0,sy=0;w.forEach(p=>{sx+=p.x;sy+=p.y;});return{x:sx/w.length,y:sy/w.length};}
+function rot(lx,ly,deg){const r=deg*PI/180,co=Math.cos(r),si=Math.sin(r);return{x:lx*co-ly*si,y:lx*si+ly*co};}
+function furnCorners(f,w2s){const cs=[[-1,-1],[1,-1],[1,1],[-1,1]];return cs.map(([sx,sy])=>{const l=rot(sx*f.w/2,sy*f.h/2,f.rot);return w2s({x:f.x+l.x,y:f.y+l.y});});}
+function furnHandles(f,w2s){
+  w2s=w2s||W2S;
+  const top=rot(0,-f.h/2,f.rot);
+  const topS=w2s({x:f.x+top.x,y:f.y+top.y});
+  const rotWorldOffset=rot(0,-f.h/2-22/scale,f.rot);
+  const rotS=w2s({x:f.x+rotWorldOffset.x,y:f.y+rotWorldOffset.y});
+  const cor=rot(f.w/2,f.h/2,f.rot);
+  const sizeS=w2s({x:f.x+cor.x,y:f.y+cor.y});
+  return {rot:rotS, size:sizeS, top:topS};
+}
+
+function render(){
+  const dpr=Math.min(window.devicePixelRatio||1,2.5);
+  const w=cwrap.clientWidth, h=cwrap.clientHeight;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  drawScene(ctx,{w,h,scale,ox:offsetX,oy:offsetY,grid:true,dims:showDims,angles:showAngles,sel:true,bg:V("--bg")});
+  refreshInfo();
+}
+
+/* ---------- Info-Overlay ---------- */
+function refreshInfo(){
+  if(state.drawing){
+    info.innerHTML='<b>Zeichnen:</b> '+state.walls.length+' Ecke(n). Winkelraster: '+(angleStep>0?angleStep+'°':'aus')+'. Tippe weiter oder auf die erste Ecke zum Schließen.'+
+      ' <span style="display:block;margin-top:6px"><button id="dFin" class="ikn" style="min-height:34px;padding:6px 10px">Fertig</button> '+
+      '<button id="dCancel" class="ikn zweit" style="min-height:34px;padding:6px 10px">Abbrechen</button></span>';
+    const f=document.getElementById("dFin"),c=document.getElementById("dCancel");
+    if(f)f.onclick=()=>finishDrawing(true);
+    if(c)c.onclick=()=>finishDrawing(false);
+    return;
+  }
+  const a=area();
+  info.innerHTML='<b>Fläche:</b> '+(a>0?a.toFixed(2)+' m²':'–')+
+    (mode==="door"?' · Tippe auf eine Wand für eine Tür':
+     mode==="window"?' · Tippe auf eine Wand für ein Fenster':
+     mode==="opening"?' · Tippe auf eine Wand für einen Durchgang':
+     mode==="split"?' · Tippe auf eine Wand, um dort einen Eckpunkt einzufügen':
+     mode==="wall"?' · Tippe, um einen neuen Raum zu zeichnen (Winkelraster '+(angleStep>0?angleStep+'°':'aus')+')':'');
+}
+
+/* ---------- Eigenschaften-Panel ---------- */
+function cornerPrevLen(){const n=state.walls.length;return dist(state.walls[(sel.idx-1+n)%n],state.walls[sel.idx]);}
+function setCornerPrevLen(L){
+  const n=state.walls.length,prev=state.walls[(sel.idx-1+n)%n],cur=state.walls[sel.idx];
+  let v={x:cur.x-prev.x,y:cur.y-prev.y};let len=Math.hypot(v.x,v.y);
+  if(len<1e-6){v={x:1,y:0};len=1;}
+  state.walls[sel.idx]={x:r3(prev.x+v.x/len*L),y:r3(prev.y+v.y/len*L)};
+}
+function refreshProps(){
+  if(!sel){props.hidden=true;return;}
+  props.hidden=false;
+  let html="";
+  if(sel.type==="corner"){
+    const n=state.walls.length;
+    const L=cornerPrevLen();
+    const uu = unit==="cm"?"cm":"m";
+    const val = unit==="cm"? (L*100).toFixed(0) : L.toFixed(2);
+    const stp = unit==="cm"? "1":"0.01";
+    const angs=interiorAngles();
+    const angTxt=(state.closed&&angs.length)?('<p class="hinweis" style="margin:6px 0 0">Innenwinkel an dieser Ecke: <b style="color:var(--ak)">'+Math.round(angs[sel.idx])+'°</b></p>'):'';
+    html='<h2>Ecke</h2>'+
+      '<label>Länge der vorherigen Wand ('+uu+')</label>'+
+      '<div class="zeile" style="flex-wrap:nowrap">'+
+        '<button id="pLenM" class="zweit" style="flex:none;width:44px;padding:8px">−</button>'+
+        '<input id="pLen" type="number" min="0" step="'+stp+'" value="'+val+'" style="flex:1;min-width:0">'+
+        '<button id="pLenP" class="zweit" style="flex:none;width:44px;padding:8px">+</button>'+
+      '</div>'+
+      angTxt+
+      '<p class="hinweis" style="margin:8px 0 0">Ecke ziehen ändert die Form; mit dem Modus „Teilen" oder per Doppeltippen auf eine Wand fügst du eine neue Ecke ein.</p>'+
+      '<div class="zeile" style="margin-top:12px">'+
+      (n>3?'<button id="pDel" class="zweit">Ecke löschen</button>':'')+'</div>';
+  } else if(sel.type==="opening"){
+    const op=state.openings[sel.idx];
+    const {a,b}=getSeg(op.seg); const L=dist(a,b);
+    html='<h2>'+(op.type==="door"?"Tür":op.type==="window"?"Fenster":"Durchgang")+'</h2>'+
+      '<label>Art</label><select id="pType">'+
+        '<option value="door"'+(op.type==="door"?" selected":"")+'>Tür</option>'+
+        '<option value="window"'+(op.type==="window"?" selected":"")+'>Fenster</option>'+
+        '<option value="opening"'+(op.type==="opening"?" selected":"")+'>Durchgang</option></select>'+
+      '<label>Breite ('+fmtLen(op.width)+')</label>'+
+      '<input id="pW" type="range" min="0.3" max="'+Math.max(0.4,L).toFixed(2)+'" step="0.05" value="'+op.width.toFixed(2)+'">'+
+      '<label>Position entlang der Wand</label>'+
+      '<input id="pPos" type="range" min="0" max="100" step="1" value="'+Math.round(op.t*100)+'">'+
+      '<div class="zeile" style="margin-top:12px"><button id="pDel" class="zweit">Löschen</button></div>';
+  } else if(sel.type==="furniture"){
+    const f=state.furniture[sel.idx];
+    html='<h2>Möbel</h2>'+
+      '<label>Name</label><input id="pName" type="text" value="'+f.n.replace(/"/g,'&quot;')+'">'+
+      '<label>Breite ('+fmtLen(f.w)+')</label><input id="pFw" type="range" min="0.2" max="4" step="0.05" value="'+f.w.toFixed(2)+'">'+
+      '<label>Tiefe ('+fmtLen(f.h)+')</label><input id="pFh" type="range" min="0.1" max="4" step="0.05" value="'+f.h.toFixed(2)+'">'+
+      '<label>Drehung ('+Math.round(f.rot)+'°)</label><input id="pRot" type="range" min="0" max="360" step="1" value="'+Math.round(f.rot)+'">'+
+      '<div class="zeile" style="margin-top:12px"><button id="pFront" class="zweit">Nach vorne</button><button id="pDel" class="zweit">Löschen</button></div>';
+  }
+  props.innerHTML=html;
+  bindProps();
+}
+function bindProps(){
+  const del=document.getElementById("pDel");
+  if(del)del.onclick=delSelected;
+  if(sel.type==="corner"){
+    const pl=document.getElementById("pLen");
+    const applyLen=()=>{let v=parseFloat(pl.value);if(!(v>0))return;const L=unit==="cm"?v/100:v;setCornerPrevLen(L);validateOpenings();commit();refreshProps();};
+    if(pl)pl.onchange=applyLen;
+    const fine=0.01;
+    const stepBtn=(d)=>{const L=Math.max(0.01,cornerPrevLen()+d);setCornerPrevLen(L);validateOpenings();commit();refreshProps();};
+    const pm=document.getElementById("pLenM"),pp=document.getElementById("pLenP");
+    if(pm)pm.onclick=()=>stepBtn(-fine);
+    if(pp)pp.onclick=()=>stepBtn(+fine);
+  }
+  if(sel.type==="opening"){
+    const op=state.openings[sel.idx];
+    const ty=document.getElementById("pType"),w=document.getElementById("pW"),pos=document.getElementById("pPos");
+    if(ty)ty.onchange=()=>{op.type=ty.value;commit();};
+    if(w)w.oninput=()=>{op.width=parseFloat(w.value);clampOpening(op);render();};
+    if(w)w.onchange=()=>{refreshProps();commit();};
+    if(pos)pos.oninput=()=>{op.t=parseFloat(pos.value)/100;clampOpening(op);render();};
+    if(pos)pos.onchange=commit;
+  }
+  if(sel.type==="furniture"){
+    const f=state.furniture[sel.idx];
+    const nm=document.getElementById("pName"),fw=document.getElementById("pFw"),fh=document.getElementById("pFh"),rr=document.getElementById("pRot"),fr=document.getElementById("pFront");
+    if(nm)nm.onchange=()=>{f.n=nm.value||"Möbel";commit();};
+    if(fw)fw.oninput=()=>{f.w=parseFloat(fw.value);render();};
+    if(fh)fh.oninput=()=>{f.h=parseFloat(fh.value);render();};
+    if(rr)rr.oninput=()=>{f.rot=parseFloat(rr.value);render();};
+    [fw,fh,rr].forEach(e=>{if(e)e.onchange=()=>{refreshProps();commit();};});
+    if(fr)fr.onclick=()=>{const item=state.furniture.splice(sel.idx,1)[0];state.furniture.push(item);sel.idx=state.furniture.length-1;commit();refreshProps();};
+  }
+}
+function delSelected(){
+  if(!sel)return;
+  if(sel.type==="corner"){ if(state.walls.length<=3)return; state.walls.splice(sel.idx,1); validateOpenings(); }
+  else if(sel.type==="opening"){ state.openings.splice(sel.idx,1); }
+  else if(sel.type==="furniture"){ state.furniture.splice(sel.idx,1); }
+  sel=null; commit(); refreshProps();
+}
+function clampOpening(op){
+  const {a,b}=getSeg(op.seg); const L=dist(a,b)||1;
+  op.width=Math.max(0.3,Math.min(op.width,L));
+  const half=(op.width/2)/L;
+  op.t=Math.max(half,Math.min(1-half,op.t));
+}
+function validateOpenings(){
+  const sc=segCount();
+  state.openings=state.openings.filter(o=>o.seg<sc);
+  state.openings.forEach(clampOpening);
+}
+
+/* ---------- Eckpunkt einfügen (Wand teilen) ---------- */
+function insertNode(seg,t,proj){
+  const idx=seg+1;
+  state.walls.splice(idx,0,{x:snapV(proj.x),y:snapV(proj.y)});
+  state.openings.forEach(op=>{
+    if(op.seg>seg){op.seg++;}
+    else if(op.seg===seg){
+      if(op.t<=t){ op.t = t>1e-6? op.t/t : 0; }
+      else { op.seg=seg+1; op.t=(op.t-t)/((1-t)||1); }
+    }
+  });
+  validateOpenings();
+  return idx;
+}
+function splitWall(w){
+  if(segCount()<1){flash("Zeichne zuerst einen geschlossenen Raum.");return;}
+  const ns=nearestSegment(w);
+  if(!ns||ns.dist*scale>40){flash("Tippe näher an eine Wand.");return;}
+  const idx=insertNode(ns.seg,ns.t,ns.proj);
+  sel={type:"corner",idx};
+  setMode("select");
+  commit(); refreshProps();
+  flash("Eckpunkt eingefügt – jetzt frei verschieben.");
+}
+
+/* ---------- Historie ---------- */
+let history=[], hidx=-1;
+function serialize(){return{walls:state.walls.map(p=>({x:p.x,y:p.y})),closed:state.closed,openings:state.openings.map(o=>({...o})),furniture:state.furniture.map(f=>({...f})),thickness:state.thickness};}
+function restore(o){
+  state.walls=(o.walls||[]).map(p=>({x:p.x,y:p.y}));
+  state.closed=!!o.closed; state.drawing=false;
+  state.openings=(o.openings||[]).map(x=>({...x}));
+  state.furniture=(o.furniture||[]).map(f=>({...f}));
+  state.thickness=o.thickness||0.2;
+}
+function pushHistory(){
+  history=history.slice(0,hidx+1);
+  history.push(JSON.stringify(serialize()));
+  if(history.length>60)history.shift();
+  hidx=history.length-1; updateUndo();
+  lsSet(K_CUR,history[hidx]);
+}
+function commit(){pushHistory();render();}
+function updateUndo(){document.getElementById("bUndo").disabled=hidx<=0;document.getElementById("bRedo").disabled=hidx>=history.length-1;}
+function undo(){if(hidx>0){hidx--;restore(JSON.parse(history[hidx]));sel=null;updateUndo();render();refreshProps();}}
+function redo(){if(hidx<history.length-1){hidx++;restore(JSON.parse(history[hidx]));sel=null;updateUndo();render();refreshProps();}}
+
+/* ---------- Treffer / Interaktion ---------- */
+function nearestSegment(w){
+  const sc=segCount(); let best=null;
+  for(let i=0;i<sc;i++){
+    const {a,b}=getSeg(i); const d={x:b.x-a.x,y:b.y-a.y}; const dd=d.x*d.x+d.y*d.y||1;
+    let t=((w.x-a.x)*d.x+(w.y-a.y)*d.y)/dd; t=Math.max(0,Math.min(1,t));
+    const proj={x:a.x+d.x*t,y:a.y+d.y*t}; const dist2=Math.hypot(w.x-proj.x,w.y-proj.y);
+    if(!best||dist2<best.dist)best={seg:i,t,dist:dist2,proj};
+  }
+  return best;
+}
+function openingHitScreen(op,p){
+  const {a,b}=getSeg(op.seg); const d={x:b.x-a.x,y:b.y-a.y}; const L=Math.hypot(d.x,d.y)||1;
+  const u={x:d.x/L,y:d.y/L}; const c={x:a.x+d.x*op.t,y:a.y+d.y*op.t};
+  const cs=W2S(c); const along=((p.x-cs.x)*u.x+(p.y-cs.y)*u.y);
+  const perp=Math.abs((p.x-cs.x)*(-u.y)+(p.y-cs.y)*(u.x));
+  return Math.abs(along)<=op.width*scale/2+4 && perp<=state.thickness*scale/2+10;
+}
+function furnHit(f,w){const l=rot(w.x-f.x,w.y-f.y,-f.rot);return Math.abs(l.x)<=f.w/2 && Math.abs(l.y)<=f.h/2;}
+
+function hitTest(p,w){
+  if(sel&&sel.type==="furniture"){
+    const f=state.furniture[sel.idx]; const h=furnHandles(f);
+    if(dist(p,h.rot)<16)return{type:"furniture-rot",idx:sel.idx};
+    if(dist(p,h.size)<16)return{type:"furniture-size",idx:sel.idx};
+  }
+  for(let i=0;i<state.openings.length;i++){if(state.openings[i].seg<segCount()&&openingHitScreen(state.openings[i],p))return{type:"opening",idx:i};}
+  for(let i=0;i<state.walls.length;i++){if(dist(p,W2S(state.walls[i]))<14)return{type:"corner",idx:i,grab:{x:w.x-state.walls[i].x,y:w.y-state.walls[i].y}};}
+  for(let i=state.furniture.length-1;i>=0;i--){const f=state.furniture[i];if(furnHit(f,w))return{type:"furniture",idx:i,grab:{x:w.x-f.x,y:w.y-f.y}};}
+  return{type:"pan"};
+}
+function snapCorner(np,idx){
+  np={x:snapV(np.x),y:snapV(np.y)};
+  if(angleStep>0 && state.walls.length>=2){
+    const n=state.walls.length; const P=state.walls[(idx-1+n)%n];
+    const v={x:np.x-P.x,y:np.y-P.y}; const len=Math.hypot(v.x,v.y);
+    if(len>0.001){let ang=Math.atan2(v.y,v.x);const st=angleStep*PI/180;ang=Math.round(ang/st)*st;np={x:snapV(P.x+len*Math.cos(ang)),y:snapV(P.y+len*Math.sin(ang))};}
+  }
+  return np;
+}
+function snapDraw(w){
+  let p={x:snapV(w.x),y:snapV(w.y)};
+  if(angleStep>0 && state.drawing && state.walls.length>=1){
+    const P=state.walls[state.walls.length-1];
+    const v={x:p.x-P.x,y:p.y-P.y}; const len=Math.hypot(v.x,v.y);
+    if(len>0.001){let a=Math.atan2(v.y,v.x);const st=angleStep*PI/180;a=Math.round(a/st)*st;p={x:snapV(P.x+len*Math.cos(a)),y:snapV(P.y+len*Math.sin(a))};}
+  }
+  return p;
+}
+
+const pointers=new Map();
+let drag=null, pinch=null, lastTap={t:0,x:0,y:0};
+function getPos(e){const r=cv.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};}
+
+cv.addEventListener("pointerdown",e=>{
+  cv.setPointerCapture(e.pointerId);
+  const p=getPos(e); pointers.set(e.pointerId,p);
+  if(pointers.size===2){drag={type:"pinch"};pinch=null;return;}
+  const w=toWorld(p);
+  const now=Date.now();
+  const isDbl = now-lastTap.t<320 && Math.hypot(p.x-lastTap.x,p.y-lastTap.y)<20;
+  lastTap={t:now,x:p.x,y:p.y};
+
+  if(mode==="door"||mode==="window"||mode==="opening"){placeOpening(w,mode);return;}
+  if(mode==="split"){splitWall(w);return;}
+  if(mode==="wall"){wallClick(w,p);return;}
+
+  if(isDbl){
+    const ns=nearestSegment(w);
+    if(ns && ns.dist*scale<30 && segCount()>=1){
+      const idx=insertNode(ns.seg,ns.t,ns.proj);
+      sel={type:"corner",idx}; commit(); refreshProps(); return;
+    }
+  }
+  const h=hitTest(p,w);
+  drag=h;
+  if(h.type==="pan"){drag.sx=p.x;drag.sy=p.y;drag.ox=offsetX;drag.oy=offsetY; if(sel){sel=null;refreshProps();render();} return;}
+  if(h.type==="corner")sel={type:"corner",idx:h.idx};
+  else if(h.type==="opening")sel={type:"opening",idx:h.idx};
+  else if(h.type==="furniture")sel={type:"furniture",idx:h.idx};
+  refreshProps(); render();
+});
+window.addEventListener("pointermove",e=>{
+  if(!pointers.has(e.pointerId))return;
+  const p=getPos(e); pointers.set(e.pointerId,p);
+  if(pointers.size>=2){doPinch();return;}
+  if(!drag){return;}
+  const w=toWorld(p);
+  if(drag.type==="pan"){offsetX=drag.ox+(p.x-drag.sx);offsetY=drag.oy+(p.y-drag.sy);render();}
+  else if(drag.type==="corner"){state.walls[drag.idx]=snapCorner({x:w.x-drag.grab.x,y:w.y-drag.grab.y},drag.idx);drag.changed=true;render();refreshProps();}
+  else if(drag.type==="opening"){const op=state.openings[drag.idx];const ns=nearestSegment(w);if(ns){op.seg=ns.seg;op.t=ns.t;clampOpening(op);}drag.changed=true;render();refreshProps();}
+  else if(drag.type==="furniture"){const f=state.furniture[drag.idx];f.x=snapV(w.x-drag.grab.x);f.y=snapV(w.y-drag.grab.y);drag.changed=true;render();}
+  else if(drag.type==="furniture-rot"){const f=state.furniture[drag.idx];let a=Math.atan2(w.y-f.y,w.x-f.x)*180/PI+90;a=(a+360)%360;if(angleStep>0)a=Math.round(a/angleStep)*angleStep;f.rot=a;drag.changed=true;render();refreshProps();}
+  else if(drag.type==="furniture-size"){const f=state.furniture[drag.idx];const l=rot(w.x-f.x,w.y-f.y,-f.rot);f.w=Math.max(0.2,snapV(Math.abs(l.x)*2));f.h=Math.max(0.1,snapV(Math.abs(l.y)*2));drag.changed=true;render();refreshProps();}
+});
+function endPointer(e){
+  if(pointers.has(e.pointerId))pointers.delete(e.pointerId);
+  if(pointers.size<2)pinch=null;
+  if(drag&&drag.changed){ if(drag.type==="corner")validateOpenings(); commit(); refreshProps(); }
+  if(pointers.size===0)drag=null;
+}
+window.addEventListener("pointerup",endPointer);
+window.addEventListener("pointercancel",endPointer);
+
+cv.addEventListener("pointermove",e=>{if(mode==="wall"&&state.drawing){previewPt=snapDraw(toWorld(getPos(e)));render();}});
+
+function doPinch(){
+  const pts=[...pointers.values()]; if(pts.length<2)return;
+  const d=Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y);
+  const mid={x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2};
+  if(!pinch){pinch={d0:d,s0:scale,wx:(mid.x-offsetX)/scale,wy:(mid.y-offsetY)/scale};return;}
+  const ns=Math.max(12,Math.min(400,pinch.s0*(d/pinch.d0)));
+  scale=ns; offsetX=mid.x-pinch.wx*scale; offsetY=mid.y-pinch.wy*scale; render();
+}
+cv.addEventListener("wheel",e=>{e.preventDefault();const p=getPos(e);const f=e.deltaY<0?1.1:1/1.1;const ns=Math.max(12,Math.min(400,scale*f));const wx=(p.x-offsetX)/scale,wy=(p.y-offsetY)/scale;scale=ns;offsetX=p.x-wx*scale;offsetY=p.y-wy*scale;render();},{passive:false});
+
+/* Öffnung platzieren */
+function placeOpening(w,type){
+  if(segCount()<1){flash("Zeichne zuerst einen geschlossenen Raum.");return;}
+  const ns=nearestSegment(w);
+  if(!ns || ns.dist*scale>40){flash("Tippe näher an eine Wand.");return;}
+  const width=type==="door"?0.9:type==="window"?1.1:1.2;
+  const op={seg:ns.seg,t:ns.t,width,type}; clampOpening(op);
+  state.openings.push(op); sel={type:"opening",idx:state.openings.length-1};
+  setMode("select"); commit(); refreshProps();
+}
+/* Wand zeichnen */
+function wallClick(w,p){
+  if(!state.drawing){state.walls=[];state.openings=[];state.closed=false;state.drawing=true;sel=null;refreshProps();}
+  const n=state.walls.length;
+  if(n>=3){const s0=W2S(state.walls[0]);if(dist(p,s0)<16){finishDrawing(true);return;}}
+  state.walls.push(snapDraw(w));
+  render();
+}
+function finishDrawing(ok){
+  if(ok && state.walls.length>=3){state.closed=true;state.drawing=false;previewPt=null;setMode("select");commit();}
+  else{state.drawing=false;previewPt=null;const prev=history[hidx];if(prev){restore(JSON.parse(prev));}setMode("select");render();}
+}
+let flashT=null;
+function flash(msg){info.innerHTML='<b class="fehler">'+msg+'</b>';clearTimeout(flashT);flashT=setTimeout(refreshInfo,2200);}
+
+/* ---------- Modus & Panels ---------- */
+function setMode(m){
+  if(state.drawing && m!=="wall")finishDrawing(state.walls.length>=3);
+  mode=m;
+  document.querySelectorAll(".app-fuss button[data-mode]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode===m));
+  refreshInfo();
+}
+document.querySelectorAll(".app-fuss button[data-mode]").forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
+
+document.getElementById("bUndo").onclick=undo;
+document.getElementById("bRedo").onclick=redo;
+document.getElementById("bSave").onclick=()=>{lsSet(K_CUR,JSON.stringify(serialize()));flash("Gespeichert.");};
+document.addEventListener("keydown",e=>{
+  if(e.key==="Delete"||e.key==="Backspace"){if(sel&&!/input|select|textarea/i.test(document.activeElement.tagName)){delSelected();e.preventDefault();}}
+  if(e.key==="Escape"){if(state.drawing)finishDrawing(false);}
+  if((e.ctrlKey||e.metaKey)&&e.key==="z"){e.preventDefault();e.shiftKey?redo():undo();}
+});
+
+const PANELS=["tpl","settings","lib","imp"];
+function showPanel(id){PANELS.forEach(x=>document.getElementById(x).hidden=x!==id);}
+function hidePanels(){PANELS.forEach(x=>document.getElementById(x).hidden=true);}
+document.getElementById("bTpl").onclick=()=>showPanel("tpl");
+document.getElementById("tplClose").onclick=hidePanels;
+document.getElementById("bGear").onclick=()=>{syncSettings();showPanel("settings");};
+document.getElementById("setClose").onclick=hidePanels;
+document.getElementById("mFurn").onclick=()=>showPanel("lib");
+document.getElementById("libClose").onclick=hidePanels;
+
+/* Vorlagen */
+const TPL={
+  rect:[[0,0],[5,0],[5,4],[0,4]],
+  l:[[0,0],[6,0],[6,3],[3,3],[3,5],[0,5]],
+  u:[[0,0],[6,0],[6,5],[4,5],[4,2],[2,2],[2,5],[0,5]],
+  t:[[0,0],[6,0],[6,2],[4,2],[4,5],[2,5],[2,2],[0,2]],
+  bay:[[0,0],[2,0],[2.5,-0.9],[3.5,-0.9],[4,0],[6,0],[6,4],[0,4]],
+  niche:[[0,0],[6,0],[6,4],[4,4],[4,2.8],[2.5,2.8],[2.5,4],[0,4]]
+};
+document.querySelectorAll("#tpl [data-tpl]").forEach(b=>b.onclick=()=>{
+  state.walls=TPL[b.dataset.tpl].map(([x,y])=>({x,y}));state.closed=true;state.drawing=false;state.openings=[];sel=null;
+  hidePanels();fitView();commit();refreshProps();
+});
+
+/* Einstellungen */
+function syncSettings(){
+  document.getElementById("selUnit").value=unit;
+  document.getElementById("inThick").value=state.thickness;
+  document.getElementById("selAngle").value=String(angleStep);
+  document.getElementById("ckGrid").checked=gridSnap;
+  document.getElementById("ckDims").checked=showDims;
+  document.getElementById("ckAng").checked=showAngles;
+}
+document.getElementById("selUnit").onchange=e=>{unit=e.target.value;render();refreshProps();};
+document.getElementById("inThick").onchange=e=>{let v=parseFloat(e.target.value);if(v>0){state.thickness=Math.max(0.05,Math.min(1,v));commit();}};
+document.getElementById("selAngle").onchange=e=>{angleStep=parseFloat(e.target.value)||0;refreshInfo();};
+document.getElementById("ckGrid").onchange=e=>gridSnap=e.target.checked;
+document.getElementById("ckDims").onchange=e=>{showDims=e.target.checked;render();};
+document.getElementById("ckAng").onchange=e=>{showAngles=e.target.checked;render();};
+document.getElementById("bCenter").onclick=()=>{fitView();render();};
+document.getElementById("bClear").onclick=()=>{state.walls=[{x:0,y:0},{x:4,y:0},{x:4,y:3},{x:0,y:3}];state.closed=true;state.openings=[];state.furniture=[];state.drawing=false;sel=null;hidePanels();fitView();commit();refreshProps();};
+
+/* Bibliothek */
+(function buildLib(){
+  const g=document.getElementById("libGrid");
+  LIB.forEach(it=>{const b=document.createElement("button");b.className="zweit";b.textContent=it.n;b.onclick=()=>addFurniture(it);g.appendChild(b);});
+})();
+function addFurniture(it){
+  const c=toWorld({x:cwrap.clientWidth/2,y:cwrap.clientHeight/2});
+  state.furniture.push({n:it.n,x:snapV(c.x),y:snapV(c.y),w:it.w,h:it.h,rot:0});
+  sel={type:"furniture",idx:state.furniture.length-1};
+  hidePanels();setMode("select");commit();refreshProps();
+}
+
+/* ====================================================================
+   SKIZZE -> GRUNDRISS ERKENNUNG
+   ==================================================================== */
+async function fileToCanvas(file){
+  if(!file || !/^image\//.test(file.type||"")) throw new Error("Bitte ein Bild (JPG oder PNG) wählen.");
+  let bmp;
+  try{ bmp=await createImageBitmap(file); }
+  catch(e){
+    bmp=await new Promise((res,rej)=>{const img=new Image();const u=URL.createObjectURL(file);img.onload=()=>{res(img);setTimeout(()=>URL.revokeObjectURL(u),2000);};img.onerror=()=>{URL.revokeObjectURL(u);rej(new Error("Das Bild konnte nicht geladen werden."));};img.src=u;});
+  }
+  const c=document.createElement("canvas");c.width=bmp.width;c.height=bmp.height;
+  c.getContext("2d").drawImage(bmp,0,0);
+  return c;
+}
+function otsu(gray){
+  const hist=new Array(256).fill(0);
+  for(let i=0;i<gray.length;i++)hist[gray[i]]++;
+  const total=gray.length;let sum=0;for(let i=0;i<256;i++)sum+=i*hist[i];
+  let sumB=0,wB=0,max=0,thr=128;
+  for(let i=0;i<256;i++){wB+=hist[i];if(!wB)continue;const wF=total-wB;if(!wF)break;sumB+=i*hist[i];const mB=sumB/wB,mF=(sum-sumB)/wF;const between=wB*wF*(mB-mF)*(mB-mF);if(between>max){max=between;thr=i;}}
+  return thr;
+}
+function fillExterior(ink,w,h){
+  const ext=new Uint8Array(w*h);const stack=[];
+  function add(x,y){const i=y*w+x;if(!ink[i]&&!ext[i]){ext[i]=1;stack.push(i);}}
+  for(let x=0;x<w;x++){add(x,0);add(x,h-1);}
+  for(let y=0;y<h;y++){add(0,y);add(w-1,y);}
+  const N=[[1,0],[-1,0],[0,1],[0,-1]];
+  while(stack.length){const j=stack.pop();const x=j%w,y=(j/w)|0;for(const d of N){const nx=x+d[0],ny=y+d[1];if(nx>=0&&ny>=0&&nx<w&&ny<h)add(nx,ny);}}
+  return ext;
+}
+function largestComponent(mask,w,h){
+  const lbl=new Uint8Array(w*h);let best=null,bestSize=0;const stack=[];
+  const N=[[1,0],[-1,0],[0,1],[0,-1]];
+  for(let i=0;i<w*h;i++){
+    if(mask[i]&&!lbl[i]){
+      let size=0;stack.length=0;stack.push(i);lbl[i]=1;const cells=[];
+      while(stack.length){const j=stack.pop();cells.push(j);size++;const x=j%w,y=(j/w)|0;
+        for(const d of N){const nx=x+d[0],ny=y+d[1];if(nx>=0&&ny>=0&&nx<w&&ny<h){const k=ny*w+nx;if(mask[k]&&!lbl[k]){lbl[k]=1;stack.push(k);}}}
+      }
+      if(size>bestSize){bestSize=size;best=cells;}
+    }
+  }
+  const out=new Uint8Array(w*h);if(best)best.forEach(j=>out[j]=1);
+  return {mask:out,size:bestSize};
+}
+function traceContour(mask,w,h){
+  const M=[[-1,-1],[0,-1],[1,-1],[1,0],[1,1],[0,1],[-1,1],[-1,0]];
+  const get=(x,y)=>(x>=0&&y>=0&&x<w&&y<h)?mask[y*w+x]:0;
+  let sx=-1,sy=-1;
+  for(let y=0;y<h&&sy<0;y++)for(let x=0;x<w;x++){if(mask[y*w+x]){sx=x;sy=y;break;}}
+  if(sx<0)return[];
+  const idxOf=(dx,dy)=>{for(let i=0;i<8;i++)if(M[i][0]===dx&&M[i][1]===dy)return i;return 7;};
+  const B=[[sx,sy]];
+  let p={x:sx,y:sy}, b={x:sx-1,y:sy};
+  let guard=0,maxG=w*h*8;
+  while(guard++<maxG){
+    const start=idxOf(b.x-p.x,b.y-p.y);
+    let found=null,prev={x:b.x,y:b.y};
+    for(let k=1;k<=8;k++){
+      const i=(start+k)%8;
+      const cx=p.x+M[i][0], cy=p.y+M[i][1];
+      if(get(cx,cy)){found={x:cx,y:cy};break;}
+      prev={x:cx,y:cy};
+    }
+    if(!found)break;
+    b=prev;p=found;
+    if(p.x===sx&&p.y===sy)break;
+    B.push([p.x,p.y]);
+  }
+  return B;
+}
+function ptLineDist(p,a,b){const dx=b.x-a.x,dy=b.y-a.y;const L2=dx*dx+dy*dy;if(L2<1e-9)return Math.hypot(p.x-a.x,p.y-a.y);let t=((p.x-a.x)*dx+(p.y-a.y)*dy)/L2;t=Math.max(0,Math.min(1,t));return Math.hypot(p.x-(a.x+dx*t),p.y-(a.y+dy*t));}
+function dpRec(pts,eps){
+  if(pts.length<3)return pts.slice();
+  let dmax=0,idx=0;const a=pts[0],b=pts[pts.length-1];
+  for(let i=1;i<pts.length-1;i++){const d=ptLineDist(pts[i],a,b);if(d>dmax){dmax=d;idx=i;}}
+  if(dmax>eps){const l=dpRec(pts.slice(0,idx+1),eps),r=dpRec(pts.slice(idx),eps);return l.slice(0,-1).concat(r);}
+  return [a,b];
+}
+function simplifyClosed(pts,eps){
+  if(pts.length<4)return pts.slice();
+  let fi=0,fd=-1;
+  for(let i=1;i<pts.length;i++){const d=dist(pts[0],pts[i]);if(d>fd){fd=d;fi=i;}}
+  const a=pts.slice(0,fi+1);
+  const b=pts.slice(fi).concat([pts[0]]);
+  const ra=dpRec(a,eps), rb=dpRec(b,eps);
+  return ra.slice(0,-1).concat(rb.slice(0,-1));
+}
+function cleanPoly(pts,minD){
+  const out=[];
+  for(const p of pts){ if(!out.length||dist(out[out.length-1],p)>=minD)out.push(p); }
+  if(out.length>1&&dist(out[0],out[out.length-1])<minD)out.pop();
+  const n=out.length;const res=[];
+  for(let i=0;i<n;i++){const a=out[(i-1+n)%n],b=out[i],c=out[(i+1)%n];if(ptLineDist(b,a,c)>minD*0.6)res.push(b);}
+  return res.length>=3?res:out;
+}
+function orthogonalize(pts){
+  const n=pts.length;const out=pts.map(p=>({x:p.x,y:p.y}));
+  for(let i=0;i<n;i++){
+    const a=out[i], b=out[(i+1)%n];
+    const dx=b.x-a.x, dy=b.y-a.y;
+    if(Math.abs(dy)<=Math.abs(dx)){ if(Math.abs(dy) < Math.abs(dx)*0.36) b.y=a.y; }
+    else { if(Math.abs(dx) < Math.abs(dy)*0.36) b.x=a.x; }
+  }
+  return out;
+}
+function detectSketch(src,sens){
+  sens=sens||0;
+  const maxDim=340;
+  const scaleD=Math.min(1,maxDim/Math.max(src.width,src.height));
+  const w=Math.max(1,Math.round(src.width*scaleD)), h=Math.max(1,Math.round(src.height*scaleD));
+  const tmp=document.createElement("canvas");tmp.width=w;tmp.height=h;
+  const g=tmp.getContext("2d");g.drawImage(src,0,0,w,h);
+  const data=g.getImageData(0,0,w,h).data;
+  const gray=new Uint8Array(w*h);
+  for(let i=0;i<w*h;i++){const r=data[i*4],gg=data[i*4+1],b=data[i*4+2];gray[i]=(r*0.299+gg*0.587+b*0.114)|0;}
+  let t=otsu(gray)+sens;
+  const ink=new Uint8Array(w*h);let inkCount=0;
+  for(let i=0;i<w*h;i++){if(gray[i]<t){ink[i]=1;inkCount++;}}
+  if(inkCount < w*h*0.0008) throw new Error("Auf dem Bild sind kaum Linien zu erkennen. Nutze eine klarere Skizze oder stelle die Empfindlichkeit höher.");
+  const ext=fillExterior(ink,w,h);
+  const shape=new Uint8Array(w*h);let interior=0;
+  for(let i=0;i<w*h;i++){ if(ink[i]||!ext[i])shape[i]=1; if(!ink[i]&&!ext[i])interior++; }
+  const comp=largestComponent(shape,w,h);
+  if(comp.size<20) throw new Error("Es konnte keine Raumform erkannt werden.");
+  const contour=traceContour(comp.mask,w,h);
+  if(contour.length<4) throw new Error("Der Umriss ist zu klein oder unklar.");
+  const diag=Math.hypot(w,h);
+  let poly=simplifyClosed(contour.map(([x,y])=>({x,y})), Math.max(3,diag*0.02));
+  poly=cleanPoly(poly, diag*0.012);
+  if(poly.length<3) throw new Error("Zu wenige Ecken erkannt. Zeichne den Umriss deutlicher und geschlossen.");
+  let warn=null;
+  if(interior < w*h*0.015) warn="Der Umriss wirkt offen – prüfe das Ergebnis und korrigiere einzelne Ecken nach dem Übernehmen.";
+  return {poly,w,h,warn};
+}
+function applySketch(res,realWidth,ortho){
+  let pts=res.poly.map(p=>({x:p.x,y:p.y}));
+  if(ortho)pts=orthogonalize(pts);
+  const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);
+  const minx=Math.min(...xs),maxx=Math.max(...xs),miny=Math.min(...ys);
+  const pw=Math.max(1,maxx-minx);
+  const sc=realWidth/pw;
+  return pts.map(p=>({x:r3((p.x-minx)*sc),y:r3((p.y-miny)*sc)}));
+}
+
+/* Import-Panel UI */
+let impSrc=null, impRes=null;
+const impMsg=document.getElementById("impMsg");
+document.getElementById("bImport").onclick=()=>{
+  impSrc=null;impRes=null;
+  document.getElementById("impFile").value="";
+  document.getElementById("impCv").hidden=true;
+  document.getElementById("impOpts").hidden=true;
+  document.getElementById("impApply").disabled=true;
+  impMsg.textContent="";
+  document.getElementById("impWUnit").textContent=unit;
+  document.getElementById("impWidth").value=unit==="cm"?500:5;
+  showPanel("imp");
+};
+document.getElementById("impClose").onclick=hidePanels;
+document.getElementById("impFile").onchange=e=>{const f=e.target.files&&e.target.files[0];if(f)impLoad(f);};
+document.getElementById("impSens").oninput=()=>{if(impSrc)impDetect();};
+document.getElementById("impOrtho").onchange=()=>{if(impRes)drawImpPreview();};
+document.getElementById("impApply").onclick=impApplyFn;
+
+async function impLoad(file){
+  impMsg.textContent="Bild wird geladen…";
+  try{ impSrc=await fileToCanvas(file); }
+  catch(err){ impMsg.innerHTML='<span class="fehler">'+err.message+'</span>'; impSrc=null; return; }
+  document.getElementById("impCv").hidden=false;
+  document.getElementById("impOpts").hidden=false;
+  impDetect();
+}
+function impDetect(){
+  if(!impSrc)return;
+  try{
+    impRes=detectSketch(impSrc, parseFloat(document.getElementById("impSens").value)||0);
+    drawImpPreview();
+    document.getElementById("impApply").disabled=false;
+    const ortho=document.getElementById("impOrtho").checked;
+    const ec=(ortho?orthogonalize(impRes.poly):impRes.poly).length;
+    impMsg.innerHTML=(impRes.warn?'<span class="fehler">'+impRes.warn+'</span><br>':'')+
+      'Umriss erkannt mit '+ec+' Ecken. Gesamtbreite einstellen und „Übernehmen".';
+  }catch(err){
+    impRes=null;
+    document.getElementById("impApply").disabled=true;
+    drawImpPreview();
+    impMsg.innerHTML='<span class="fehler">'+err.message+'</span>';
+  }
+}
+function drawImpPreview(){
+  const cvp=document.getElementById("impCv");const g=cvp.getContext("2d");
+  const W=cvp.width,H=cvp.height;
+  g.fillStyle=V("--fl2");g.fillRect(0,0,W,H);
+  if(!impSrc)return;
+  const s=Math.min(W/impSrc.width,H/impSrc.height);
+  const dw=impSrc.width*s, dh=impSrc.height*s, ox=(W-dw)/2, oy=(H-dh)/2;
+  g.globalAlpha=1;g.drawImage(impSrc,ox,oy,dw,dh);
+  if(impRes){
+    const ortho=document.getElementById("impOrtho").checked;
+    let pts=ortho?orthogonalize(impRes.poly):impRes.poly;
+    const rx=dw/impRes.w, ry=dh/impRes.h;
+    g.strokeStyle=V("--ak");g.lineWidth=2;g.fillStyle=V("--ak2");g.globalAlpha=.35;
+    g.beginPath();pts.forEach((p,i)=>{const x=ox+p.x*rx,y=oy+p.y*ry;i?g.lineTo(x,y):g.moveTo(x,y);});g.closePath();g.fill();
+    g.globalAlpha=1;g.stroke();
+    g.fillStyle=V("--ak");
+    pts.forEach(p=>{const x=ox+p.x*rx,y=oy+p.y*ry;g.beginPath();g.arc(x,y,3,0,2*PI);g.fill();});
+  }
+}
+function impApplyFn(){
+  if(!impRes)return;
+  const inp=parseFloat(document.getElementById("impWidth").value);
+  if(!(inp>0)){impMsg.innerHTML='<span class="fehler">Bitte eine gültige Breite angeben.</span>';return;}
+  const realW = unit==="cm"? inp/100 : inp;
+  const ortho=document.getElementById("impOrtho").checked;
+  const world=applySketch(impRes, realW, ortho);
+  if(world.length<3){impMsg.innerHTML='<span class="fehler">Zu wenige Ecken erkannt.</span>';return;}
+  state.walls=world; state.closed=true; state.drawing=false; state.openings=[]; sel=null;
+  hidePanels(); fitView(); commit(); refreshProps();
+  flash("Skizze übernommen – Ecken antippen und Längen feinjustieren.");
+}
+
+/* Ansicht */
+function bounds(){
+  let xs=[],ys=[];
+  state.walls.forEach(p=>{xs.push(p.x);ys.push(p.y);});
+  state.furniture.forEach(f=>{const r=Math.hypot(f.w,f.h)/2;xs.push(f.x-r,f.x+r);ys.push(f.y-r,f.y+r);});
+  if(!xs.length)return{minx:0,miny:0,maxx:5,maxy:4};
+  return{minx:Math.min(...xs),miny:Math.min(...ys),maxx:Math.max(...xs),maxy:Math.max(...ys)};
+}
+function fitView(){
+  const b=bounds();const w=cwrap.clientWidth,h=cwrap.clientHeight;
+  const bw=Math.max(1,b.maxx-b.minx),bh=Math.max(1,b.maxy-b.miny);
+  const m=0.9;scale=Math.max(12,Math.min(260,m*Math.min(w/bw,h/bh)));
+  offsetX=(w-bw*scale)/2-b.minx*scale;offsetY=(h-bh*scale)/2-b.miny*scale;
+}
+function resize(){
+  const w=cwrap.clientWidth,h=cwrap.clientHeight;
+  const dpr=Math.min(window.devicePixelRatio||1,2.5);
+  cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);cv.style.width=w+"px";cv.style.height=h+"px";
+  render();
+}
+
+/* ---------- Export ---------- */
+function renderToCanvas(mult){
+  const b=bounds();const pad=1;
+  const bw=(b.maxx-b.minx)+pad*2, bh=(b.maxy-b.miny)+pad*2;
+  const pxpm=80*(mult||1);
+  const w=Math.max(200,Math.round(bw*pxpm)), h=Math.max(150,Math.round(bh*pxpm));
+  const c=document.createElement("canvas");c.width=w;c.height=h;
+  const g=c.getContext("2d");
+  const sScale=scale,sox=offsetX,soy=offsetY;
+  scale=pxpm;offsetX=(-b.minx+pad)*pxpm;offsetY=(-b.miny+pad)*pxpm;
+  const sSel=sel;sel=null;
+  drawScene(g,{w,h,scale,ox:offsetX,oy:offsetY,grid:false,dims:showDims,angles:showAngles,sel:false,bg:V("--bg")});
+  scale=sScale;offsetX=sox;offsetY=soy;sel=sSel;
+  return c;
+}
+document.getElementById("bImg").onclick=async()=>{
+  const c=renderToCanvas(1.5);
+  const blob=await new Promise(r=>c.toBlob(r,"image/png"));
+  const url=URL.createObjectURL(blob);
+  const a=document.getElementById("dl");a.href=url;a.download="grundriss.png";a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),4000);
+  flash("Bild gespeichert.");
+};
+
+/* ---------- Werkzeuge für KIs ---------- */
+if(window.helloworld && helloworld.werkzeug){
+  helloworld.werkzeug("grundriss_bild",async()=>{
+    const c=renderToCanvas(1.5);
+    const blob=await new Promise(r=>c.toBlob(r,"image/png"));
+    return{breite_px:c.width,hoehe_px:c.height,dateien:[new File([blob],"grundriss.png",{type:"image/png"})]};
+  });
+  helloworld.werkzeug("grundriss_masse",async()=>{
+    const sc=segCount();const laengen=[];
+    for(let i=0;i<sc;i++){const {a,b}=getSeg(i);laengen.push(+dist(a,b).toFixed(3));}
+    const winkel=interiorAngles().map(a=>+a.toFixed(1));
+    return{flaeche_qm:+area().toFixed(3),wandlaengen_m:laengen,winkel_grad:winkel,anzahl_oeffnungen:state.openings.length,anzahl_moebel:state.furniture.length};
+  });
+  helloworld.werkzeug("skizze_erkennen",async(eingabe,dateien)=>{
+    if(!dateien||!dateien.length) throw new Error("Bitte ein Bild der Skizze übergeben.");
+    const src=await fileToCanvas(dateien[0]);
+    const res=detectSketch(src,0);
+    const breite=(eingabe&&eingabe.breite_m>0)?eingabe.breite_m:5;
+    const ortho=eingabe?(eingabe.ausrichten!==false):true;
+    const world=applySketch(res,breite,ortho);
+    if(world.length<3) throw new Error("Es konnte keine geschlossene Raumform erkannt werden.");
+    return{ ecken:world.map(p=>({x:+p.x.toFixed(3),y:+p.y.toFixed(3)})), anzahl_ecken:world.length, skaliert_auf_breite_m:breite, hinweis:res.warn||"ok" };
+  });
+}
+
+/* ---------- Start ---------- */
+(function init(){
+  let start=null;
+  const cur=lsGet(K_CUR);
+  if(cur){try{const o=JSON.parse(cur);if((o.walls&&o.walls.length)||(o.furniture&&o.furniture.length))start=o;}catch(e){}}
+  if(start)restore(start);
+  history=[JSON.stringify(serialize())];hidx=0;updateUndo();
+  setMode("select");refreshProps();
+  const ro=new ResizeObserver(()=>resize());ro.observe(cwrap);
+  fitView();resize();
+})();
+</script>
+</body>
+</html>
