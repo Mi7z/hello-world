@@ -1,0 +1,16 @@
+/* design.terminal – minimalistisch wie eine Befehlszeile: dunkel, Schreibmaschinenschrift, grün. */
+:root:root {
+  color-scheme: dark;
+  --bg: #0b0e0c; --fl: #111613; --fl2: #18201b; --li: #1f2a23; --li2: #2c3b31;
+  --tx: #d3ddd6; --tx2: #8a9a90; --tx3: #5c6b62;
+  --ak: #3ddc7a; --ak2: #14301f; --ak-tx: #0b0e0c;
+  --rot: #ff6b6b; --gelb: #e3b341; --gruen: #3ddc7a;
+  --r: 0px; --r-klein: 0px;
+  --schrift: ui-monospace, "JetBrains Mono", "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  --schrift-titel: var(--schrift);
+  --mono: var(--schrift);
+  --schatten: none;
+}
+/* Eigenarten: Befehlszeilen-Zeichen vor Überschriften */
+.hw-titel::before, body > h1::before, .karte > h1::before { content: "$ "; color: var(--ak); }
+.hw-abschnitt::before { content: "## "; color: var(--tx3); }

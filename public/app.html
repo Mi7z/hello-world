@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f6f5f2">
+<title>Hello World</title>
+<link rel="icon" href="/icon.svg">
+<link rel="stylesheet" href="/style.css">
+<script src="/design.js"></script>
+</head>
+<body>
+
+<!-- Browser-Apps und Designs: Vollbild + Hello-World-Menü -->
+<div id="vollbild" hidden>
+  <iframe id="rahmen" class="voll-rahmen" title="App" sandbox="allow-scripts allow-downloads allow-modals allow-popups allow-popups-to-escape-sandbox"></iframe>
+  <div id="vorschauBand" class="vorschau-band" hidden>Vorschau – noch nicht übernommen</div>
+  <div class="hw-leiste">
+    <a href="/" class="hw-zurueck" id="zurueckKnopf" aria-label="Zurück zu Hello World" title="Zurück zu Hello World">←</a>
+    <button type="button" id="menuKnopf" class="hw-menu-knopf" aria-haspopup="dialog" aria-controls="menu" aria-expanded="false"><span class="logo-zeichen" aria-hidden="true">hw</span>helloworld</button>
+  </div>
+  <aside id="menu" class="hw-menu" aria-label="Hello-World-Menü" hidden>
+    <div class="hw-menu-kopf">
+      <a href="/" class="logo"><span class="logo-zeichen" aria-hidden="true">hw</span><span>Hello World</span></a>
+      <button type="button" class="leise klein" id="menuZu" aria-label="Menü schließen">✕ Schließen</button>
+    </div>
+    <div class="hw-menu-inhalt">
+      <section class="flaeche">
+        <div class="blatt-kopf" style="margin:0">
+          <span class="symbol" id="mSymbol" aria-hidden="true"></span>
+          <h2 id="mKennung" style="font-size:18px"></h2>
+          <span class="hinweis" id="mVersion"></span>
+        </div>
+        <p class="hinweis" id="mBeschreibung"></p>
+        <ul class="funktionen" id="mFunktionen"></ul>
+        <div class="knoepfe links" id="mDesignKnoepfe" hidden><button type="button" id="mVerwenden">Dieses Design verwenden</button></div>
+      </section>
+
+      <section class="flaeche">
+        <h3 id="wunschTitel">Verbessern oder erweitern</h3>
+        <p class="hinweis" id="wunschHinweis">Beschreibe, was anders werden soll. Deine KI baut es, du siehst vorher eine Vorschau.</p>
+        <form id="wunschForm" autocomplete="off">
+          <textarea id="wunsch" rows="3" placeholder="z. B. Füge einen Farbeimer zum Ausfüllen hinzu"></textarea>
+          <button type="submit" id="wunschKnopf">Los geht's</button>
+        </form>
+        <ol class="schritte" id="schritte" hidden>
+          <li class="schritt" data-schritt="pruefen"><span class="punkt">1</span><b>Wunsch prüfen</b><span></span></li>
+          <li class="schritt" data-schritt="bauen"><span class="punkt">2</span><b>Umbauen</b><span></span></li>
+          <li class="schritt" data-schritt="test"><span class="punkt">3</span><b>Prüfen</b><span>Sicherheit · Handy · Desktop · Funktionen</span></li>
+          <li class="schritt" data-schritt="fertig"><span class="punkt">4</span><b>Vorschau</b><span></span></li>
+        </ol>
+        <div id="mMeldung" class="meldung" hidden></div>
+        <div class="knoepfe voll" id="vorschauKnoepfe" hidden>
+          <button type="button" class="leise" id="verwerfen">Verwerfen</button>
+          <button type="button" class="zweit" id="nachbessern">Nachbessern</button>
+          <button type="button" id="uebernehmen">Übernehmen</button>
+        </div>
+      </section>
+
+      <section class="flaeche">
+        <h3>Aussehen</h3>
+        <div class="mini-designs" id="miniDesigns"></div>
+      </section>
+
+      <section class="flaeche">
+        <h3>Mehr</h3>
+        <div class="menu-links">
+          <a class="knopf zweit klein" id="baumLink" href="#" hidden>Versionen</a>
+          <button type="button" class="zweit klein" id="codeKnopf">Code ansehen</button>
+          <button type="button" class="zweit klein" id="linkKnopf">Link kopieren</button>
+          <button type="button" class="zweit klein" data-anmelde-knopf>Anmelden</button>
+        </div>
+      </section>
+    </div>
+  </aside>
+</div>
+
+<!-- Skills, KI-Werkzeuge, Server-Apps: Infoseite -->
+<div id="infoseite" hidden>
+  <header class="kopf">
+    <a href="/" class="logo"><span class="logo-zeichen" aria-hidden="true">hw</span><span>Hello World</span></a>
+    <div class="kopf-rechts"><button type="button" class="konto" data-anmelde-knopf>Anmelden</button></div>
+  </header>
+  <main class="seite" style="max-width:820px">
+    <a class="zurueck" href="/">Zurück</a>
+    <div class="app-kopf">
+      <h1 id="iTitel" class="hw-titel"></h1>
+      <p id="iBeschreibung"></p>
+      <p><span class="marke akzent" id="iSchild"></span></p>
+    </div>
+    <div class="meldung warn" id="iHinweis"></div>
+    <ul class="funktionen" id="iFakten"></ul>
+    <section class="flaeche text-inhalt" id="iText" style="margin-top:18px"></section>
+  </main>
+</div>
+
+<dialog id="codeDialog" class="blatt" style="width:min(900px,calc(100% - 24px))">
+  <form method="dialog">
+    <h2 id="codeTitel">Code</h2>
+    <pre class="code" id="code"></pre>
+    <div class="knoepfe"><button type="submit">Schließen</button></div>
+  </form>
+</dialog>
+
+<script src="/kern.js"></script>
+<script>
+const [slugRoh, versionAusAdresse] = decodeURIComponent(location.pathname.split('/')[2] || '').split('@');
+let version = versionAusAdresse || null; // geöffnete Version (null = beste Distribution)
+let stammbaum = null;
+let app = null, stand = null;
+const istDesign = () => app?.typ === 'design';
+
+function meldung(html, art = '') {
+  $('mMeldung').hidden = !html;
+  $('mMeldung').className = `meldung ${art}`;
+  $('mMeldung').innerHTML = html || '';
+}
+function menu(auf) {
+  $('menu').hidden = !auf;
+  $('menuKnopf').setAttribute('aria-expanded', String(auf));
+  if (auf) $('menuZu').focus();
+}
+
+async function laden() {
+  const [a, s] = await Promise.all([fetch(`/api/app/${encodeURIComponent(slugRoh)}`), fetch('/api/apps', { cache: 'no-store' })]);
+  stand = await s.json();
+  if (!kiEinstellung() && stand.lokaleKi) localStorage.setItem('hw-ki', JSON.stringify({ art: 'lokal', modell: 'claude' }));
+  if (!a.ok) { document.body.innerHTML = '<main class="seite"><h1 class="hw-titel" style="margin-top:40px">Nicht gefunden</h1><p><a href="/">Zurück zu Hello World</a></p></main>'; return; }
+  const d = await a.json();
+  app = { ...d.app, ...(stand.apps.find((x) => x.slug === d.app.slug) || {}) };
+  document.title = `${kennung(app)} – Hello World`;
+  if (['browser', 'design'].includes(app.typ || 'browser')) vollbild(); else infoseite(d.readme);
+}
+
+// Was im Rahmen läuft: die App mit dem gewählten Design – bzw. bei Designs die Musterseite
+const appQuelle = () => (istDesign()
+  ? `/muster?design=${app.slug}${version ? `&version=${version}` : ''}`
+  : `${version ? `/apps/${app.slug}/v/${version}/` : `/apps/${app.slug}/`}?design=${designName()}`);
+const mitZeit = (u) => `${u}${u.includes('?') ? '&' : '?'}t=${Date.now()}`;
+
+async function vollbild() {
+  $('vollbild').hidden = false;
+  $('rahmen').src = appQuelle();
+  $('mSymbol').outerHTML = symbolHtml(app).replace('class="symbol', 'id="mSymbol" class="symbol');
+  $('mDesignKnoepfe').hidden = !istDesign();
+  if (istDesign()) {
+    $('wunschTitel').textContent = 'Design anpassen';
+    $('wunsch').placeholder = 'z. B. Etwas wärmere Farben und rundere Knöpfe';
+    designKnopf();
+  }
+  try {
+    stammbaum = await api(`/api/stammbaum/${app.slug}`);
+    const v = stammbaum.versionen.find((x) => x.id === (version || stammbaum.standard));
+    if (v) {
+      $('mVersion').textContent = `Version ${v.id.slice(1)} · von ${autorText(v.autor)} · ${sterneText(v.wertung)}`;
+      $('wunschHinweis').textContent = `Deine Änderung wird eine neue Version (ab Version ${v.id.slice(1)}) – mit deinem Namen. Du siehst vorher eine Vorschau.`;
+      $('baumLink').href = `/b/${kennung(app)}`;
+      $('baumLink').hidden = false;
+      $('baumLink').textContent = `Versionen (${stammbaum.versionen.length})`;
+    }
+  } catch { /* kein Stammbaum */ }
+  if (new URLSearchParams(location.search).has('weiter')) { menu(true); $('wunsch').focus(); }
+  $('mKennung').textContent = kennung(app) + (version ? `@${version}` : '');
+  $('mBeschreibung').textContent = app.beschreibung;
+  $('mFunktionen').innerHTML = (app.funktionen || []).map((f) => `<li>${esc(f)}</li>`).join('');
+  miniDesigns();
+  offenenAuftragSuchen();
+  const q = new URLSearchParams(location.search);
+  if (q.has('neu') || q.has('erweitert')) {
+    menu(true);
+    meldung(q.has('neu') ? '✓ Veröffentlicht – jetzt für alle da, mit dir als Ersteller.' : '✓ Neue Version angelegt – mit deinem Namen. Die vorige bleibt erhalten.');
+    history.replaceState(null, '', `/a/${kennung(app)}${version ? '@' + version : ''}`);
+  }
+}
+
+// ---------- Aussehen direkt aus der App umschalten ----------
+function miniDesigns() {
+  const designs = stand.apps.filter((a) => a.typ === 'design');
+  $('miniDesigns').innerHTML = designs.map((d) => {
+    const f = d.farben?.[0] || {};
+    return `<button type="button" data-design="${d.slug}" aria-pressed="${d.slug === designName()}"><span class="tupfen" style="background:linear-gradient(135deg, ${esc(f.bg)} 50%, ${esc(f.ak)} 50%)"></span>${esc(d.slug)}</button>`;
+  }).join('') + '<a class="knopf leise klein" href="/#mehr">Neues Design …</a>';
+}
+$('miniDesigns').addEventListener('click', (ev) => {
+  const b = ev.target.closest('[data-design]');
+  if (!b) return;
+  designWaehlen(b.dataset.design);
+  miniDesigns();
+  designKnopf();
+  if (!istDesign() && !$('rahmen').dataset.auftrag) $('rahmen').src = appQuelle();
+});
+function designKnopf() {
+  if (!istDesign()) return;
+  const aktiv = designName() === app.slug && !version;
+  $('mVerwenden').disabled = aktiv;
+  $('mVerwenden').textContent = aktiv ? 'Ist dein Design ✓' : 'Dieses Design verwenden';
+}
+$('mVerwenden').addEventListener('click', () => { designWaehlen(app.slug + (version ? `@${version}` : '')); miniDesigns(); designKnopf(); });
+
+function infoseite(readme) {
+  $('infoseite').hidden = false;
+  $('iTitel').textContent = kennung(app);
+  $('iBeschreibung').textContent = app.beschreibung;
+  const s = app.server || {};
+  if (app.typ === 'server') {
+    $('iSchild').textContent = 'Server-App · läuft beim Betreiber';
+    $('iHinweis').innerHTML = `Hello World betreibt keine Server. Wer diese App nutzen will, betreibt sie selbst – oder nutzt die Instanz eines Betreibers.${s.betreiber_url ? `<div class="knoepfe"><a class="knopf" href="${encodeURI(s.betreiber_url)}" target="_blank" rel="noopener">Beim Betreiber öffnen ↗</a></div>` : ''}`;
+    $('iFakten').innerHTML = [['Start', s.start], ['Kosten (zahlt der Betreiber)', s.kosten]].filter(([, v]) => v).map(([k, v]) => `<li><span><b>${k}:</b> ${esc(v)}</span></li>`).join('');
+  } else if (app.typ === 'skill') {
+    $('iSchild').textContent = 'Skill für KIs';
+    $('iHinweis').innerHTML = `Mit Hello World in deiner KI (Claude Code, Codex …) wird dieser Skill automatisch gefunden, sobald er passt – oder sag „nutze ${esc(kennung(app))}". Dauerhaft: „installiere ${esc(kennung(app))}".`;
+  } else {
+    $('iSchild').textContent = 'Werkzeug für KIs (MCP) · läuft auf deinem Rechner';
+    $('iHinweis').textContent = 'Richte es nach der Anleitung unten in deiner KI ein. Es läuft auf deinem Rechner, Hello World betreibt nichts.';
+    if (app.mcp) $('iFakten').innerHTML = `<li><span><b>Start:</b> <code>${esc([app.mcp.command, ...(app.mcp.args || [])].join(' '))}</code></span></li>`;
+  }
+  $('iText').innerHTML = markdown(String(readme || '').replace(/^---[\s\S]*?---\n/, ''));
+}
+
+// ---------- Menü ----------
+$('menuKnopf').addEventListener('click', () => menu($('menu').hidden));
+$('menuZu').addEventListener('click', () => menu(false));
+document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && !$('menu').hidden) menu(false); });
+$('codeKnopf').addEventListener('click', async () => {
+  const quelle = $('rahmen').dataset.auftrag ? `/api/bau/${aktuell}/vorschau`
+    : istDesign() ? `/api/design/${app.slug}${version ? '@' + version : ''}.css` : appQuelle();
+  $('codeTitel').textContent = istDesign() ? 'design.css' : 'index.html';
+  $('code').textContent = await (await fetch(quelle)).text();
+  $('codeDialog').showModal();
+});
+$('linkKnopf').addEventListener('click', async () => {
+  const link = `${location.origin}/a/${kennung(app)}`;
+  try { await navigator.clipboard.writeText(link); $('linkKnopf').textContent = 'Kopiert ✓'; } catch { prompt('Link:', link); }
+});
+
+// ---------- Verbessern / erweitern: der PC arbeitet, das Menü zeigt den Stand ----------
+let aktuell = null;
+
+$('wunschForm').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  const wunsch = $('wunsch').value.trim();
+  if (!wunsch) return;
+  if (!kiEinstellung()) return meldung('Verbinde zuerst deine KI: <a href="/#mehr">Hello World → Mehr → Deine KI</a>.', 'warn');
+  try {
+    const a = await auftragStarten({ ziel: app.slug, wunsch, basis: version || stammbaum?.standard || null });
+    $('wunsch').value = '';
+    verfolgen(a.id);
+  } catch (err) { meldung(esc(err.message), 'nein'); }
+});
+
+function verfolgen(id) {
+  aktuell = id;
+  $('schritte').hidden = false;
+  auftragVerfolgen(id, darstellen);
+}
+
+function darstellen(a) {
+  if (a.id !== aktuell) return;
+  schritteZeigen($('menu'), a);
+  $('wunschKnopf').disabled = a.status === 'laeuft';
+  $('menuKnopf').classList.toggle('arbeitet', a.status === 'laeuft');
+  $('menuKnopf').classList.toggle('vorschau', a.status === 'vorschau');
+  let html = esc(a.meldung || '');
+  if (a.status === 'laeuft') html = `${html ? html + '<br>' : ''}<span class="hinweis">Der PC arbeitet weiter, auch wenn du die Seite schließt oder das Handy ausmachst.</span>`;
+  if ((a.status === 'fehler' || a.status === 'abgebrochen') && a.probleme?.length) html += `<ul>${a.probleme.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`;
+  if (a.status === 'fehler' || a.status === 'abgebrochen') html += `<div class="knoepfe"><button type="button" id="neuStarten">Nochmal versuchen</button></div>`;
+  meldung(html, a.meldungArt || '');
+  $('neuStarten')?.addEventListener('click', async () => { const n = await auftragAktion(a.id, 'neustart', { ki: kiFuerAuftrag() }); verfolgen(n.id); });
+  if (a.status === 'vorschau') {
+    if ($('rahmen').dataset.auftrag !== a.id + a.aktualisiert) {
+      $('rahmen').dataset.auftrag = a.id + a.aktualisiert;
+      $('rahmen').src = `/api/bau/${a.id}/vorschau?design=${designName()}&t=${a.aktualisiert}`;
+    }
+    $('vorschauBand').hidden = false;
+    $('vorschauKnoepfe').hidden = false;
+  } else {
+    if ($('rahmen').dataset.auftrag) zurueckZumOriginal();
+    $('vorschauKnoepfe').hidden = true;
+  }
+  if (a.status === 'fertig') location.href = `/a/${kennung(app)}${a.app?.version ? '@' + a.app.version : ''}?erweitert=1`;
+}
+
+function zurueckZumOriginal() {
+  delete $('rahmen').dataset.auftrag;
+  $('rahmen').src = mitZeit(appQuelle());
+  $('vorschauBand').hidden = true;
+  $('vorschauKnoepfe').hidden = true;
+}
+$('verwerfen').addEventListener('click', async () => {
+  if (!aktuell) return;
+  await auftragAktion(aktuell, 'verwerfen');
+  zurueckZumOriginal();
+  meldung('Verworfen – alles bleibt wie vorher.');
+  $('menuKnopf').classList.remove('arbeitet', 'vorschau');
+});
+$('nachbessern').addEventListener('click', async () => {
+  const was = prompt('Was soll noch anders werden?');
+  if (!was || !aktuell) return;
+  await auftragAktion(aktuell, 'nachbessern', { was });
+  verfolgen(aktuell);
+});
+$('uebernehmen').addEventListener('click', async () => {
+  if (!aktuell) return;
+  $('uebernehmen').disabled = true;
+  try {
+    const a = await auftragAktion(aktuell, 'uebernehmen');
+    location.href = `/a/${kennung(app)}${a.app?.version ? '@' + a.app.version : ''}?erweitert=1`;
+  } catch (err) { meldung(`Übernehmen nicht möglich: ${esc(err.message)}`, 'nein'); }
+  finally { $('uebernehmen').disabled = false; }
+});
+
+// Beim Öffnen: läuft für diese App gerade ein Auftrag oder wartet eine Vorschau?
+async function offenenAuftragSuchen() {
+  try {
+    const { auftraege } = await (await fetch(`/api/bau?ziel=${app.slug}`, { cache: 'no-store' })).json();
+    const offen = auftraege.find((a) => ['laeuft', 'vorschau'].includes(a.status));
+    if (offen) verfolgen(offen.id);
+  } catch { /* egal */ }
+}
+
+// Brücke: Apps rufen helloworld.faehigkeit(…) auf – nur aus dem eigenen App-Rahmen
+addEventListener('message', async (ev) => {
+  const d = ev.data;
+  if (!d || !['faehigkeit', 'ki'].includes(d.hwSdk) || ev.source !== $('rahmen').contentWindow) return;
+  const antworten = (x) => $('rahmen').contentWindow.postMessage({ hwAntwort: true, id: d.id, ...x }, '*');
+  if (d.hwSdk === 'ki') {
+    const vorschau = Boolean($('rahmen').dataset.auftrag);
+    const quelle = vorschau ? { auftrag: aktuell, kennung: kennung(app), adresse: `/api/bau/${aktuell}/vorschau` } : { slug: app.slug, version, kennung: kennung(app), adresse: appQuelle() };
+    $('menuKnopf').classList.add('arbeitet');
+    try { antworten({ ok: true, ergebnis: await appKiAusfuehren(quelle, String(d.aufgabe), d.eingabe ?? {}) }); }
+    catch (err) { antworten({ ok: false, fehler: err.message }); }
+    finally { $('menuKnopf').classList.remove('arbeitet'); }
+    return;
+  }
+  try { antworten({ ok: true, ergebnis: await faehigkeitAusfuehren(app, String(d.name), d.parameter || {}) }); }
+  catch (err) { antworten({ ok: false, fehler: err.message }); }
+});
+
+ichLaden().catch(() => {}).finally(laden);
+</script>
+</body>
+</html>

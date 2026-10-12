@@ -1,0 +1,12 @@
+{
+  "name": "hello-world",
+  "owner": { "name": "Hello World" },
+  "metadata": { "description": "Die offene Datenbank für Apps, Skills und KI-Werkzeuge." },
+  "plugins": [
+    {
+      "name": "hello-world",
+      "source": "./plugin",
+      "description": "Claude sucht und nutzt selbstständig Apps, Skills und KI-Werkzeuge aus Hello World und kann nach festen Regeln Neues beitragen."
+    }
+  ]
+}

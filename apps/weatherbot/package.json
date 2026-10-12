@@ -1,0 +1,13 @@
+{
+  "name": "weatherbot",
+  "private": true,
+  "type": "module",
+  "version": "1.0.0",
+  "description": "Telegram-Bot, der jeden Morgen das Wetter für deine Stadt schickt.",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

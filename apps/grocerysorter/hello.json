@@ -1,0 +1,84 @@
+{
+  "titel": "Einkaufsliste nach Abteilungen",
+  "beschreibung": "Du tippst deinen Einkaufszettel als freien Text ein und bekommst daraus automatisch eine nach Supermarkt-Abteilungen sortierte Liste zum Abhaken, damit du im Laden schneller und ohne Zurücklaufen einkaufst.",
+  "kategorie": "werkzeug",
+  "funktionen": [
+    "Freien Einkaufstext in eine nach Supermarkt-Abteilungen sortierte, abhakbare Liste umwandeln"
+  ],
+  "tags": [
+    "einkaufsliste",
+    "einkauf",
+    "abteilungen",
+    "checkliste",
+    "sortieren"
+  ],
+  "anfrage": "Ich schreibe meinen Einkaufszettel einfach als freien Text und will eine nach Supermarkt-Abteilungen sortierte Einkaufsliste zum Abhaken",
+  "ki": "Claude",
+  "erstellt": "2026-10-12T04:42:15.648Z",
+  "version": 1,
+  "typ": "browser",
+  "hinweise": [],
+  "autor": {
+    "login": "Mi7z",
+    "name": "Mi7z"
+  },
+  "eigeneKi": {
+    "zweck": "Freien Einkaufszettel-Text in eine nach Supermarkt-Abteilungen sortierte Artikelliste verwandeln.",
+    "aufgaben": [
+      "sortieren"
+    ]
+  },
+  "beispiele": [
+    "Ich brauche eine Einkaufsliste, die nach Abteilungen sortiert ist",
+    "wie kann ich meinen Einkaufszettel ordnen",
+    "Milch, Brot, Äpfel, Spülmittel sortieren lassen",
+    "Einkaufsliste zum Abhaken erstellen",
+    "meinen Zettel nach Supermarkt-Gängen sortieren",
+    "ich schreibe wild alles auf und will es geordnet haben",
+    "Einkaufsliste nach Obst, Molkerei, Tiefkühl gruppieren",
+    "schnellere Einkaufsrunde durch sortierte Liste",
+    "Liste mit Häkchen zum Abhaken im Laden",
+    "aus einem Textzettel eine strukturierte Einkaufsliste machen",
+    "digitale Einkaufsliste mit Kategorien",
+    "Lebensmittel nach Kategorie sortieren",
+    "Besorgungen ordnen und abhaken",
+    "mehrere Sachen zur Liste hinzufügen",
+    "erledigte Artikel aus der Liste entfernen",
+    "I need a shopping list sorted by store sections",
+    "sort my grocery list by aisle",
+    "turn my notes into a checkable shopping list",
+    "organize my groceries by department"
+  ],
+  "stichworte": [
+    "einkaufsliste",
+    "einkaufszettel",
+    "einkaufen",
+    "supermarkt",
+    "abteilungen",
+    "sortieren",
+    "liste",
+    "abhaken",
+    "checkliste",
+    "lebensmittel",
+    "besorgungen",
+    "ordnen",
+    "kategorien",
+    "gänge",
+    "obst",
+    "gemüse",
+    "molkerei",
+    "tiefkühl",
+    "getränke",
+    "drogerie",
+    "haushalt",
+    "shopping",
+    "grocery",
+    "list",
+    "sort",
+    "checklist",
+    "groceries",
+    "aisle"
+  ],
+  "symbol": "🛒",
+  "beschreibungStand": "2026-10-12T04:42:46.788Z"
+}

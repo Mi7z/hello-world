@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Würfel-Werkzeug · W6 W20 & mehr</title>
+<style>
+/* Hello-World-Grund-Design für Apps. Farben, Schrift und Rundungen kommen aus dem
+   gewählten Design (design.klar, design.terminal …) – hier nur Ersatzwerte. */
+:where(:root){color-scheme:light dark;--bg:#f6f5f2;--fl:#fff;--fl2:#f1efea;--li:#e6e3dc;--li2:#d3cfc6;--tx:#1d1c1a;--tx2:#5d5a55;--tx3:#918d86;--ak:#3b5bdb;--ak2:#e9eeff;--ak-tx:#fff;--rot:#d9480f;--gelb:#d68c00;--gruen:#2b8a3e;--r:16px;--r-klein:10px;--schrift:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--schrift-titel:var(--schrift);--mono:ui-monospace,Menlo,Consolas,monospace;--schatten:0 1px 2px rgba(0,0,0,.05),0 8px 24px rgba(0,0,0,.06)}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--bg);color:var(--tx);font:16px/1.55 var(--schrift);padding:64px 16px 40px;max-width:760px;margin:0 auto;-webkit-font-smoothing:antialiased}
+h1{font:700 24px/1.2 var(--schrift-titel);margin:6px 0 6px;letter-spacing:-.01em}h2{font:650 18px/1.3 var(--schrift-titel);margin:18px 0 8px}
+p.unter{color:var(--tx2);margin:0 0 20px}
+.karte{background:var(--fl);border:1px solid var(--li);border-radius:var(--r);padding:18px;margin-bottom:14px;box-shadow:var(--schatten)}
+button,.knopf{font:600 15px/1 var(--schrift);border:1px solid var(--ak);border-radius:var(--r-klein);padding:12px 18px;min-height:46px;background:var(--ak);color:var(--ak-tx);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:filter .15s,transform .05s}
+button:hover,.knopf:hover{filter:brightness(1.07)}button:active,.knopf:active{transform:translateY(1px)}
+button.zweit,.knopf.zweit{background:var(--fl2);color:var(--tx);border-color:var(--li)}
+button:disabled{opacity:.45;cursor:default;filter:none}
+input,select,textarea{font:16px/1.4 var(--schrift);color:var(--tx);background:var(--fl2);border:1px solid var(--li);border-radius:var(--r-klein);padding:11px 13px;min-height:46px;width:100%;caret-color:var(--ak)}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--ak);outline-offset:-1px;border-color:transparent}
+input[type=range]{padding:0;min-height:32px;accent-color:var(--ak)}input[type=color]{padding:4px;min-height:46px}input[type=checkbox],input[type=radio]{width:auto;min-height:auto;accent-color:var(--ak)}
+label{display:block;font-size:14px;color:var(--tx2);margin:12px 0 6px;font-weight:500}
+.ablage{border:2px dashed var(--li2);border-radius:var(--r);padding:32px 16px;text-align:center;color:var(--tx2);cursor:pointer;background:var(--fl)}
+.ablage.drueber{border-color:var(--ak);background:var(--ak2);color:var(--tx)}
+.zeile{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.spalten{display:grid;gap:14px}
+.reiter{display:flex;gap:4px;background:var(--fl2);border:1px solid var(--li);border-radius:var(--r-klein);padding:4px;margin-bottom:14px}
+.reiter button{flex:1;background:none;color:var(--tx2);border:0;min-height:40px;font-weight:500}
+.reiter button[aria-selected=true],.reiter button.an{background:var(--fl);color:var(--tx);box-shadow:var(--schatten);font-weight:650}
+.hinweis{font-size:14px;color:var(--tx2)}.fehler{color:var(--rot)}
+a{color:var(--ak)}
+[hidden]{display:none!important}
+:focus-visible{outline:2px solid var(--ak);outline-offset:2px}
+@media (min-width:900px){body{max-width:1120px;padding:32px 36px 48px}.spalten{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}}
+
+/* App-spezifisch */
+.schnell{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.schnell button{min-height:40px;padding:6px 12px;font-size:14px}
+.wuerfel{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin:4px 0 14px;min-height:72px}
+.w{width:72px;height:72px;border:1px solid var(--li);background:var(--fl2);display:flex;align-items:center;justify-content:center;position:relative}
+.w.hoch{color:var(--ak);border-color:var(--ak)}
+.w .zahl{font-size:30px;font-weight:700}
+.pips{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);width:56px;height:56px;gap:2px}
+.pip{width:12px;height:12px;border-radius:50%;background:var(--tx);align-self:center;justify-self:center}
+.summe{font-size:22px;color:var(--ak);text-align:center;margin:2px 0}
+.summe small{color:var(--tx2);font-size:13px}
+.verlauf{list-style:none;margin:8px 0 0;padding:0;max-height:300px;overflow:auto}
+.verlauf li{border-bottom:1px solid var(--li);padding:7px 2px;display:flex;justify-content:space-between;gap:10px;font-size:13px}
+.verlauf li:last-child{border-bottom:none}
+.verlauf .vein{color:var(--tx2)}.verlauf .vsum{color:var(--ak)}
+</style>
+</head>
+<body>
+<h1>🎲 Würfel-Werkzeug</h1>
+<p class="unter">Würfle beliebig viele Würfel mit frei wählbaren Seiten – alles läuft nur in deinem Browser, nichts wird gesendet.</p>
+
+<div class="spalten">
+
+  <section class="karte" aria-label="Einstellungen">
+    <div class="zeile" style="gap:12px">
+      <div style="flex:1 1 120px">
+        <label for="anzahl">Anzahl Würfel</label>
+        <input id="anzahl" type="number" min="1" max="100" value="2" inputmode="numeric">
+      </div>
+      <div style="flex:1 1 120px">
+        <label for="seiten">Seiten je Würfel</label>
+        <input id="seiten" type="number" min="2" max="1000" value="6" inputmode="numeric">
+      </div>
+    </div>
+
+    <label>Schnellauswahl</label>
+    <div class="schnell" id="schnell"></div>
+
+    <p class="fehler" id="fehler" hidden></p>
+
+    <div class="zeile" style="margin-top:16px">
+      <button id="roll" style="flex:1 1 auto">Würfeln</button>
+      <button id="leeren" class="zweit">Verlauf leeren</button>
+    </div>
+    <p class="hinweis" id="konfig" style="margin-top:10px"></p>
+  </section>
+
+  <section class="karte" aria-label="Ergebnis">
+    <div class="wuerfel" id="wuerfel" aria-live="polite">
+      <span class="hinweis">Noch nicht gewürfelt.</span>
+    </div>
+    <div class="summe" id="summe"></div>
+
+    <label style="margin-top:14px">Verlauf (letzte 20 Würfe)</label>
+    <ul class="verlauf" id="verlauf"></ul>
+    <p class="hinweis" id="leerverlauf">Noch keine Würfe vorhanden.</p>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const $=id=>document.getElementById(id);
+  const anzahlE=$("anzahl"), seitenE=$("seiten"), fehlerE=$("fehler");
+  const wuerfelE=$("wuerfel"), summeE=$("summe"), verlaufE=$("verlauf");
+  const konfigE=$("konfig"), leerV=$("leerverlauf");
+
+  const presets=[
+    {t:"1W6",a:1,s:6},{t:"2W6",a:2,s:6},{t:"3W6",a:3,s:6},
+    {t:"1W4",a:1,s:4},{t:"1W8",a:1,s:8},{t:"1W10",a:1,s:10},
+    {t:"1W12",a:1,s:12},{t:"1W20",a:1,s:20},{t:"1W100",a:1,s:100}
+  ];
+
+  // Schnellauswahl aufbauen
+  const schnellE=$("schnell");
+  presets.forEach(p=>{
+    const b=document.createElement("button");
+    b.type="button"; b.className="zweit"; b.textContent=p.t;
+    b.addEventListener("click",()=>{
+      anzahlE.value=p.a; seitenE.value=p.s; fehler(""); wuerfeln();
+    });
+    schnellE.appendChild(b);
+  });
+
+  // Pip-Muster für klassische 6-seitige Würfel (1..6)
+  const pipMuster={
+    1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]
+  };
+
+  function zufall(max){
+    // kryptografisch, falls verfügbar, sonst Math.random
+    if(window.crypto && crypto.getRandomValues){
+      const grenze=Math.floor(4294967296/max)*max;
+      const buf=new Uint32Array(1);
+      let x;
+      do{ crypto.getRandomValues(buf); x=buf[0]; }while(x>=grenze);
+      return x%max+1;
+    }
+    return Math.floor(Math.random()*max)+1;
+  }
+
+  function fehler(txt){
+    if(txt){ fehlerE.textContent=txt; fehlerE.hidden=false; }
+    else{ fehlerE.hidden=true; }
+  }
+
+  function lesen(){
+    let a=parseInt(anzahlE.value,10);
+    let s=parseInt(seitenE.value,10);
+    if(!Number.isFinite(a)||a<1){ fehler("Bitte mindestens 1 Würfel angeben."); return null; }
+    if(a>100){ fehler("Höchstens 100 Würfel möglich."); return null; }
+    if(!Number.isFinite(s)||s<2){ fehler("Ein Würfel braucht mindestens 2 Seiten."); return null; }
+    if(s>1000){ fehler("Höchstens 1000 Seiten möglich."); return null; }
+    fehler("");
+    return {a:a,s:s};
+  }
+
+  function wuerfelKachel(wert,seiten){
+    const d=document.createElement("div");
+    d.className="w";
+    if(wert===seiten) d.classList.add("hoch");
+    if(seiten===6){
+      const grid=document.createElement("div");
+      grid.className="pips";
+      for(let i=0;i<9;i++){
+        const cell=document.createElement("div");
+        if(pipMuster[wert].includes(i)){
+          const p=document.createElement("div"); p.className="pip"; cell.appendChild(p);
+        }
+        grid.appendChild(cell);
+      }
+      d.appendChild(grid);
+      d.setAttribute("aria-label",wert+" Augen");
+    }else{
+      const z=document.createElement("span");
+      z.className="zahl"; z.textContent=wert;
+      d.appendChild(z);
+      d.setAttribute("aria-label",wert);
+    }
+    return d;
+  }
+
+  function wuerfeln(){
+    const cfg=lesen();
+    if(!cfg) return;
+    const {a,s}=cfg;
+    const werte=[];
+    for(let i=0;i<a;i++) werte.push(zufall(s));
+    const summe=werte.reduce((x,y)=>x+y,0);
+
+    // Anzeige
+    wuerfelE.innerHTML="";
+    werte.forEach(w=>wuerfelE.appendChild(wuerfelKachel(w,s)));
+    summeE.innerHTML="Summe: "+summe+" <small>("+a+"W"+s+")</small>";
+    konfigE.textContent="Konfiguration: "+a+" Würfel × "+s+" Seiten";
+
+    // Verlauf
+    const li=document.createElement("li");
+    const links=document.createElement("span");
+    links.className="vein";
+    links.textContent=a+"W"+s+": ["+werte.join(", ")+"]";
+    const rechts=document.createElement("span");
+    rechts.className="vsum";
+    rechts.textContent="Σ "+summe;
+    li.appendChild(links); li.appendChild(rechts);
+    verlaufE.insertBefore(li,verlaufE.firstChild);
+    while(verlaufE.children.length>20) verlaufE.removeChild(verlaufE.lastChild);
+    leerV.hidden=true;
+  }
+
+  $("roll").addEventListener("click",wuerfeln);
+  $("leeren").addEventListener("click",()=>{
+    verlaufE.innerHTML=""; leerV.hidden=false;
+  });
+  [anzahlE,seitenE].forEach(el=>el.addEventListener("keydown",e=>{
+    if(e.key==="Enter") wuerfeln();
+  }));
+
+  konfigE.textContent="Konfiguration: "+anzahlE.value+" Würfel × "+seitenE.value+" Seiten";
+})();
+</script>
+</body>
+</html>

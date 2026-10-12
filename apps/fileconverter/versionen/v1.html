@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Datei-Konverter</title>
+<style>
+:root{color-scheme:light dark;--bg:#f7f7f4;--fl:#ffffff;--fl2:#efefea;--li:#dcdcd4;--tx:#16181d;--tx2:#585b63;--ak:#1f8a5b;--ak2:#e8f5ee;--rot:#d64545;--r:14px}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1115;--fl:#181b21;--fl2:#22262e;--li:#2f343d;--tx:#eef0f3;--tx2:#a3a8b3;--ak:#4fd18b;--ak2:#163024}}
+*{box-sizing:border-box}html,body{margin:0}body{background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:16px;max-width:720px;margin:0 auto}
+h1{font-size:22px;margin:4px 0 4px}p.unter{color:var(--tx2);margin:0 0 16px}
+.karte{background:var(--fl);border:1px solid var(--li);border-radius:var(--r);padding:16px;margin-bottom:12px}
+button,.knopf{font:inherit;border:0;border-radius:999px;padding:10px 18px;min-height:44px;background:var(--ak);color:#fff;font-weight:600;cursor:pointer}
+button.zweit{background:var(--fl2);color:var(--tx);border:1px solid var(--li)}button:disabled{opacity:.5}
+input,select,textarea{font:inherit;font-size:16px;color:var(--tx);background:var(--fl2);border:1px solid var(--li);border-radius:10px;padding:10px 12px;min-height:44px;width:100%}
+label{display:block;font-size:14px;color:var(--tx2);margin:10px 0 4px}
+.ablage{border:2px dashed var(--li);border-radius:var(--r);padding:28px 16px;text-align:center;color:var(--tx2);cursor:pointer}
+.ablage.drueber{border-color:var(--ak);background:var(--ak2)}
+.zeile{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.hinweis{font-size:13px;color:var(--tx2)}.fehler{color:var(--rot)}
+:focus-visible{outline:2px solid var(--ak);outline-offset:2px}
+</style>
+</head>
+<body>
+<h1>🔄 Datei-Konverter</h1>
+<p class="unter">Dateien umwandeln – alles passiert in deinem Browser, nichts verlässt dein Gerät.</p>
+<div class="reiter" role="tablist" id="reiter">
+  <button type="button" role="tab" data-r="pdf" aria-selected="true">📄 PDF → Bild</button>
+  <button type="button" role="tab" data-r="bild" aria-selected="false">🖼️ Bild → Bild</button>
+</div>
+
+<!-- Funktion: PDF in Bilder (PNG) -->
+<section data-bereich="pdf">
+  <div class="karte">
+    <div class="ablage" id="pdfAblage">PDF hierher ziehen oder <b>antippen zum Auswählen</b></div>
+    <input type="file" id="pdfDatei" accept="application/pdf" hidden>
+    <label for="schaerfe">Bildschärfe</label>
+    <select id="schaerfe"><option value="1">Normal (schnell, klein)</option><option value="2" selected>Scharf (empfohlen)</option><option value="3">Sehr scharf (groß)</option></select>
+  </div>
+  <p class="hinweis" id="pdfStatus"></p>
+  <div class="zeile" id="alleZeile" hidden><button id="alle">Alle als ZIP laden</button></div>
+  <div id="seiten"></div>
+</section>
+
+<!-- Funktion: Bilder umwandeln & verkleinern (JPG/PNG/WebP) -->
+<section data-bereich="bild" hidden>
+  <div class="karte">
+    <div class="ablage" id="bildAblage">Bilder hierher ziehen oder <b>antippen zum Auswählen</b></div>
+    <input type="file" id="bildDatei" accept="image/*" multiple hidden>
+    <div class="zeile">
+      <div style="flex:1;min-width:140px"><label for="format">Zielformat</label><select id="format"><option value="image/jpeg">JPG</option><option value="image/png">PNG</option><option value="image/webp">WebP</option></select></div>
+      <div style="flex:1;min-width:140px"><label for="breite">Maximale Breite (px)</label><input id="breite" type="number" inputmode="numeric" value="1600" min="50" max="10000"></div>
+    </div>
+    <label for="qualitaet">Qualität: <span id="qWert">85</span> %</label>
+    <input id="qualitaet" type="range" min="30" max="100" value="85" style="padding:0">
+  </div>
+  <div id="bildListe"></div>
+</section>
+
+<style>
+.reiter{display:flex;background:var(--fl2);border-radius:12px;padding:3px;margin-bottom:12px;gap:2px}
+.reiter button{flex:1;background:none;color:var(--tx2);border-radius:9px;font-weight:500;padding:8px 6px;min-height:40px}
+.reiter button[aria-selected="true"]{background:var(--fl);color:var(--tx);font-weight:650;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.seite{background:var(--fl);border:1px solid var(--li);border-radius:var(--r);padding:10px;margin:10px 0}.seite img{width:100%;border-radius:8px;display:block;background:#fff}.seite .zeile{justify-content:space-between;margin-top:8px}
+.bild{display:flex;gap:12px;align-items:center;background:var(--fl);border:1px solid var(--li);border-radius:var(--r);padding:10px;margin:8px 0}.bild img{width:72px;height:72px;object-fit:cover;border-radius:8px}.bild .info{flex:1;font-size:14px}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+const kb = (b) => b > 1048576 ? (b / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.round(b / 1024) + ' KB';
+function ablage(feld, eingabe, fertig) {
+  $(feld).onclick = () => $(eingabe).click();
+  $(feld).ondragover = (e) => { e.preventDefault(); $(feld).classList.add('drueber'); };
+  $(feld).ondragleave = () => $(feld).classList.remove('drueber');
+  $(feld).ondrop = (e) => { e.preventDefault(); $(feld).classList.remove('drueber'); fertig([...e.dataTransfer.files]); };
+  $(eingabe).onchange = () => fertig([...$(eingabe).files]);
+}
+// Reiter
+$('reiter').onclick = (e) => {
+  const b = e.target.closest('[data-r]'); if (!b) return;
+  for (const x of $('reiter').children) x.setAttribute('aria-selected', String(x === b));
+  for (const s of document.querySelectorAll('[data-bereich]')) s.hidden = s.dataset.bereich !== b.dataset.r;
+};
+
+// ---- PDF → Bild ----
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+let bilder = [], name = 'dokument';
+ablage('pdfAblage', 'pdfDatei', (d) => d[0] && umwandeln(d[0]));
+async function umwandeln(datei) {
+  if (!/pdf$/i.test(datei.type) && !/\.pdf$/i.test(datei.name)) { $('pdfStatus').innerHTML = '<span class="fehler">Das ist keine PDF-Datei.</span>'; return; }
+  name = datei.name.replace(/\.pdf$/i, '');
+  $('seiten').innerHTML = ''; bilder = []; $('alleZeile').hidden = true;
+  try {
+    const pdf = await pdfjsLib.getDocument({ data: await datei.arrayBuffer() }).promise;
+    const faktor = Number($('schaerfe').value);
+    for (let i = 1; i <= pdf.numPages; i++) {
+      $('pdfStatus').textContent = `Seite ${i} von ${pdf.numPages} wird umgewandelt …`;
+      const seite = await pdf.getPage(i);
+      const vp = seite.getViewport({ scale: faktor * 1.5 });
+      const c = document.createElement('canvas'); c.width = vp.width; c.height = vp.height;
+      const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+      await seite.render({ canvasContext: ctx, viewport: vp }).promise;
+      const blob = await new Promise((r) => c.toBlob(r, 'image/png'));
+      const dateiname = `${name}-seite-${String(i).padStart(2, '0')}.png`;
+      bilder.push({ blob, dateiname });
+      const url = URL.createObjectURL(blob);
+      const div = document.createElement('div'); div.className = 'seite';
+      div.innerHTML = `<img alt="Seite ${i}" src="${url}"><div class="zeile"><span class="hinweis">Seite ${i} · ${c.width}×${c.height}px</span><a class="knopf" download="${dateiname}" href="${url}">PNG laden</a></div>`;
+      $('seiten').appendChild(div);
+    }
+    $('pdfStatus').textContent = `Fertig: ${pdf.numPages} ${pdf.numPages === 1 ? 'Seite' : 'Seiten'}.`;
+    $('alleZeile').hidden = bilder.length < 2;
+  } catch (err) {
+    $('pdfStatus').innerHTML = `<span class="fehler">Die PDF konnte nicht gelesen werden (${err.message}).</span>`;
+  }
+}
+$('alle').onclick = async () => {
+  const zip = new JSZip(); bilder.forEach((b) => zip.file(b.dateiname, b.blob));
+  const blob = await zip.generateAsync({ type: 'blob' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${name}-png.zip`; a.click();
+};
+
+// ---- Bild → Bild ----
+let bildDateien = [];
+ablage('bildAblage', 'bildDatei', (d) => bilderUmwandeln(d));
+$('qualitaet').oninput = () => { $('qWert').textContent = $('qualitaet').value; };
+['format', 'breite', 'qualitaet'].forEach((id) => $(id).addEventListener('change', () => bildDateien.length && bilderUmwandeln(bildDateien)));
+async function bilderUmwandeln(liste) {
+  bildDateien = liste.filter((d) => d.type.startsWith('image/'));
+  $('bildListe').innerHTML = bildDateien.length ? '' : '<p class="fehler">Bitte Bilddateien wählen.</p>';
+  for (const d of bildDateien) {
+    try {
+      const bild = await createImageBitmap(d);
+      const max = Number($('breite').value) || bild.width;
+      const f = Math.min(1, max / bild.width);
+      const c = document.createElement('canvas'); c.width = Math.round(bild.width * f); c.height = Math.round(bild.height * f);
+      const ctx = c.getContext('2d');
+      const format = $('format').value;
+      if (format === 'image/jpeg') { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height); }
+      ctx.drawImage(bild, 0, 0, c.width, c.height);
+      const blob = await new Promise((r) => c.toBlob(r, format, Number($('qualitaet').value) / 100));
+      const endung = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }[format];
+      const neu = d.name.replace(/\.[^.]+$/, '') + '.' + endung;
+      const url = URL.createObjectURL(blob);
+      const div = document.createElement('div'); div.className = 'bild';
+      div.innerHTML = `<img alt="" src="${url}"><div class="info"><b>${neu.replace(/</g, '&lt;')}</b><br><span class="hinweis">${c.width}×${c.height}px · ${kb(d.size)} → ${kb(blob.size)}</span></div><a class="knopf" download="${neu.replace(/"/g, '')}" href="${url}">Laden</a>`;
+      $('bildListe').appendChild(div);
+    } catch { $('bildListe').insertAdjacentHTML('beforeend', `<p class="fehler">${d.name.replace(/</g, '&lt;')} konnte nicht gelesen werden.</p>`); }
+  }
+}
+</script>
+</body>
+</html>

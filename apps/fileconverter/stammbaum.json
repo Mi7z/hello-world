@@ -1,0 +1,24 @@
+{
+  "versionen": [
+    {
+      "id": "v1",
+      "eltern": null,
+      "autor": {
+        "login": "hello-world",
+        "name": "Hello World"
+      },
+      "zeit": "2026-10-11T20:00:00.000Z",
+      "aenderung": "erste Version"
+    },
+    {
+      "id": "v2",
+      "eltern": "v1",
+      "autor": {
+        "login": "Mi7z",
+        "name": "Mi7z"
+      },
+      "zeit": "2026-10-11T17:48:41.419Z",
+      "aenderung": "Ich brauche ein Tool, das mehrere Bilder zu einer PDF zusammenfügt"
+    }
+  ]
+}

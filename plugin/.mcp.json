@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "hello-world": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/mcp/server.js"],
+      "env": { "HELLO_WORLD_URL": "${HELLO_WORLD_URL:-http://localhost:8810}" }
+    }
+  }
+}

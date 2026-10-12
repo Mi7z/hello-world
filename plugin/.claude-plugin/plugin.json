@@ -1,0 +1,8 @@
+{
+  "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
+  "name": "hello-world",
+  "version": "0.3.0",
+  "description": "Hello World – die offene Datenbank für Apps, Skills und KI-Werkzeuge. Claude sucht dort selbstständig passende Werkzeuge, nutzt Skills und kann Neues nach festen Regeln beitragen.",
+  "author": { "name": "Hello World" },
+  "skills": ["./skills/"]
+}

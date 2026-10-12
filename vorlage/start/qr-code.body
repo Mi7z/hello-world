@@ -1,0 +1,32 @@
+<h1>🔳 QR-Code erstellen</h1>
+<p class="unter">Text oder Link eingeben – der QR-Code entsteht sofort, als PNG zum Herunterladen.</p>
+<div class="karte">
+  <label for="text">Text oder Link</label>
+  <textarea id="text" rows="3" placeholder="https://beispiel.de">https://</textarea>
+  <div class="zeile">
+    <div style="flex:1;min-width:120px"><label for="groesse">Größe</label><select id="groesse"><option value="6">Klein</option><option value="10" selected>Mittel</option><option value="16">Groß</option></select></div>
+    <div style="flex:1;min-width:120px"><label for="farbe">Farbe</label><input id="farbe" type="color" value="#16181d" style="padding:4px"></div>
+  </div>
+</div>
+<div class="karte" style="text-align:center"><canvas id="bild" style="max-width:100%;image-rendering:pixelated;background:#fff;border-radius:8px"></canvas><p class="hinweis" id="info"></p><a class="knopf" id="laden" download="qr-code.png">PNG laden</a></div>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+function zeichnen() {
+  const text = $('text').value.trim();
+  const c = $('bild'), ctx = c.getContext('2d');
+  if (!text) { c.width = c.height = 0; $('info').textContent = 'Bitte Text eingeben.'; return; }
+  try {
+    const qr = qrcode(0, 'M'); qr.addData(unescape(encodeURIComponent(text))); qr.make();
+    const n = qr.getModuleCount(), z = Number($('groesse').value), rand = 4 * z;
+    c.width = c.height = n * z + rand * 2;
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+    ctx.fillStyle = $('farbe').value;
+    for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (qr.isDark(y, x)) ctx.fillRect(rand + x * z, rand + y * z, z, z);
+    $('info').textContent = `${c.width}×${c.width}px`;
+    $('laden').href = c.toDataURL('image/png');
+  } catch { $('info').innerHTML = '<span class="fehler">Der Text ist zu lang für einen QR-Code.</span>'; }
+}
+['text', 'groesse', 'farbe'].forEach((id) => $(id).addEventListener('input', zeichnen));
+zeichnen();
+</script>

@@ -1,0 +1,23 @@
+/* design.klar – freundlich, ruhig, gut lesbar. Hell und dunkel automatisch. */
+:root:root {
+  color-scheme: light;
+  --bg: #f6f5f2; --fl: #ffffff; --fl2: #f1efea; --li: #e6e3dc; --li2: #d3cfc6;
+  --tx: #1d1c1a; --tx2: #5d5a55; --tx3: #918d86;
+  --ak: #3b5bdb; --ak2: #e9eeff; --ak-tx: #ffffff;
+  --rot: #d9480f; --gelb: #d68c00; --gruen: #2b8a3e;
+  --r: 16px; --r-klein: 10px;
+  --schrift: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --schrift-titel: var(--schrift);
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --schatten: 0 1px 2px rgba(20, 18, 14, .05), 0 8px 24px rgba(20, 18, 14, .06);
+}
+@media (prefers-color-scheme: dark) {
+  :root:root {
+    color-scheme: dark;
+    --bg: #121212; --fl: #1c1c1e; --fl2: #262628; --li: #2f2f33; --li2: #3d3d42;
+    --tx: #f2f2f3; --tx2: #a9a9ae; --tx3: #77777d;
+    --ak: #7b93ff; --ak2: #1f2747; --ak-tx: #0b0f24;
+    --rot: #ff7a45; --gelb: #f2b538; --gruen: #51cf66;
+    --schatten: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+  }
+}

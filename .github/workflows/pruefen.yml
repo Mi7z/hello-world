@@ -1,0 +1,17 @@
+# Prüft bei jedem Pull Request alle Apps nach den Regeln in AGENTS.md.
+name: Apps prüfen
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  pruefen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node werkzeuge/pruefen.js

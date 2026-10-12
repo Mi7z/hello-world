@@ -1,0 +1,14 @@
+{
+  "versionen": [
+    {
+      "id": "v1",
+      "eltern": null,
+      "autor": {
+        "login": "Mi7z",
+        "name": "Mi7z"
+      },
+      "zeit": "2026-10-11T20:40:54.588Z",
+      "aenderung": "erste Version: Ich brauche ein Tool, das einen oder mehrere Würfel würfelt (z. B. 2 sechsseitige oder ein 20-seitiger)"
+    }
+  ]
+}

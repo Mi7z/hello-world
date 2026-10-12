@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Zähler-App – mehrere Namen zählen</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+/* Hello-World-Grund-Design für Apps. Farben, Schrift und Rundungen kommen aus dem
+   gewählten Design (design.klar, design.terminal …) – hier nur Ersatzwerte. */
+:where(:root){color-scheme:light dark;--bg:#f6f5f2;--fl:#fff;--fl2:#f1efea;--li:#e6e3dc;--li2:#d3cfc6;--tx:#1d1c1a;--tx2:#5d5a55;--tx3:#918d86;--ak:#3b5bdb;--ak2:#e9eeff;--ak-tx:#fff;--rot:#d9480f;--gelb:#d68c00;--gruen:#2b8a3e;--r:16px;--r-klein:10px;--schrift:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--schrift-titel:var(--schrift);--mono:ui-monospace,Menlo,Consolas,monospace;--schatten:0 1px 2px rgba(0,0,0,.05),0 8px 24px rgba(0,0,0,.06)}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--bg);color:var(--tx);font:16px/1.55 var(--schrift);padding:64px 16px 40px;max-width:760px;margin:0 auto;-webkit-font-smoothing:antialiased}
+h1{font:700 24px/1.2 var(--schrift-titel);margin:6px 0 6px;letter-spacing:-.01em}h2{font:650 18px/1.3 var(--schrift-titel);margin:18px 0 8px}
+p.unter{color:var(--tx2);margin:0 0 20px}
+.karte{background:var(--fl);border:1px solid var(--li);border-radius:var(--r);padding:18px;margin-bottom:14px;box-shadow:var(--schatten)}
+button,.knopf{font:600 15px/1 var(--schrift);border:1px solid var(--ak);border-radius:var(--r-klein);padding:12px 18px;min-height:46px;background:var(--ak);color:var(--ak-tx);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:filter .15s,transform .05s}
+button:hover,.knopf:hover{filter:brightness(1.07)}button:active,.knopf:active{transform:translateY(1px)}
+button.zweit,.knopf.zweit{background:var(--fl2);color:var(--tx);border-color:var(--li)}
+button:disabled{opacity:.45;cursor:default;filter:none}
+input,select,textarea{font:16px/1.4 var(--schrift);color:var(--tx);background:var(--fl2);border:1px solid var(--li);border-radius:var(--r-klein);padding:11px 13px;min-height:46px;width:100%;caret-color:var(--ak)}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--ak);outline-offset:-1px;border-color:transparent}
+input[type=range]{padding:0;min-height:32px;accent-color:var(--ak)}input[type=color]{padding:4px;min-height:46px}input[type=checkbox],input[type=radio]{width:auto;min-height:auto;accent-color:var(--ak)}
+label{display:block;font-size:14px;color:var(--tx2);margin:12px 0 6px;font-weight:500}
+.ablage{border:2px dashed var(--li2);border-radius:var(--r);padding:32px 16px;text-align:center;color:var(--tx2);cursor:pointer;background:var(--fl)}
+.ablage.drueber{border-color:var(--ak);background:var(--ak2);color:var(--tx)}
+.zeile{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.spalten{display:grid;gap:14px}
+.reiter{display:flex;gap:4px;background:var(--fl2);border:1px solid var(--li);border-radius:var(--r-klein);padding:4px;margin-bottom:14px}
+.reiter button{flex:1;background:none;color:var(--tx2);border:0;min-height:40px;font-weight:500}
+.reiter button[aria-selected=true],.reiter button.an{background:var(--fl);color:var(--tx);box-shadow:var(--schatten);font-weight:650}
+.hinweis{font-size:14px;color:var(--tx2)}.fehler{color:var(--rot)}
+a{color:var(--ak)}
+[hidden]{display:none!important}
+:focus-visible{outline:2px solid var(--ak);outline-offset:2px}
+@media (min-width:900px){body{max-width:1120px;padding:32px 36px 48px}.spalten{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}}
+
+/* App-spezifisch */
+.raster{display:grid;gap:12px;grid-template-columns:1fr}
+@media (min-width:600px){.raster{grid-template-columns:1fr 1fr}}
+@media (min-width:900px){.raster{grid-template-columns:1fr 1fr 1fr}}
+.z-karte{background:var(--fl);border:1px solid var(--li);padding:0;display:flex;flex-direction:column}
+.z-kopf{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--li)}
+.z-name{flex:1;font-size:15px;color:var(--tx);word-break:break-word;min-width:0}
+.z-mini{min-height:36px;padding:4px 10px;font-size:13px}
+.z-plus{border:none;background:none;color:var(--tx);cursor:pointer;width:100%;padding:28px 12px;font:inherit;display:flex;flex-direction:column;align-items:center;gap:4px}
+.z-plus:hover{background:var(--ak2)}
+.z-plus:active{background:var(--ak);color:var(--bg)}
+.z-zahl{font-size:52px;line-height:1;color:var(--ak);font-weight:700}
+.z-plus:active .z-zahl{color:var(--bg)}
+.z-tipp{font-size:12px;color:var(--tx2)}
+.z-fuss{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--li)}
+.z-fuss button{flex:1;min-height:40px;padding:6px 8px}
+.summe{font-variant-numeric:tabular-nums}
+.leer{color:var(--tx2);text-align:center;padding:24px}
+.bestaetigung{color:var(--rot);font-size:13px;margin-right:4px;align-self:center}
+</style>
+</head>
+<body>
+<h1>Zähler 🔢</h1>
+<p class="unter">Lege beliebig viele benannte Zähler an und tippe sie zum Hochzählen. Alles bleibt nur lokal in deinem Browser.</p>
+
+<div class="spalten">
+  <div>
+    <div class="karte">
+      <label for="nameEingabe">Neuen Zähler hinzufügen</label>
+      <div class="zeile">
+        <input id="nameEingabe" type="text" placeholder="z. B. Vögel, Kaffee, Punkte …" maxlength="40" style="flex:1;min-width:140px">
+        <button id="anlegenBtn" type="button">+ Anlegen</button>
+      </div>
+      <p id="fehler" class="fehler" hidden></p>
+    </div>
+
+    <div class="karte">
+      <div class="zeile" style="justify-content:space-between">
+        <span class="hinweis">Zähler gesamt: <b id="anzahl" class="summe">0</b> · Summe: <b id="summe" class="summe">0</b></span>
+      </div>
+      <div class="zeile" style="margin-top:10px">
+        <button id="alleReset" class="zweit" type="button">Alle auf 0</button>
+        <button id="alleLoeschen" class="zweit" type="button">Alle löschen</button>
+      </div>
+      <p id="speicherHinweis" class="hinweis" style="margin-bottom:0" hidden></p>
+    </div>
+  </div>
+
+  <div>
+    <div id="liste" class="raster"></div>
+    <div id="leer" class="karte leer">Noch keine Zähler. Lege oben deinen ersten an!</div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var KEY="app.tallycounter.v1";
+  var speicherOk=false;
+  var speicher=null;
+  var zaehler=[];
+  var bearbeiteId=null;      // Zähler, dessen Name gerade bearbeitet wird
+  var loeschId=null;         // Zähler mit offener Lösch-Bestätigung
+  var alleLoeschArmed=false; // zweistufiges "Alle löschen"
+
+  function pruefeSpeicher(){
+    try{
+      var s=window.localStorage;
+      if(!s)return;
+      var t="__test__"+Math.random();
+      s.setItem(t,"1");
+      s.removeItem(t);
+      speicher=s;
+      speicherOk=true;
+    }catch(e){
+      speicher=null;
+      speicherOk=false;
+    }
+  }
+
+  function laden(){
+    if(!speicherOk)return;
+    try{
+      var r=speicher.getItem(KEY);
+      if(r){
+        var d=JSON.parse(r);
+        if(Array.isArray(d)){
+          zaehler=d.filter(function(z){return z&&typeof z.id==="string";}).map(function(z){
+            return {id:z.id,name:String(z.name||"Zähler").slice(0,40),wert:Math.max(0,parseInt(z.wert,10)||0)};
+          });
+        }
+      }
+    }catch(e){}
+  }
+
+  function speichern(){
+    if(!speicherOk)return;
+    try{speicher.setItem(KEY,JSON.stringify(zaehler));}
+    catch(e){speicherOk=false;aktualisiereSpeicherHinweis();}
+  }
+
+  function neueId(){return "z"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+
+  var liste=document.getElementById("liste");
+  var leer=document.getElementById("leer");
+  var fehler=document.getElementById("fehler");
+  var nameEingabe=document.getElementById("nameEingabe");
+  var anzahlEl=document.getElementById("anzahl");
+  var summeEl=document.getElementById("summe");
+  var speicherHinweis=document.getElementById("speicherHinweis");
+  var alleLoeschenBtn=document.getElementById("alleLoeschen");
+
+  function zeigeFehler(t){fehler.textContent=t;fehler.hidden=!t;}
+
+  function aktualisiereSpeicherHinweis(){
+    if(speicherOk){speicherHinweis.hidden=true;}
+    else{speicherHinweis.hidden=false;speicherHinweis.textContent="Hinweis: Speichern ist in diesem Browser nicht möglich – Stände gehen beim Schließen verloren.";}
+  }
+
+  function finde(id){for(var i=0;i<zaehler.length;i++)if(zaehler[i].id===id)return zaehler[i];return null;}
+
+  function anlegen(){
+    var n=nameEingabe.value.trim();
+    if(!n){zeigeFehler("Bitte zuerst einen Namen eingeben.");nameEingabe.focus();return;}
+    zeigeFehler("");
+    zaehler.push({id:neueId(),name:n.slice(0,40),wert:0});
+    nameEingabe.value="";
+    speichern();
+    rendere();
+    nameEingabe.focus();
+  }
+
+  function plus(id){var z=finde(id);if(z){z.wert++;speichern();rendere();}}
+  function minus(id){var z=finde(id);if(z&&z.wert>0){z.wert--;speichern();rendere();}}
+  function resetEinen(id){var z=finde(id);if(z){z.wert=0;speichern();rendere();}}
+  function loeschen(id){
+    zaehler=zaehler.filter(function(e){return e.id!==id;});
+    loeschId=null;
+    speichern();rendere();
+  }
+
+  function rendere(){
+    liste.innerHTML="";
+    leer.hidden=zaehler.length!==0;
+    var summe=0;
+
+    zaehler.forEach(function(z){
+      summe+=z.wert;
+      var karte=document.createElement("div");
+      karte.className="z-karte";
+
+      /* Kopf: Name oder Bearbeiten-Feld */
+      var kopf=document.createElement("div");
+      kopf.className="z-kopf";
+
+      if(bearbeiteId===z.id){
+        var feld=document.createElement("input");
+        feld.type="text";feld.maxLength=40;feld.value=z.name;
+        feld.style.flex="1";feld.style.minWidth="0";feld.style.minHeight="36px";
+        kopf.appendChild(feld);
+
+        var bOk=document.createElement("button");
+        bOk.className="z-mini";bOk.type="button";bOk.textContent="OK";
+        kopf.appendChild(bOk);
+
+        var speichereName=function(){
+          var neu=feld.value.trim();
+          if(neu){z.name=neu.slice(0,40);}
+          bearbeiteId=null;
+          speichern();rendere();
+        };
+        bOk.addEventListener("click",speichereName);
+        feld.addEventListener("keydown",function(ev){
+          if(ev.key==="Enter"){ev.preventDefault();speichereName();}
+          else if(ev.key==="Escape"){bearbeiteId=null;rendere();}
+        });
+        karte.appendChild(kopf);
+        setTimeout(function(){feld.focus();feld.select();},0);
+      }else{
+        var name=document.createElement("div");
+        name.className="z-name";
+        name.textContent=z.name;
+        kopf.appendChild(name);
+
+        var bNam=document.createElement("button");
+        bNam.className="zweit z-mini";bNam.type="button";bNam.textContent="✎";
+        bNam.title="Umbenennen";
+        bNam.addEventListener("click",function(){bearbeiteId=z.id;loeschId=null;rendere();});
+        kopf.appendChild(bNam);
+        karte.appendChild(kopf);
+      }
+
+      /* Zähl-Fläche */
+      var plusBtn=document.createElement("button");
+      plusBtn.className="z-plus";plusBtn.type="button";
+      plusBtn.setAttribute("aria-label",z.name+" um eins erhöhen, aktuell "+z.wert);
+      var zahl=document.createElement("span");
+      zahl.className="z-zahl";zahl.textContent=z.wert;
+      var tipp=document.createElement("span");
+      tipp.className="z-tipp";tipp.textContent="Tippen für +1";
+      plusBtn.appendChild(zahl);plusBtn.appendChild(tipp);
+      plusBtn.addEventListener("click",function(){plus(z.id);});
+      karte.appendChild(plusBtn);
+
+      /* Fuß */
+      var fuss=document.createElement("div");
+      fuss.className="z-fuss";
+
+      if(loeschId===z.id){
+        var frage=document.createElement("span");
+        frage.className="bestaetigung";frage.textContent="Löschen?";
+        var bJa=document.createElement("button");
+        bJa.type="button";bJa.textContent="Ja";
+        bJa.style.borderColor="var(--rot)";bJa.style.color="var(--rot)";
+        bJa.addEventListener("click",function(){loeschen(z.id);});
+        var bNein=document.createElement("button");
+        bNein.className="zweit";bNein.type="button";bNein.textContent="Nein";
+        bNein.addEventListener("click",function(){loeschId=null;rendere();});
+        fuss.appendChild(frage);fuss.appendChild(bJa);fuss.appendChild(bNein);
+      }else{
+        var bMinus=document.createElement("button");
+        bMinus.className="zweit";bMinus.type="button";bMinus.textContent="−1";
+        bMinus.disabled=z.wert<=0;
+        bMinus.addEventListener("click",function(){minus(z.id);});
+        var bReset=document.createElement("button");
+        bReset.className="zweit";bReset.type="button";bReset.textContent="0";
+        bReset.title="Auf null zurücksetzen";
+        bReset.addEventListener("click",function(){resetEinen(z.id);});
+        var bDel=document.createElement("button");
+        bDel.className="zweit";bDel.type="button";bDel.textContent="🗑";
+        bDel.title="Löschen";
+        bDel.addEventListener("click",function(){loeschId=z.id;bearbeiteId=null;rendere();});
+        fuss.appendChild(bMinus);fuss.appendChild(bReset);fuss.appendChild(bDel);
+      }
+      karte.appendChild(fuss);
+
+      liste.appendChild(karte);
+    });
+
+    anzahlEl.textContent=zaehler.length;
+    summeEl.textContent=summe;
+
+    alleLoeschenBtn.textContent=alleLoeschArmed?"Wirklich? Erneut tippen":"Alle löschen";
+  }
+
+  /* Anlegen: Klick + Enter */
+  document.getElementById("anlegenBtn").addEventListener("click",anlegen);
+  nameEingabe.addEventListener("keydown",function(ev){
+    if(ev.key==="Enter"){ev.preventDefault();anlegen();}
+  });
+  nameEingabe.addEventListener("input",function(){if(!fehler.hidden)zeigeFehler("");});
+
+  document.getElementById("alleReset").addEventListener("click",function(){
+    if(zaehler.length===0)return;
+    zaehler.forEach(function(z){z.wert=0;});
+    speichern();rendere();
+  });
+
+  alleLoeschenBtn.addEventListener("click",function(){
+    if(zaehler.length===0)return;
+    if(!alleLoeschArmed){
+      alleLoeschArmed=true;
+      rendere();
+      setTimeout(function(){alleLoeschArmed=false;rendere();},4000);
+      return;
+    }
+    alleLoeschArmed=false;
+    zaehler=[];loeschId=null;bearbeiteId=null;
+    speichern();rendere();
+  });
+
+  pruefeSpeicher();
+  laden();
+  aktualisiereSpeicherHinweis();
+  rendere();
+})();
+</script>
+</body>
+</html>

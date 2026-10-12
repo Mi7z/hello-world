@@ -1,0 +1,88 @@
+{
+  "titel": "QR-Code",
+  "beschreibung": "Du gibst einen Text oder Link ein und bekommst sofort einen QR-Code als PNG zum Herunterladen – Größe und Farbe kannst du selbst wählen.",
+  "tags": [
+    "qr",
+    "qrcode",
+    "code",
+    "link",
+    "url",
+    "barcode",
+    "erstellen"
+  ],
+  "anfrage": "",
+  "ki": "Start-App",
+  "erstellt": "2026-10-11T20:00:00.000Z",
+  "hinweise": [],
+  "kategorie": "generator",
+  "funktionen": [
+    "QR-Code aus Text oder Link als PNG"
+  ],
+  "typ": "browser",
+  "aliase": [
+    "qr-code"
+  ],
+  "quellen": [
+    {
+      "repo": "kazuhikoarase/qrcode-generator",
+      "url": "https://github.com/kazuhikoarase/qrcode-generator",
+      "lizenz": "MIT",
+      "autor": "kazuhikoarase",
+      "paket": "qrcode-generator"
+    }
+  ],
+  "beispiele": [
+    "Ich brauche einen QR-Code für meine Webseite",
+    "wie kann ich einen QR-Code erstellen",
+    "Link in QR-Code umwandeln",
+    "QR-Code aus Text generieren",
+    "QR Code für WLAN-Passwort machen",
+    "QR-Code zum Download als Bild",
+    "einen QR-Code in anderer Farbe erstellen",
+    "QR-Code für Visitenkarte",
+    "Text als QR-Code speichern",
+    "QR-Code groß und druckbar",
+    "URL in QR umwandeln",
+    "create a QR code from a link",
+    "generate QR code PNG",
+    "how to make a QR code for free",
+    "qr code with custom color",
+    "QR-Code für Speisekarte erstellen",
+    "schnell einen QR-Code basteln",
+    "QR Code für Instagram Profil"
+  ],
+  "stichworte": [
+    "qr",
+    "qr-code",
+    "qrcode",
+    "qr code",
+    "code",
+    "barcode",
+    "strichcode",
+    "scannen",
+    "scanner",
+    "link",
+    "url",
+    "text",
+    "png",
+    "bild",
+    "image",
+    "generator",
+    "erstellen",
+    "generieren",
+    "create",
+    "generate",
+    "download",
+    "herunterladen",
+    "farbe",
+    "color",
+    "wlan",
+    "visitenkarte",
+    "umwandeln",
+    "convert",
+    "weblink",
+    "quadrat"
+  ],
+  "beschreibungStand": "2026-10-11T20:56:54.763Z",
+  "symbol": "🔳"
+}

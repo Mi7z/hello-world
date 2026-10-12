@@ -1,0 +1,14 @@
+{
+  "versionen": [
+    {
+      "id": "v1",
+      "eltern": null,
+      "autor": {
+        "login": "Mi7z",
+        "name": "Mi7z"
+      },
+      "zeit": "2026-10-12T04:42:15.649Z",
+      "aenderung": "erste Version: Ich schreibe meinen Einkaufszettel einfach als freien Text und will eine nach Supermarkt-Abteilungen sortierte Einkaufsliste zum Abhaken"
+    }
+  ]
+}

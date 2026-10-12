@@ -1,0 +1,14 @@
+{
+  "versionen": [
+    {
+      "id": "v1",
+      "eltern": null,
+      "autor": {
+        "login": "Mi7z",
+        "name": "Mi7z"
+      },
+      "zeit": "2026-10-11T21:25:58.538Z",
+      "aenderung": "erste Version: Ich brauche einen Countdown-Timer mit Alarmton"
+    }
+  ]
+}

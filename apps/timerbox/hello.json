@@ -1,0 +1,89 @@
+{
+  "titel": "Timerbox – Countdown-Timer mit Alarm",
+  "beschreibung": "Mit diesem Countdown-Timer stellst du eine Zeit ein, lässt sie rückwärts laufen und wirst am Ende durch einen Alarmton erinnert. Praktisch für Kochen, Pausen, Lernen oder kurze Aufgaben – alles direkt im Browser.",
+  "kategorie": "werkzeug",
+  "funktionen": [
+    "Zeit einstellen, Countdown starten und am Ende einen Alarmton abspielen"
+  ],
+  "tags": [
+    "timer",
+    "countdown",
+    "alarm",
+    "uhr",
+    "werkzeug"
+  ],
+  "anfrage": "Ich brauche einen Countdown-Timer mit Alarmton",
+  "ki": "Claude",
+  "erstellt": "2026-10-11T21:25:58.537Z",
+  "version": 1,
+  "typ": "browser",
+  "hinweise": [],
+  "quellen": [
+    {
+      "repo": "VincentLoy/simplyCountdown.js",
+      "url": "https://github.com/VincentLoy/simplyCountdown.js",
+      "lizenz": "MIT",
+      "autor": "VincentLoy",
+      "paket": "simplycountdown.js"
+    }
+  ],
+  "autor": {
+    "login": "Mi7z",
+    "name": "Mi7z"
+  },
+  "beispiele": [
+    "Ich brauche einen Countdown-Timer",
+    "wie kann ich eine Zeit rückwärts zählen lassen",
+    "Timer mit Alarm am Ende",
+    "Eieruhr für 5 Minuten",
+    "Küchentimer zum Kochen",
+    "25 Minuten Timer für Pomodoro",
+    "Wecker nach 10 Minuten klingeln lassen",
+    "Zeit stoppen beim Lernen",
+    "kurzer Timer für eine Pause",
+    "Alarm nach 1 Minute",
+    "ich will einen Timer starten und pausieren",
+    "Countdown bis Null mit Ton",
+    "Stunden Minuten Sekunden einstellen und ablaufen lassen",
+    "I need a countdown timer with alarm",
+    "simple kitchen timer in the browser",
+    "set a 5 minute timer",
+    "online stopwatch countdown",
+    "Zeitschaltuhr für Tee ziehen lassen",
+    "Erinnerung nach bestimmter Zeit mit Signalton",
+    "Workout Timer für Übungen"
+  ],
+  "stichworte": [
+    "timer",
+    "countdown",
+    "countdown-timer",
+    "wecker",
+    "alarm",
+    "alarmton",
+    "eieruhr",
+    "küchentimer",
+    "zeit",
+    "zeitmesser",
+    "zeitschaltuhr",
+    "stoppuhr",
+    "rückwärts",
+    "pomodoro",
+    "pause",
+    "erinnerung",
+    "signalton",
+    "piepton",
+    "minuten",
+    "sekunden",
+    "stunden",
+    "kochen",
+    "lernen",
+    "clock",
+    "stopwatch",
+    "reminder",
+    "beep",
+    "egg timer",
+    "kitchen timer"
+  ],
+  "symbol": "⏱️",
+  "beschreibungStand": "2026-10-11T21:26:11.565Z"
+}

@@ -1,0 +1,14 @@
+{
+  "titel": "Name der App",
+  "beschreibung": "Ein bis zwei Sätze, was die App kann.",
+  "kategorie": "werkzeug",
+  "funktionen": ["Hauptfunktion"],
+  "tags": ["suchwort1", "suchwort2", "suchwort3"],
+  "typ": "server",
+  "version": 1,
+  "server": {
+    "start": "npm install && npm start",
+    "kosten": "z. B. kostenlos auf dem eigenen Rechner oder kleiner VPS ab ca. 5 €/Monat",
+    "betreiber_url": ""
+  }
+}

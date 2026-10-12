@@ -1,0 +1,55 @@
+{
+  "name": "hello-world-desktop",
+  "productName": "Hello World",
+  "version": "0.1.0",
+  "description": "Hello World – die freie App-Wolke als eigenes Programm",
+  "main": "main.cjs",
+  "author": "Hello World",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "bauen": "sh bauen.sh"
+  },
+  "devDependencies": {
+    "electron": "44.7.0",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "world.hello.app",
+    "productName": "Hello World",
+    "asar": false,
+    "files": [
+      "main.cjs",
+      "package.json",
+      "hw/**/*"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Utility",
+      "icon": "hw/public/icon-512.png",
+      "desktop": {
+        "entry": {
+          "StartupWMClass": "hello-world-desktop"
+        }
+      }
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "hw/public/icon-512.png"
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.productivity",
+      "icon": "hw/public/icon-512.png"
+    }
+  }
+}

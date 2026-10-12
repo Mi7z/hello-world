@@ -1,0 +1,14 @@
+{
+  "versionen": [
+    {
+      "id": "v1",
+      "eltern": null,
+      "autor": {
+        "login": "hello-world",
+        "name": "Hello World"
+      },
+      "zeit": "2026-10-11T21:15:29.683Z",
+      "aenderung": "erste Version"
+    }
+  ]
+}

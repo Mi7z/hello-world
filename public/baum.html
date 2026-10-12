@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f6f5f2">
+<title>Stammbaum – Hello World</title>
+<link rel="icon" href="/icon.svg">
+<link rel="stylesheet" href="/style.css">
+<script src="/design.js"></script>
+</head>
+<body>
+<header class="kopf">
+  <a href="/" class="logo"><span class="logo-zeichen" aria-hidden="true">hw</span><span>Hello World</span></a>
+  <div class="kopf-rechts"><button type="button" class="konto" data-anmelde-knopf>Anmelden</button></div>
+</header>
+<main class="seite" style="max-width:900px">
+  <a class="zurueck" id="zurueck" href="/">Zurück</a>
+  <div class="app-kopf">
+    <h1 id="titel" class="hw-titel">Versionen</h1>
+    <p id="beschreibung"></p>
+  </div>
+
+  <h2 class="hw-abschnitt">Die besten Versionen</h2>
+  <p class="hinweis">Jede Weiterentwicklung ist ein eigener Zweig mit ihren Besonderheiten. Die beste öffnet sich automatisch.</p>
+  <div id="distributionen" style="margin-top:12px"></div>
+
+  <h2 class="hw-abschnitt">Stammbaum</h2>
+  <p class="hinweis">Oben die erste Version, darunter alle Weiterentwicklungen. Tippe eine Version an, um sie zu öffnen oder zu bewerten.</p>
+  <div class="flaeche baum" id="baum" style="margin-top:12px"></div>
+  <div class="flaeche knoten-info" id="info" hidden></div>
+</main>
+
+<script src="/kern.js"></script>
+<script>
+const slugRoh = decodeURIComponent(location.pathname.split('/')[2] || '');
+let daten = null, gewaehlt = null;
+
+async function laden() {
+  try { daten = await api(`/api/stammbaum/${encodeURIComponent(slugRoh)}`); }
+  catch (err) { document.querySelector('main').innerHTML = `<h1 class="hw-titel" style="margin-top:40px">${esc(err.message)}</h1><a href="/">Zurück zu Hello World</a>`; return; }
+  const app = daten.app;
+  document.title = `Stammbaum ${kennung(app)} – Hello World`;
+  $('titel').textContent = kennung(app);
+  $('zurueck').href = `/a/${kennung(app)}`;
+  $('beschreibung').textContent = app.beschreibung;
+  const nachId = Object.fromEntries(daten.versionen.map((v) => [v.id, v]));
+  $('distributionen').innerHTML = daten.distributionen.map((id, i) => distributionKarte(app, nachId[id], i)).join('');
+
+  // Baum wie beim Befehl „tree": ├─ └─ │
+  const zeilen = [];
+  const wurzeln = daten.versionen.filter((v) => !v.eltern);
+  const gehen = (v, vorne, letzter, istWurzel) => {
+    zeilen.push({ v, ast: istWurzel ? '' : `${vorne}${letzter ? '└─ ' : '├─ '}` });
+    const weiter = istWurzel ? '' : `${vorne}${letzter ? '   ' : '│  '}`;
+    v.kinder.forEach((k, i) => gehen(nachId[k], weiter, i === v.kinder.length - 1, false));
+  };
+  wurzeln.forEach((w) => gehen(w, '', true, true));
+  $('baum').innerHTML = zeilen.map(({ v, ast }) => `<button type="button" class="knoten${v.id === gewaehlt ? ' gewaehlt' : ''}" data-v="${v.id}">
+    <span class="ast">${esc(ast)}●&nbsp;</span><span class="vid">${v.id}</span><span class="wer">${esc(autorText(v.autor))}</span><span class="was">${esc(v.aenderung)}</span>${v.wertung.schnitt ? `<span class="stern">★${String(v.wertung.schnitt).replace('.', ',')}</span>` : ''}${!v.kinder.length ? '<span class="ende marke">Zweig-Ende</span>' : ''}
+  </button>`).join('');
+  if (gewaehlt) zeigen(gewaehlt);
+}
+
+function zeigen(id) {
+  gewaehlt = id;
+  const app = daten.app;
+  const v = daten.versionen.find((x) => x.id === id);
+  document.querySelectorAll('.knoten').forEach((k) => k.classList.toggle('gewaehlt', k.dataset.v === id));
+  const eltern = v.eltern ? `weiterentwickelt aus Version ${v.eltern.slice(1)}` : 'die erste Version';
+  $('info').hidden = false;
+  $('info').innerHTML = `
+    <div class="dist-kopf"><b>Version ${v.id.slice(1)}</b><span class="hinweis">${sterneText(v.wertung)}</span></div>
+    <div class="hinweis">von ${esc(autorText(v.autor))} · ${new Date(v.zeit).toLocaleString('de-DE')} · ${eltern}${v.kinder.length ? ` · ${v.kinder.length} Weiterentwicklung(en)` : ''}</div>
+    <p>${esc(v.aenderung)}</p>
+    ${v.eigenarten.length ? `<ul class="eigenarten">${v.eigenarten.map((e) => `<li>+ ${esc(e.text)} <span class="leise-text">${esc(autorText(e.autor))}</span></li>`).join('')}</ul>` : ''}
+    <div class="hinweis" style="margin-top:12px">${ich ? 'Deine Bewertung:' : 'Zum Bewerten bitte anmelden:'}</div>
+    <div class="sterne" id="sterne">${[1, 2, 3, 4, 5].map((n) => `<button type="button" class="${(v.wertung.meine || 0) >= n ? 'an' : ''}" data-sterne="${n}" aria-label="${n} Sterne">★</button>`).join('')}</div>
+    <div class="knoepfe links">
+      <a class="knopf" href="/a/${kennung(app)}@${v.id}">Öffnen</a>
+      <a class="knopf zweit" href="/a/${kennung(app)}@${v.id}?weiter=1">Daran weiterarbeiten</a>
+    </div>`;
+}
+
+$('baum').addEventListener('click', (ev) => { const k = ev.target.closest('[data-v]'); if (k) zeigen(k.dataset.v); });
+$('info').addEventListener('click', async (ev) => {
+  const b = ev.target.closest('[data-sterne]');
+  if (!b) return;
+  if (!ich) return anmelden();
+  try {
+    await api('/api/bewerten', { method: 'POST', body: JSON.stringify({ slug: daten.app.slug, version: gewaehlt, sterne: Number(b.dataset.sterne) }) });
+    await laden();
+  } catch { /* Anmeldung wurde geöffnet */ }
+});
+document.addEventListener('hw-angemeldet', laden);
+
+ichLaden().then(laden);
+</script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+<h1>🔢 Text zählen</h1>
+<p class="unter">Zeichen, Wörter, Sätze und Lesezeit – während du tippst.</p>
+<div class="karte"><textarea id="text" rows="9" placeholder="Text hier einfügen oder schreiben …"></textarea></div>
+<div class="werte" id="werte"></div>
+<style>.werte{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}.wert{background:var(--fl);border:1px solid var(--li);border-radius:var(--r);padding:12px}.wert b{font-size:24px;display:block}.wert span{font-size:13px;color:var(--tx2)}</style>
+<script>
+const $ = (id) => document.getElementById(id);
+function zaehlen() {
+  const t = $('text').value;
+  const woerter = (t.match(/[\p{L}\p{N}'’-]+/gu) || []).length;
+  const saetze = (t.match(/[^.!?…]+[.!?…]+/g) || []).length || (t.trim() ? 1 : 0);
+  const absaetze = t.split(/\n\s*\n/).filter((x) => x.trim()).length;
+  const min = woerter / 200;
+  const werte = [
+    [t.length, 'Zeichen'], [t.replace(/\s/g, '').length, 'Zeichen ohne Leerzeichen'], [woerter, 'Wörter'],
+    [saetze, 'Sätze'], [absaetze, 'Absätze'], [min < 1 ? (woerter ? '< 1 Min.' : '0 Min.') : Math.round(min) + ' Min.', 'Lesezeit'],
+  ];
+  $('werte').innerHTML = werte.map(([w, n]) => `<div class="wert"><b>${w}</b><span>${n}</span></div>`).join('');
+}
+$('text').addEventListener('input', zaehlen); zaehlen();
+</script>

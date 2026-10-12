@@ -1,0 +1,34 @@
+{
+  "versionen": [
+    {
+      "id": "v1",
+      "eltern": null,
+      "autor": {
+        "login": "Mi7z",
+        "name": "Mi7z"
+      },
+      "zeit": "2026-10-11T19:15:43.937Z",
+      "aenderung": "erste Version: Ich brauche ein Tool wie paint"
+    },
+    {
+      "id": "v2",
+      "eltern": "v1",
+      "autor": {
+        "login": "Mi7z",
+        "name": "Mi7z"
+      },
+      "zeit": "2026-10-11T19:54:14.579Z",
+      "aenderung": "Dort braucht man auch noch sowas wie Formen oder Werkzeuge die man einfügen kann. Also jetzt zum Beispiel ein Quadrat oder ein Text"
+    },
+    {
+      "id": "v3",
+      "eltern": "v2",
+      "autor": {
+        "login": "Mi7z",
+        "name": "Mi7z"
+      },
+      "zeit": "2026-10-11T20:05:02.481Z",
+      "aenderung": "Hintergrund auch wählbar und tools wie füllen oder ausschneiden hinzufügen"
+    }
+  ]
+}

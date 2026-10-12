@@ -1,0 +1,92 @@
+{
+  "titel": "Shutdown Timer",
+  "beschreibung": "Du legst fest, nach wie vielen Minuten dein Computer automatisch herunterfährt, neu startet oder in den Ruhezustand geht – mit sichtbarem Countdown, Vorwarnung und einem Knopf zum Abbrechen.",
+  "kategorie": "werkzeug",
+  "funktionen": [
+    "Den PC nach einer einstellbaren Zeit (in Minuten) automatisch herunterfahren, mit Countdown und Abbruch-Möglichkeit."
+  ],
+  "tags": [
+    "shutdown",
+    "timer",
+    "herunterfahren",
+    "countdown",
+    "pc"
+  ],
+  "anfrage": "Ich brauche einen Shutdown Timer, der meinen PC nach einer einstellbaren Zeit herunterfährt",
+  "ki": "Claude",
+  "erstellt": "2026-10-11T20:30:31.668Z",
+  "version": 1,
+  "typ": "browser",
+  "hinweise": [],
+  "quellen": [
+    {
+      "repo": "VincentLoy/simplyCountdown.js",
+      "url": "https://github.com/VincentLoy/simplyCountdown.js",
+      "lizenz": "MIT",
+      "autor": "VincentLoy",
+      "paket": "simplycountdown.js"
+    }
+  ],
+  "autor": {
+    "login": "Mi7z",
+    "name": "Mi7z"
+  },
+  "faehigkeiten": [
+    "system.herunterfahren",
+    "system.abbrechen",
+    "benachrichtigung.zeigen"
+  ],
+  "beispiele": [
+    "Ich möchte meinen PC nach 30 Minuten automatisch herunterfahren",
+    "wie kann ich den Computer nach einer Zeit ausschalten lassen",
+    "Timer zum Herunterfahren einstellen",
+    "PC soll sich in 1 Stunde ausschalten",
+    "automatisch Rechner abschalten während ich schlafe",
+    "Computer nach Film beenden lassen",
+    "Countdown zum Ausschalten mit Abbrechen-Knopf",
+    "Neustart nach bestimmter Zeit planen",
+    "PC in den Ruhezustand nach 45 Minuten",
+    "Einschlaf-Timer für den Rechner",
+    "shutdown timer for my pc",
+    "turn off computer after 2 hours",
+    "how to auto shutdown my computer",
+    "set a sleep timer to power off the pc",
+    "wie stelle ich eine Abschaltautomatik ein",
+    "Rechner herunterfahren wenn Download fertig",
+    "geplantes Ausschalten abbrechen",
+    "PC ausschalten timer minuten"
+  ],
+  "stichworte": [
+    "timer",
+    "shutdown",
+    "herunterfahren",
+    "ausschalten",
+    "abschalten",
+    "abschaltautomatik",
+    "countdown",
+    "neustart",
+    "neustarten",
+    "restart",
+    "reboot",
+    "ruhezustand",
+    "sleep",
+    "hibernate",
+    "standby",
+    "einschlaftimer",
+    "computer",
+    "pc",
+    "rechner",
+    "automatisch",
+    "zeit",
+    "minuten",
+    "planen",
+    "abbrechen",
+    "cancel",
+    "power off",
+    "poweroff",
+    "schlafen",
+    "nachtmodus"
+  ],
+  "beschreibungStand": "2026-10-11T20:57:08.443Z",
+  "symbol": "🔌"
+}

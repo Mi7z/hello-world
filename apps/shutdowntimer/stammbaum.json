@@ -1,0 +1,14 @@
+{
+  "versionen": [
+    {
+      "id": "v1",
+      "eltern": null,
+      "autor": {
+        "login": "Mi7z",
+        "name": "Mi7z"
+      },
+      "zeit": "2026-10-11T20:30:31.669Z",
+      "aenderung": "erste Version: Ich brauche einen Shutdown Timer, der meinen PC nach einer einstellbaren Zeit herunterfährt"
+    }
+  ]
+}

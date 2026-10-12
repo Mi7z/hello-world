@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paintboard</title>
+<style>
+/* Hello-World-Grund-Design für Apps. Farben, Schrift und Rundungen kommen aus dem
+   gewählten Design (design.klar, design.terminal …) – hier nur Ersatzwerte. */
+:where(:root){color-scheme:light dark;--bg:#f6f5f2;--fl:#fff;--fl2:#f1efea;--li:#e6e3dc;--li2:#d3cfc6;--tx:#1d1c1a;--tx2:#5d5a55;--tx3:#918d86;--ak:#3b5bdb;--ak2:#e9eeff;--ak-tx:#fff;--rot:#d9480f;--gelb:#d68c00;--gruen:#2b8a3e;--r:16px;--r-klein:10px;--schrift:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--schrift-titel:var(--schrift);--mono:ui-monospace,Menlo,Consolas,monospace;--schatten:0 1px 2px rgba(0,0,0,.05),0 8px 24px rgba(0,0,0,.06)}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--bg);color:var(--tx);font:16px/1.55 var(--schrift);padding:64px 16px 40px;max-width:760px;margin:0 auto;-webkit-font-smoothing:antialiased}
+h1{font:700 24px/1.2 var(--schrift-titel);margin:6px 0 6px;letter-spacing:-.01em}h2{font:650 18px/1.3 var(--schrift-titel);margin:18px 0 8px}
+p.unter{color:var(--tx2);margin:0 0 20px}
+.karte{background:var(--fl);border:1px solid var(--li);border-radius:var(--r);padding:18px;margin-bottom:14px;box-shadow:var(--schatten)}
+button,.knopf{font:600 15px/1 var(--schrift);border:1px solid var(--ak);border-radius:var(--r-klein);padding:12px 18px;min-height:46px;background:var(--ak);color:var(--ak-tx);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:filter .15s,transform .05s}
+button:hover,.knopf:hover{filter:brightness(1.07)}button:active,.knopf:active{transform:translateY(1px)}
+button.zweit,.knopf.zweit{background:var(--fl2);color:var(--tx);border-color:var(--li)}
+button:disabled{opacity:.45;cursor:default;filter:none}
+input,select,textarea{font:16px/1.4 var(--schrift);color:var(--tx);background:var(--fl2);border:1px solid var(--li);border-radius:var(--r-klein);padding:11px 13px;min-height:46px;width:100%;caret-color:var(--ak)}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--ak);outline-offset:-1px;border-color:transparent}
+input[type=range]{padding:0;min-height:32px;accent-color:var(--ak)}input[type=color]{padding:4px;min-height:46px}input[type=checkbox],input[type=radio]{width:auto;min-height:auto;accent-color:var(--ak)}
+label{display:block;font-size:14px;color:var(--tx2);margin:12px 0 6px;font-weight:500}
+.ablage{border:2px dashed var(--li2);border-radius:var(--r);padding:32px 16px;text-align:center;color:var(--tx2);cursor:pointer;background:var(--fl)}
+.ablage.drueber{border-color:var(--ak);background:var(--ak2);color:var(--tx)}
+.zeile{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.spalten{display:grid;gap:14px}
+.reiter{display:flex;gap:4px;background:var(--fl2);border:1px solid var(--li);border-radius:var(--r-klein);padding:4px;margin-bottom:14px}
+.reiter button{flex:1;background:none;color:var(--tx2);border:0;min-height:40px;font-weight:500}
+.reiter button[aria-selected=true],.reiter button.an{background:var(--fl);color:var(--tx);box-shadow:var(--schatten);font-weight:650}
+.hinweis{font-size:14px;color:var(--tx2)}.fehler{color:var(--rot)}
+a{color:var(--ak)}
+[hidden]{display:none!important}
+:focus-visible{outline:2px solid var(--ak);outline-offset:2px}
+@media (min-width:900px){body{max-width:1120px;padding:32px 36px 48px}.spalten{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}}
+/* App-spezifisch */
+.werkzeug label{margin:0 0 2px}
+.werkzeug .feld{display:flex;flex-direction:column;gap:2px}
+.farbe-feld input[type=color]{width:56px;height:44px;padding:4px;cursor:pointer}
+.staerke-feld{flex:1;min-width:150px}
+.staerke-feld input[type=range]{min-height:auto;padding:0;background:none;border:0}
+.aktiv{background:var(--ak);color:#fff;border-color:var(--ak)}
+.wz-raster{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.wz-raster button{padding:9px 6px}
+#leinwandBox{position:relative;width:100%;background:var(--fl2);border:1px solid var(--li);border-radius:var(--r);overflow:hidden;touch-action:none}
+canvas{display:block;width:100%;height:auto;background:#ffffff;cursor:crosshair;touch-action:none}
+.staerke-wert{min-width:42px;text-align:right;font-variant-numeric:tabular-nums}
+.gefuellt-feld{display:flex;align-items:center;gap:8px;margin-top:12px}
+.gefuellt-feld input[type=checkbox]{width:20px;height:20px;min-height:0;padding:0}
+.gefuellt-feld label{margin:0}
+@media (min-width:900px){.mal-layout{display:grid;grid-template-columns:320px minmax(0,1fr);grid-template-areas:"werkzeug flaeche" "aktionen flaeche";gap:0 16px;align-items:start}.mal-layout .werkzeug{grid-area:werkzeug}.mal-layout .aktionen{grid-area:aktionen}.mal-layout .flaeche{grid-area:flaeche}.mal-layout .aktionen .zeile,.mal-layout .werkzeug>.zeile{flex-direction:column;align-items:stretch}.mal-layout .werkzeug .wz-raster,.mal-layout .werkzeug .farbstaerke{flex-direction:row}}
+</style>
+</head>
+<body>
+<h1>🎨 Paintboard</h1>
+<p class="unter">Male frei, füge Formen (Rechteck, Kreis, Linie) oder Text ein – mit Farbe und Pinselstärke, dann als PNG speichern. Alles bleibt in deinem Browser.</p>
+
+<div class="mal-layout">
+<div class="karte werkzeug">
+  <div class="zeile farbstaerke">
+    <div class="feld farbe-feld">
+      <label for="farbe">Farbe</label>
+      <input type="color" id="farbe" value="#1f8a5b" aria-label="Farbe wählen">
+    </div>
+    <div class="feld staerke-feld">
+      <label for="staerke">Pinsel-/Strichstärke</label>
+      <div class="zeile">
+        <input type="range" id="staerke" min="1" max="60" value="8" aria-label="Pinselstärke">
+        <span class="staerke-wert" id="staerkeWert">8&nbsp;px</span>
+      </div>
+    </div>
+  </div>
+
+  <label style="margin-top:12px">Werkzeug</label>
+  <div class="wz-raster">
+    <button type="button" id="wz-pinsel" class="aktiv">✏️ Pinsel</button>
+    <button type="button" id="wz-radierer" class="zweit">🧽 Radierer</button>
+    <button type="button" id="wz-linie" class="zweit">╱ Linie</button>
+    <button type="button" id="wz-rechteck" class="zweit">▭ Rechteck</button>
+    <button type="button" id="wz-kreis" class="zweit">◯ Kreis</button>
+    <button type="button" id="wz-text" class="zweit">T Text</button>
+  </div>
+
+  <div class="gefuellt-feld" id="formOptionen" hidden>
+    <input type="checkbox" id="gefuellt">
+    <label for="gefuellt">Form ausfüllen (sonst nur Umriss)</label>
+  </div>
+
+  <div id="textOptionen" hidden>
+    <label for="textEingabe">Text</label>
+    <input type="text" id="textEingabe" placeholder="Hallo Welt" maxlength="120">
+    <label for="textGroesse">Schriftgröße</label>
+    <div class="zeile">
+      <input type="range" id="textGroesse" min="10" max="200" value="40" aria-label="Schriftgröße">
+      <span class="staerke-wert" id="textGroesseWert">40&nbsp;px</span>
+    </div>
+    <p class="hinweis" style="margin:8px 0 0">Tippe deinen Text ein und klicke dann auf die Leinwand, um ihn dort zu platzieren.</p>
+  </div>
+</div>
+
+<div class="karte flaeche">
+  <div id="leinwandBox">
+    <canvas id="leinwand" width="700" height="500" aria-label="Zeichenfläche"></canvas>
+  </div>
+</div>
+
+<div class="karte aktionen">
+  <div class="zeile">
+    <button type="button" id="zurueckBtn" class="zweit" disabled>↩️ Zurück</button>
+    <button type="button" id="wiederBtn" class="zweit" disabled>↪️ Wiederholen</button>
+    <button type="button" id="loeschenBtn" class="zweit">🗑️ Alles löschen</button>
+    <button type="button" id="speichernBtn">💾 Als PNG speichern</button>
+  </div>
+  <p class="hinweis" id="meldung" style="margin-top:12px">Tipp: Wähle ein Werkzeug und leg los. Formen ziehst du auf, Text setzt du mit einem Klick.</p>
+</div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var FONT = 'ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace';
+  var canvas = document.getElementById("leinwand");
+  var ctx = canvas.getContext("2d");
+  var farbe = document.getElementById("farbe");
+  var staerke = document.getElementById("staerke");
+  var staerkeWert = document.getElementById("staerkeWert");
+  var gefuellt = document.getElementById("gefuellt");
+  var formOptionen = document.getElementById("formOptionen");
+  var textOptionen = document.getElementById("textOptionen");
+  var textEingabe = document.getElementById("textEingabe");
+  var textGroesse = document.getElementById("textGroesse");
+  var textGroesseWert = document.getElementById("textGroesseWert");
+  var zurueckBtn = document.getElementById("zurueckBtn");
+  var wiederBtn = document.getElementById("wiederBtn");
+  var loeschenBtn = document.getElementById("loeschenBtn");
+  var speichernBtn = document.getElementById("speichernBtn");
+  var meldung = document.getElementById("meldung");
+
+  var werkzeuge = {
+    pinsel:   document.getElementById("wz-pinsel"),
+    radierer: document.getElementById("wz-radierer"),
+    linie:    document.getElementById("wz-linie"),
+    rechteck: document.getElementById("wz-rechteck"),
+    kreis:    document.getElementById("wz-kreis"),
+    text:     document.getElementById("wz-text")
+  };
+  var werkzeug = "pinsel";
+
+  var zeichnet = false;
+  var startX = 0, startY = 0, letzteX = 0, letzteY = 0;
+  var schnappschuss = null; // für Form-Vorschau
+  var verlauf = [];
+  var zukunft = [];
+  var MAX = 30;
+
+  function istForm(w){ return w === "linie" || w === "rechteck" || w === "kreis"; }
+
+  function hintergrund(){
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+  hintergrund();
+
+  function zustandSichern(){
+    try{
+      verlauf.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+      if(verlauf.length > MAX) verlauf.shift();
+      zukunft = [];
+      knoepfeAktualisieren();
+    }catch(e){}
+  }
+
+  function knoepfeAktualisieren(){
+    zurueckBtn.disabled = verlauf.length === 0;
+    wiederBtn.disabled = zukunft.length === 0;
+  }
+
+  function sagen(text, fehler){
+    meldung.textContent = text;
+    meldung.className = fehler ? "hinweis fehler" : "hinweis";
+  }
+
+  function pos(ev){
+    var rect = canvas.getBoundingClientRect();
+    var x, y;
+    if(ev.touches && ev.touches.length){
+      x = ev.touches[0].clientX; y = ev.touches[0].clientY;
+    } else if(ev.changedTouches && ev.changedTouches.length){
+      x = ev.changedTouches[0].clientX; y = ev.changedTouches[0].clientY;
+    } else {
+      x = ev.clientX; y = ev.clientY;
+    }
+    return {
+      x: (x - rect.left) * (canvas.width / rect.width),
+      y: (y - rect.top) * (canvas.height / rect.height)
+    };
+  }
+
+  function strichBreite(){ return parseInt(staerke.value, 10); }
+
+  function formZeichnen(x0, y0, x1, y1){
+    ctx.lineWidth = strichBreite();
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = farbe.value;
+    ctx.fillStyle = farbe.value;
+    if(werkzeug === "linie"){
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(x1, y1);
+      ctx.stroke();
+    } else if(werkzeug === "rechteck"){
+      var x = Math.min(x0, x1), y = Math.min(y0, y1);
+      var w = Math.abs(x1 - x0), h = Math.abs(y1 - y0);
+      if(gefuellt.checked) ctx.fillRect(x, y, w, h);
+      else ctx.strokeRect(x, y, w, h);
+    } else if(werkzeug === "kreis"){
+      var cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+      var rx = Math.abs(x1 - x0) / 2, ry = Math.abs(y1 - y0) / 2;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, Math.max(rx, 0.1), Math.max(ry, 0.1), 0, 0, Math.PI * 2);
+      if(gefuellt.checked) ctx.fill();
+      else ctx.stroke();
+    }
+  }
+
+  function textZeichnen(x, y){
+    var txt = textEingabe.value.trim();
+    if(!txt){
+      sagen("Bitte zuerst oben einen Text eingeben.", true);
+      return;
+    }
+    zustandSichern();
+    var g = parseInt(textGroesse.value, 10);
+    ctx.fillStyle = farbe.value;
+    ctx.textBaseline = "top";
+    ctx.textAlign = "left";
+    ctx.font = g + "px " + FONT;
+    ctx.fillText(txt, x, y);
+    sagen("Text eingefügt.", false);
+  }
+
+  function start(ev){
+    ev.preventDefault();
+    var p = pos(ev);
+
+    if(werkzeug === "text"){
+      textZeichnen(p.x, p.y);
+      return;
+    }
+
+    zustandSichern();
+    zeichnet = true;
+    startX = letzteX = p.x;
+    startY = letzteY = p.y;
+
+    if(istForm(werkzeug)){
+      try{ schnappschuss = ctx.getImageData(0, 0, canvas.width, canvas.height); }catch(e){ schnappschuss = null; }
+    } else {
+      // Pinsel / Radierer: einzelner Punkt
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, strichBreite()/2, 0, Math.PI*2);
+      ctx.fillStyle = (werkzeug === "radierer") ? "#ffffff" : farbe.value;
+      ctx.fill();
+    }
+  }
+
+  function malen(ev){
+    if(!zeichnet) return;
+    ev.preventDefault();
+    var p = pos(ev);
+    letzteX = p.x;
+    letzteY = p.y;
+
+    if(istForm(werkzeug)){
+      if(schnappschuss) ctx.putImageData(schnappschuss, 0, 0);
+      formZeichnen(startX, startY, p.x, p.y);
+    } else {
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(p.x, p.y);
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.lineWidth = strichBreite();
+      ctx.strokeStyle = (werkzeug === "radierer") ? "#ffffff" : farbe.value;
+      ctx.stroke();
+      startX = p.x;
+      startY = p.y;
+    }
+  }
+
+  function ende(){
+    if(!zeichnet) return;
+    zeichnet = false;
+    if(istForm(werkzeug)){
+      if(schnappschuss) ctx.putImageData(schnappschuss, 0, 0);
+      formZeichnen(startX, startY, letzteX, letzteY);
+      schnappschuss = null;
+      var namen = {linie:"Linie", rechteck:"Rechteck", kreis:"Kreis"};
+      sagen(namen[werkzeug] + " gezeichnet.", false);
+    } else {
+      sagen((werkzeug === "radierer") ? "Radiert." : "Strich gezeichnet.", false);
+    }
+  }
+
+  // Maus
+  canvas.addEventListener("mousedown", start);
+  canvas.addEventListener("mousemove", malen);
+  window.addEventListener("mouseup", ende);
+  canvas.addEventListener("mouseleave", ende);
+  // Touch
+  canvas.addEventListener("touchstart", start, {passive:false});
+  canvas.addEventListener("touchmove", malen, {passive:false});
+  canvas.addEventListener("touchend", ende);
+  canvas.addEventListener("touchcancel", ende);
+
+  function werkzeugWaehlen(name){
+    werkzeug = name;
+    for(var key in werkzeuge){
+      if(key === name){
+        werkzeuge[key].classList.add("aktiv");
+        werkzeuge[key].classList.remove("zweit");
+      } else {
+        werkzeuge[key].classList.remove("aktiv");
+        werkzeuge[key].classList.add("zweit");
+      }
+    }
+    formOptionen.hidden = !(name === "rechteck" || name === "kreis");
+    textOptionen.hidden = (name !== "text");
+    if(name === "text") canvas.style.cursor = "text";
+    else if(name === "radierer") canvas.style.cursor = "cell";
+    else canvas.style.cursor = "crosshair";
+  }
+
+  Object.keys(werkzeuge).forEach(function(name){
+    werkzeuge[name].addEventListener("click", function(){ werkzeugWaehlen(name); });
+  });
+
+  staerke.addEventListener("input", function(){
+    staerkeWert.innerHTML = strichBreite() + "&nbsp;px";
+  });
+  textGroesse.addEventListener("input", function(){
+    textGroesseWert.innerHTML = parseInt(textGroesse.value,10) + "&nbsp;px";
+  });
+
+  zurueckBtn.addEventListener("click", function(){
+    if(verlauf.length === 0) return;
+    zukunft.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+    ctx.putImageData(verlauf.pop(), 0, 0);
+    knoepfeAktualisieren();
+    sagen("Letzter Schritt rückgängig gemacht.", false);
+  });
+
+  wiederBtn.addEventListener("click", function(){
+    if(zukunft.length === 0) return;
+    verlauf.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+    ctx.putImageData(zukunft.pop(), 0, 0);
+    knoepfeAktualisieren();
+    sagen("Schritt wiederhergestellt.", false);
+  });
+
+  loeschenBtn.addEventListener("click", function(){
+    zustandSichern();
+    hintergrund();
+    sagen("Zeichenfläche geleert.", false);
+  });
+
+  speichernBtn.addEventListener("click", function(){
+    try{
+      canvas.toBlob(function(blob){
+        if(!blob){ sagen("Das Bild konnte leider nicht erstellt werden.", true); return; }
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        var d = new Date();
+        var name = "mal-brett-" + d.getFullYear() + "-" +
+          String(d.getMonth()+1).padStart(2,"0") + "-" +
+          String(d.getDate()).padStart(2,"0") + ".png";
+        a.href = url; a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+        sagen("Bild als „" + name + "“ gespeichert.", false);
+      }, "image/png");
+    }catch(e){
+      sagen("Beim Speichern ist ein Fehler aufgetreten.", true);
+    }
+  });
+
+  knoepfeAktualisieren();
+})();
+</script>
+</body>
+</html>

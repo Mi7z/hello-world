@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f6f5f2">
+<title>Hello World – die freie App-Wolke</title>
+<link rel="icon" href="/icon.svg">
+<link rel="stylesheet" href="/style.css">
+<script src="/design.js"></script>
+</head>
+<body class="mit-nav">
+<header class="kopf">
+  <a href="#entdecken" class="logo" aria-label="Hello World – Entdecken"><span class="logo-zeichen" aria-hidden="true">hw</span><span>Hello World</span></a>
+  <nav class="nav" id="nav" aria-label="Bereiche">
+    <a href="#entdecken" data-ziel="entdecken"><span class="nav-zeichen" aria-hidden="true">⌕</span>Entdecken</a>
+    <a href="#auftraege" data-ziel="auftraege"><span class="nav-zeichen" aria-hidden="true">⚒</span>Aufträge<span class="zahl" id="auftragZahl" hidden></span></a>
+    <a href="#geraete" data-ziel="geraete"><span class="nav-zeichen" aria-hidden="true">⌂</span>Geräte</a>
+    <a href="#mehr" data-ziel="mehr"><span class="nav-zeichen" aria-hidden="true">☰</span>Mehr</a>
+  </nav>
+  <div class="kopf-rechts">
+    <button type="button" class="konto" data-anmelde-knopf>Anmelden</button>
+  </div>
+</header>
+
+<main class="seite">
+  <!-- ========== Entdecken ========== -->
+  <div data-ansicht="entdecken">
+    <section class="held">
+      <h1 class="hw-titel">Was brauchst du?</h1>
+      <p class="unterzeile">Apps, Designs und Werkzeuge für Menschen und KIs. Gibt es das schon, öffnet es sich. Wenn nicht, baut deine KI es – geprüft, kostenlos, für Handy und Desktop.</p>
+      <form class="suche" id="suche" autocomplete="off" role="search">
+        <span class="suche-zeichen" aria-hidden="true">⌕</span>
+        <input id="anfrage" type="search" placeholder="z. B. Aus einem PDF ein Bild machen" aria-label="Was brauchst du?" enterkeyhint="search">
+        <button type="submit">Suchen</button>
+      </form>
+      <div class="vorschlaege" id="vorschlaege">
+        <button type="button">Bilder verkleinern</button>
+        <button type="button">QR-Code erstellen</button>
+        <button type="button">PC später ausschalten</button>
+        <button type="button">Dunkles Design</button>
+      </div>
+    </section>
+
+    <section id="treffer" hidden>
+      <h2 class="hw-abschnitt" id="trefferTitel">Treffer</h2>
+      <div class="raster" id="trefferListe"></div>
+      <div class="lade" id="kiSucht" hidden>Die KI sucht weitere passende Einträge …</div>
+      <div class="flaeche neu-bauen">
+        <div><b>Nichts Passendes dabei?</b><p>Deine KI baut es neu – du siehst vorher eine Vorschau.</p></div>
+        <button type="button" id="bauenKnopf">Neu bauen lassen</button>
+      </div>
+    </section>
+
+    <section id="alle">
+      <h2 class="hw-abschnitt">Alle Einträge <span class="anzahl" id="anzahl"></span></h2>
+      <div class="chips" id="filter" role="group" aria-label="Filter">
+        <button type="button" data-filter="alle" aria-pressed="true">Alle</button>
+        <button type="button" data-filter="apps" aria-pressed="false">Apps</button>
+        <button type="button" data-filter="design" aria-pressed="false">Designs</button>
+        <button type="button" data-filter="skill" aria-pressed="false">Skills</button>
+        <button type="button" data-filter="mcp" aria-pressed="false">KI-Werkzeuge</button>
+      </div>
+      <div class="raster" id="alleListe"></div>
+    </section>
+  </div>
+
+  <!-- ========== Aufträge ========== -->
+  <div data-ansicht="auftraege" hidden>
+    <section class="held">
+      <h1 class="hw-titel">Aufträge</h1>
+      <p class="unterzeile">Hier baut deine KI. Der PC arbeitet weiter, auch wenn dein Handy aus ist.</p>
+    </section>
+
+    <section id="bau" class="flaeche" hidden>
+      <h2 style="margin:0 0 4px">Neu: <span id="bauTitel"></span></h2>
+      <p class="hinweis" id="bauAnfrage"></p>
+      <ol class="schritte" id="schritte" style="margin-top:16px">
+        <li class="schritt" data-schritt="pruefen"><span class="punkt">1</span><b>Wunsch prüfen</b><span>Sinnvoll und harmlos? Gibt es das schon?</span></li>
+        <li class="schritt" data-schritt="github"><span class="punkt">2</span><b>Open Source suchen</b><span>Gibt es ein freies Projekt auf GitHub, auf dem es aufbauen kann?</span></li>
+        <li class="schritt" data-schritt="bauen"><span class="punkt">3</span><b>Bauen</b><span>Deine KI programmiert es.</span></li>
+        <li class="schritt" data-schritt="test"><span class="punkt">4</span><b>Prüfen</b><span>Sicherheit und Testlauf auf Handy und Desktop.</span></li>
+        <li class="schritt" data-schritt="fertig"><span class="punkt">5</span><b>Ausprobieren &amp; veröffentlichen</b><span>Du entscheidest, ob es für alle da sein soll.</span></li>
+      </ol>
+      <div id="bauMeldung" class="meldung" hidden></div>
+      <div id="vorschauBereich" hidden>
+        <h3 class="unter-titel">Vorschau</h3>
+        <ul class="pruefliste" id="pruefbericht"></ul>
+        <div class="umschalter" id="ansichtWahl"><button type="button" data-ansicht-art="handy" aria-pressed="true">Handy</button><button type="button" data-ansicht-art="desktop" aria-pressed="false">Desktop</button></div>
+        <iframe id="vorschau" class="app-rahmen" title="Vorschau" sandbox="allow-scripts allow-downloads allow-modals allow-popups allow-popups-to-escape-sandbox"></iframe>
+        <p class="hinweis">Erst „Veröffentlichen" macht es für alle sichtbar. Du kannst das Handy auch weglegen – der Auftrag wartet.</p>
+        <div class="knoepfe">
+          <button type="button" class="leise" id="verwerfen">Verwerfen</button>
+          <button type="button" class="zweit" id="nachbessern">Nachbessern</button>
+          <button type="button" id="veroeffentlichen">Veröffentlichen</button>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="hw-abschnitt">Laufend und offen</h2>
+      <div class="raster" id="auftragListe"></div>
+    </section>
+  </div>
+
+  <!-- ========== Geräte ========== -->
+  <div data-ansicht="geraete" hidden>
+    <section class="held">
+      <h1 class="hw-titel">Geräte</h1>
+      <p class="unterzeile">Manche Apps steuern deinen Computer, z. B. ein Ausschalt-Timer. Das geht über den <b>Hello-World-Helfer</b>: ein kleines Programm, das nur eine feste Liste geprüfter Dinge kann – und jedes Mal um Erlaubnis fragt.</p>
+    </section>
+    <div class="zweispaltig">
+      <section class="flaeche">
+        <h3>Deine Computer</h3>
+        <div id="geraeteListe"></div>
+      </section>
+      <section class="flaeche">
+        <h3>Computer koppeln</h3>
+        <p class="hinweis">Der Helfer zeigt beim Start einen Code. Gib ihn hier ein.</p>
+        <form id="koppelnForm" autocomplete="off">
+          <label for="koppelCode">Kopplungscode</label>
+          <input id="koppelCode" placeholder="z. B. 4F7-A2C">
+          <div class="knoepfe"><button type="submit">Koppeln</button></div>
+        </form>
+        <details><summary>Helfer installieren</summary><pre class="code">Voraussetzung: Node.js 20 oder neuer.
+
+1. Den Ordner „helfer" und die Datei „faehigkeiten.js"
+   aus Hello World herunterladen (oder das ganze Repository).
+2. Starten:
+   node helfer/helfer.js --server &lt;adresse-von-hello-world&gt;
+3. Der Helfer zeigt einen Kopplungscode – oben eingeben.
+
+Er verbindet sich nur ausgehend und kann nur: herunterfahren,
+neu starten, Ruhezustand (mit Timer), abbrechen, Status,
+Benachrichtigung zeigen.</pre></details>
+      </section>
+    </div>
+  </div>
+
+  <!-- ========== Mehr ========== -->
+  <div data-ansicht="mehr" hidden>
+    <section class="held">
+      <h1 class="hw-titel">Mehr</h1>
+    </section>
+
+    <section class="flaeche">
+      <h3>Aussehen</h3>
+      <p class="hinweis">Gilt für Hello World und alle Apps. Designs sind Einträge wie Apps – jeder kann neue bauen oder vorhandene weiterentwickeln.</p>
+      <div class="design-raster" id="designWahl"></div>
+      <form id="designForm" autocomplete="off" style="margin-top:16px">
+        <label for="designWunsch">Eigenes Design bauen lassen</label>
+        <div class="suche" style="box-shadow:none">
+          <input id="designWunsch" placeholder="z. B. Pastell, verspielt, runde Ecken">
+          <button type="submit">Bauen</button>
+        </div>
+      </form>
+    </section>
+
+    <div class="zweispaltig" style="margin-top:14px">
+      <section class="flaeche">
+        <h3>Konto &amp; KI</h3>
+        <div class="liste-zeile"><div><b>Konto</b><span class="hinweis" id="kontoText">Nicht angemeldet</span></div><button type="button" class="zweit klein" data-anmelde-knopf>Anmelden</button></div>
+        <div class="liste-zeile"><div><b>Deine KI</b><span class="hinweis" id="kiName">nicht verbunden</span></div><button type="button" class="zweit klein" id="kiKnopf">Ändern</button></div>
+        <div class="liste-zeile"><div><b>Apps mit KI-Erlaubnis</b><span class="hinweis" id="kiErlaubtText"></span></div><button type="button" class="zweit klein" id="kiErlaubtZurueck" hidden>Zurücknehmen</button></div>
+      </section>
+      <section class="flaeche">
+        <h3>So funktioniert's</h3>
+        <ul class="regeln">
+          <li><span>🛡️</span><span><b>Nur Sinnvolles:</b> Eine KI prüft jeden Wunsch – Schädliches, Unsinniges oder Doppeltes wird nicht gebaut.</span></li>
+          <li><span>📦</span><span><b>Abgeschottet:</b> Jede App läuft in einer Sandbox ohne Internet. Deine Dateien bleiben auf deinem Gerät.</span></li>
+          <li><span>✅</span><span><b>Geprüft:</b> Vor dem Veröffentlichen laufen Sicherheits-Check und Testlauf.</span></li>
+          <li><span>🎁</span><span><b>Kostenlos:</b> Benutzen kostet nichts. Wer Neues will, bringt seine eigene KI mit.</span></li>
+        </ul>
+      </section>
+    </div>
+
+    <section class="flaeche" style="margin-top:14px">
+      <h3>In deine KI holen</h3>
+      <p class="hinweis">Installiere Hello World in Claude Code, Codex oder jeder KI mit MCP. Dann findet sie selbst passende Apps, Skills und Werkzeuge und kann Neues beitragen.</p>
+      <div class="code-zeile"><code>claude plugin marketplace add &lt;github-name&gt;/hello-world</code><code>claude plugin install hello-world@hello-world</code></div>
+      <details><summary>Anleitung für Codex und andere KIs</summary><pre class="code" id="installText">…</pre></details>
+    </section>
+  </div>
+</main>
+
+<dialog id="kiDialog" class="blatt">
+  <form method="dialog" id="kiForm">
+    <h2>KI verbinden</h2>
+    <p class="hinweis">Zum Bauen nutzt Hello World deine eigene KI. Gebaut wird auf dem Hello-World-Rechner – so läuft es weiter, auch wenn dein Handy aus ist. Ein eigener Schlüssel bleibt in diesem Browser und wird nur für deine Aufträge mitgeschickt, nie gespeichert.</p>
+    <label for="kiArt">KI</label>
+    <select id="kiArt">
+      <option value="lokal" id="lokalOption">Claude auf diesem PC (nur zu Hause)</option>
+      <option value="frei">Kostenlose KIs (Gratis-Konten)</option>
+      <option value="anthropic">Claude – eigener API-Schlüssel</option>
+    </select>
+    <div id="freiBereich" hidden>
+      <p class="hinweis">Lege bei einem oder mehreren Anbietern ein <b>kostenloses</b> Konto an und kopiere den Schlüssel hierher. Je mehr du einträgst, desto seltener stößt du an ein Tageslimit – Hello World wechselt automatisch zum nächsten.</p>
+      <div id="freiFelder"></div>
+    </div>
+    <div id="schluesselBereich">
+      <label for="kiSchluessel">API-Schlüssel</label>
+      <input id="kiSchluessel" type="password" placeholder="sk-ant-…" autocomplete="off">
+      <label for="kiModell">Modell</label>
+      <input id="kiModell" type="text" value="claude-opus-5">
+    </div>
+    <div class="knoepfe">
+      <button type="button" class="leise" id="kiTrennen">Trennen</button>
+      <button type="submit" id="kiSpeichern">Speichern</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="beschreibungDialog" class="blatt" aria-labelledby="bTitel">
+  <div class="blatt-inhalt">
+    <div class="blatt-kopf">
+      <span class="symbol" id="bSymbol" aria-hidden="true"></span>
+      <h2 id="bTitel"></h2>
+      <span class="hinweis" id="bTyp"></span>
+    </div>
+    <p id="bText"></p>
+    <ul class="funktionen" id="bFunktionen"></ul>
+    <iframe id="bVorschau" class="vorschau-klein" title="So sieht das Design aus" sandbox="allow-scripts" tabindex="-1" hidden></iframe>
+    <div id="bDistributionen"></div>
+    <div class="knoepfe blatt-fuss">
+      <button type="button" class="leise" id="bSchliessen">Schließen</button>
+      <a id="bBaum" href="#" class="knopf zweit" hidden>Versionen</a>
+      <button type="button" id="bVerwenden" hidden>Verwenden</button>
+      <a id="bUse" href="#" class="knopf">Öffnen</a>
+    </div>
+  </div>
+</dialog>
+
+<script src="/kern.js"></script>
+<script src="/haupt.js"></script>
+</body>
+</html>
