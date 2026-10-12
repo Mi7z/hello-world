@@ -56,14 +56,14 @@ function neu(felder, ki) {
   const a = {
     id, status: 'laeuft', erstellt: Date.now(),
     schritte: { pruefen: '', github: '', bauen: '', test: '', fertig: '' }, schrittText: {},
-    meldung: '', meldungArt: '', versuche: 0, probleme: [], ki: { art: ki?.art || 'lokal' },
+    meldung: '', meldungArt: '', versuche: 0, probleme: [], ki: { art: ki?.art || 'lokal', ...(ki?.programm ? { programm: ki.programm } : {}) },
     ...felder,
   };
   if (ki && ki.art !== 'lokal') schluessel.set(id, ki); // eigener oder Gratis-Schlüssel
   speichern(a);
   return a;
 }
-const kiVon = (a) => schluessel.get(a.id) || { art: 'lokal' };
+const kiVon = (a) => schluessel.get(a.id) || (a.ki?.art === 'lokal' ? a.ki : { art: 'lokal' });
 function schritt(a, name, status, text) {
   a.schritte[name] = status;
   if (text !== undefined) a.schrittText[name] = text;
@@ -112,7 +112,7 @@ export async function uebernehmen(id, person) {
   const d = await veroeffentlichen({
     html, name: a.name, titel: a.titel, beschreibung: a.beschreibung, tags: a.tags, anfrage: a.anfrage,
     kategorie: a.kategorie, funktionen: [a.funktion].filter(Boolean), ziel: a.zielSlug || null,
-    quellen: [...(a.quelle ? [a.quelle] : []), ...(a.quellen || [])], ki: a.ki.art === 'lokal' ? 'Claude' : 'KI',
+    quellen: [...(a.quelle ? [a.quelle] : []), ...(a.quellen || [])], ki: a.ki.art === 'lokal' ? ({ claude: 'Claude', codex: 'Codex', gemini: 'Gemini' }[a.ki.programm] || 'Claude') : a.ki.art === 'frei' ? 'kostenlose KI' : 'KI',
     autor: a.autor, basis: a.basis, faehigkeiten: a.faehigkeiten || [], typ: a.typ === 'design' ? 'design' : undefined,
   });
   a.app = { slug: d.app.slug, kennung: kennung(d.app), erweitert: Boolean(d.erweitert), version: d.version };

@@ -126,7 +126,7 @@ function menu(auf) {
 async function laden() {
   const [a, s] = await Promise.all([fetch(`/api/app/${encodeURIComponent(slugRoh)}`), fetch('/api/apps', { cache: 'no-store' })]);
   stand = await s.json();
-  if (!kiEinstellung() && stand.lokaleKi) localStorage.setItem('hw-ki', JSON.stringify({ art: 'lokal', modell: 'claude' }));
+  if (!kiEinstellung() && stand.lokaleKi) localStorage.setItem('hw-ki', JSON.stringify({ art: 'lokal', programm: stand.kiProgramme?.[0]?.id }));
   if (!a.ok) { document.body.innerHTML = '<main class="seite"><h1 class="hw-titel" style="margin-top:40px">Nicht gefunden</h1><p><a href="/">Zurück zu Hello World</a></p></main>'; return; }
   const d = await a.json();
   app = { ...d.app, ...(stand.apps.find((x) => x.slug === d.app.slug) || {}) };

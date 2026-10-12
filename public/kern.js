@@ -44,7 +44,7 @@ function kiFuerAuftrag() {
   const k = kiEinstellung();
   if (k?.art === 'anthropic') return { art: 'anthropic', schluessel: k.schluessel, modell: k.modell };
   if (k?.art === 'frei') return { art: 'frei', schluessel: k.frei || {} };
-  return { art: 'lokal' };
+  return { art: 'lokal', ...(k?.programm ? { programm: k.programm } : {}) };
 }
 
 // ---------- Anmeldung mit GitHub ----------
@@ -305,7 +305,7 @@ function kiErlaubnisFragen(kennungText, zweck, ki) {
     dlg.innerHTML = `<div class="blatt-inhalt">
       <h2>Deine KI nutzen?</h2>
       <p><b>${esc(kennungText)}</b> möchte deine KI nutzen${zweck ? `: <i>${esc(zweck)}</i>` : '.'}</p>
-      <p class="hinweis">Es rechnet ${ki.art === 'lokal' ? 'Claude auf deinem PC' : ki.art === 'frei' ? 'eine kostenlose KI mit deinen Gratis-Schlüsseln' : 'deine KI mit deinem eigenen Schlüssel'}. Die App bekommt nur die Antwort – nie deinen Schlüssel. Was die KI tun darf, hat die App fest vorgegeben und Hello World geprüft.</p>
+      <p class="hinweis">Es rechnet ${ki.art === 'lokal' ? 'das KI-Programm auf deinem PC' : ki.art === 'frei' ? 'eine kostenlose KI mit deinen Gratis-Schlüsseln' : 'deine KI mit deinem eigenen Schlüssel'}. Die App bekommt nur die Antwort – nie deinen Schlüssel. Was die KI tun darf, hat die App fest vorgegeben und Hello World geprüft.</p>
       <p class="hinweis">Hello World merkt sich deine Erlaubnis für diese App (zurücknehmen unter Mehr).</p>
       <div class="knoepfe"><button type="button" class="zweit" id="hwKiNein">Ablehnen</button><button type="button" id="hwKiJa">Erlauben</button></div>
     </div>`;

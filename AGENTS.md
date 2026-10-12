@@ -175,7 +175,9 @@ Apps (Versionen als `versionen/vN.css`). Vorschau: `/muster?design=<name>`.
 
 ## Welche KI baut?
 
-Jeder bringt seine eigene KI mit: Claude auf dem eigenen PC, ein eigener
+Jeder bringt seine eigene KI mit: ein **KI-Programm auf dem eigenen Rechner**
+(Claude Code, OpenAI Codex oder Gemini CLI – ohne Schlüssel, über das eigene Abo;
+das Hello-World-Programm erkennt sie selbst, siehe `KI_PROGRAMME` in `ki.js`), ein eigener
 API-Schlüssel – oder **kostenlose KIs** (`freiki.js`): Gratis-Konten bei Google
 Gemini, OpenRouter (Gratis-Router), Groq, Cerebras und Mistral. Hello World
 probiert sie der Reihe nach und wechselt automatisch, wenn ein Anbieter am

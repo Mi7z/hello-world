@@ -18,8 +18,9 @@ const zuBereich = (name) => { if (location.hash !== `#${name}`) location.hash = 
 function zeigeKi() {
   const k = kiEinstellung();
   const anzahlFrei = Object.values(k?.frei || {}).filter(Boolean).length;
+  const prog = (stand.kiProgramme || []).find((p) => p.id === k?.programm) || (stand.kiProgramme || [])[0];
   $('kiName').textContent = !k ? 'nicht verbunden – zum Bauen nötig'
-    : k.art === 'lokal' ? 'Claude auf diesem PC'
+    : k.art === 'lokal' ? `${prog ? prog.name : 'KI-Programm'} auf diesem PC (${prog ? prog.abo : 'ohne Schlüssel'})`
     : k.art === 'frei' ? `Kostenlose KIs (${anzahlFrei} Anbieter)`
     : `Claude mit eigenem Schlüssel (${k.modell})`;
 }
@@ -31,6 +32,7 @@ async function freiFelderZeigen(werte = {}) {
     <input id="frei_${a.id}" data-frei="${a.id}" type="password" autocomplete="off" placeholder="Schlüssel einfügen (optional)" value="${esc(werte[a.id] || '')}">`).join('');
 }
 function kiBereicheZeigen() {
+  $('programmBereich').hidden = $('kiArt').value !== 'lokal';
   $('schluesselBereich').hidden = $('kiArt').value !== 'anthropic';
   $('freiBereich').hidden = $('kiArt').value !== 'frei';
 }
@@ -40,6 +42,8 @@ function kiDialog() {
   $('kiArt').value = k.art === 'lokal' && !stand.lokaleKi ? 'anthropic' : k.art;
   $('kiSchluessel').value = k.schluessel || '';
   $('kiModell').value = k.modell || 'claude-opus-5';
+  $('kiProgramm').innerHTML = (stand.kiProgramme || []).map((p) => `<option value="${p.id}">${esc(p.name)} – ${esc(p.abo)}</option>`).join('') || '<option value="">keins gefunden</option>';
+  if (k.programm) $('kiProgramm').value = k.programm;
   freiFelderZeigen(k.frei || {});
   kiBereicheZeigen();
   $('kiDialog').showModal();
@@ -51,7 +55,7 @@ $('kiForm').addEventListener('submit', (ev) => {
   if (art === 'anthropic' && !$('kiSchluessel').value.trim()) { ev.preventDefault(); $('kiSchluessel').focus(); return; }
   const frei = Object.fromEntries([...document.querySelectorAll('[data-frei]')].map((x) => [x.dataset.frei, x.value.trim()]).filter(([, v]) => v));
   if (art === 'frei' && !Object.keys(frei).length) { ev.preventDefault(); document.querySelector('[data-frei]')?.focus(); return; }
-  localStorage.setItem('hw-ki', JSON.stringify({ art, schluessel: $('kiSchluessel').value.trim(), modell: $('kiModell').value.trim() || 'claude-opus-5', frei }));
+  localStorage.setItem('hw-ki', JSON.stringify({ art, programm: $('kiProgramm').value || undefined, schluessel: $('kiSchluessel').value.trim(), modell: $('kiModell').value.trim() || 'claude-opus-5', frei }));
   zeigeKi();
 });
 $('kiTrennen').addEventListener('click', () => { localStorage.removeItem('hw-ki'); zeigeKi(); $('kiDialog').close(); });
@@ -362,7 +366,8 @@ bereich(location.hash.slice(1), false);
 (async () => {
   const res = await fetch('/api/apps', { cache: 'no-store' });
   stand = await res.json();
-  if (!kiEinstellung() && stand.lokaleKi) localStorage.setItem('hw-ki', JSON.stringify({ art: 'lokal', modell: 'claude' }));
+  // Erster Start: gefundenes KI-Programm automatisch nehmen (z. B. Claude Code)
+  if (!kiEinstellung() && stand.lokaleKi) localStorage.setItem('hw-ki', JSON.stringify({ art: 'lokal', programm: stand.kiProgramme?.[0]?.id }));
   // Gewähltes Design gibt es nicht mehr? Zurück zum Standard
   if (!stand.apps.some((a) => a.typ === 'design' && a.slug === designName().split('@')[0])) designWaehlen('klar');
   zeigeKi();

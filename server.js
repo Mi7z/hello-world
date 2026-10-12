@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { pruefeApp, pruefeDesign, slugVon, APP_CSP } from './pruefung.js';
-import { claudeFragen, CLAUDE } from './ki.js';
+import { claudeFragen, gefundeneProgramme, KI_PROGRAMME } from './ki.js';
 import * as bau from './bauauftrag.js';
 import * as baum from './stammbaum.js';
 import * as anmeldung from './anmeldung.js';
@@ -193,7 +193,8 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/api/apps' && req.method === 'GET') {
       return json(res, 200, {
         apps: katalogLaden().map((a) => (a.typ === 'design' ? { ...a, farben: designFarben(a.slug) } : a)),
-        lokaleKi: ausHeimnetz(req) && fs.existsSync(CLAUDE),
+        lokaleKi: ausHeimnetz(req) && gefundeneProgramme().length > 0,
+        kiProgramme: ausHeimnetz(req) ? gefundeneProgramme() : [],
         csp: APP_CSP,
         basisCss: fs.readFileSync(path.join(hier, 'vorlage', 'basis.css'), 'utf8'),
       });
@@ -344,7 +345,7 @@ const server = http.createServer(async (req, res) => {
       if (k && k.art === 'frei' && k.schluessel && typeof k.schluessel === 'object') {
         return { art: 'frei', schluessel: Object.fromEntries(ANBIETER.map((x) => [x.id, String(k.schluessel[x.id] || '').slice(0, 300)]).filter(([, v]) => v)) };
       }
-      return { art: 'lokal' };
+      return { art: 'lokal', ...(KI_PROGRAMME[k?.programm] ? { programm: k.programm } : {}) };
     };
     const darf = (k) => k.art !== 'lokal' || ausHeimnetz(req);
     if (url.pathname === '/api/bau' && req.method === 'POST') {

@@ -8,34 +8,112 @@ import { spawn } from 'node:child_process';
 import Anthropic from '@anthropic-ai/sdk';
 import { freiFragen } from './freiki.js';
 
-export const CLAUDE = '/usr/bin/claude';
+// ---------- KI-Programme auf dem Rechner des Nutzers (ohne API-Schlüssel) ----------
+// Wer Claude Code, OpenAI Codex oder Gemini CLI installiert hat, nutzt sein eigenes Abo
+// bzw. Google-Konto. Hello World ruft das Programm nur mit Text auf: ohne Werkzeuge
+// bzw. schreibgeschützt, in einem leeren Arbeitsordner.
+export const KI_PROGRAMME = {
+  claude: { name: 'Claude Code', befehl: 'claude', abo: 'Claude-Abo' },
+  codex: { name: 'OpenAI Codex', befehl: 'codex', abo: 'ChatGPT-Abo' },
+  gemini: { name: 'Gemini CLI', befehl: 'gemini', abo: 'Google-Konto (kostenlos)' },
+};
+// Auch dort suchen, wo Programme oft liegen, die nicht im PATH eines Fensters stehen
+const ORTE = [
+  ...(process.env.PATH || '').split(path.delimiter),
+  path.join(os.homedir(), '.local', 'bin'), path.join(os.homedir(), '.npm-global', 'bin'), path.join(os.homedir(), '.claude', 'local'),
+  path.join(os.homedir(), '.bun', 'bin'), '/usr/local/bin', '/usr/bin', '/opt/homebrew/bin', '/snap/bin',
+  ...(process.env.APPDATA ? [path.join(process.env.APPDATA, 'npm')] : []),
+].filter(Boolean);
+const gefunden = new Map();
+export function programmFinden(id) {
+  if (gefunden.has(id)) return gefunden.get(id);
+  const befehl = KI_PROGRAMME[id]?.befehl;
+  const namen = process.platform === 'win32' ? [`${befehl}.cmd`, `${befehl}.exe`, befehl] : [befehl];
+  let pfad = null;
+  for (const ort of ORTE) for (const n of namen) {
+    const p = path.join(ort, n);
+    try { if (!pfad && fs.statSync(p).isFile()) pfad = p; } catch { /* nicht da */ }
+  }
+  gefunden.set(id, pfad);
+  return pfad;
+}
+export function gefundeneProgramme() {
+  return Object.entries(KI_PROGRAMME).filter(([id]) => programmFinden(id)).map(([id, p]) => ({ id, name: p.name, abo: p.abo }));
+}
+// Altes Kürzel: Claude-Pfad (für die Anzeige „KI auf diesem PC verfügbar")
+export const CLAUDE = programmFinden('claude') || '/usr/bin/claude';
 
-export function claudeFragen(system, frage, schema = null, zeitlimit = 900e3) {
-  const arbeitsordner = path.join(os.homedir(), '.hello-world-ki');
-  fs.mkdirSync(arbeitsordner, { recursive: true });
-  const args = ['-p', '--system-prompt', system, '--tools', '', '--strict-mcp-config', '--setting-sources', '', '--no-session-persistence', '--output-format', 'json'];
-  if (schema) args.push('--json-schema', JSON.stringify(schema)); // erzwingt gültiges JSON
+const arbeitsordner = () => { const o = path.join(os.homedir(), '.hello-world-ki'); fs.mkdirSync(o, { recursive: true }); return o; };
+
+// Ein Programm starten, Eingabe über stdin, Ausgabe einsammeln
+function ausfuehren(pfad, args, eingabe, zeitlimit) {
   return new Promise((resolve, reject) => {
-    const kind = spawn(CLAUDE, args, { cwd: arbeitsordner });
-    let aus = '';
+    const kind = spawn(pfad, args, { cwd: arbeitsordner(), shell: process.platform === 'win32' && /\.cmd$/i.test(pfad) });
+    let aus = '', fehler = '';
     const uhr = setTimeout(() => { kind.kill(); reject(new Error('Zeitüberschreitung der KI')); }, zeitlimit);
     kind.stdout.on('data', (d) => (aus += d));
+    kind.stderr.on('data', (d) => (fehler += d));
     kind.on('error', (e) => { clearTimeout(uhr); reject(e); });
-    kind.on('close', () => {
-      clearTimeout(uhr);
-      try {
-        const r = JSON.parse(aus);
-        if (r.is_error) return reject(new Error(String(r.result || 'Claude-Fehler').slice(0, 300)));
-        resolve(r.structured_output ? JSON.stringify(r.structured_output) : String(r.result || ''));
-      } catch { reject(new Error('Claude hat nicht geantwortet')); }
-    });
-    kind.stdin.end(frage);
+    kind.on('close', (code) => { clearTimeout(uhr); resolve({ aus, fehler, code }); });
+    kind.stdin.end(eingabe);
   });
 }
 
-// ki = { art: 'lokal' }, { art: 'anthropic', schluessel, modell } oder { art: 'frei', schluessel: { gemini, groq, … } }
+export async function claudeFragen(system, frage, schema = null, zeitlimit = 900e3) {
+  const args = ['-p', '--system-prompt', system, '--tools', '', '--strict-mcp-config', '--setting-sources', '', '--no-session-persistence', '--output-format', 'json'];
+  if (schema) args.push('--json-schema', JSON.stringify(schema)); // erzwingt gültiges JSON
+  const { aus } = await ausfuehren(programmFinden('claude') || '/usr/bin/claude', args, frage, zeitlimit);
+  let r;
+  try { r = JSON.parse(aus); } catch { throw new Error('Claude hat nicht geantwortet'); }
+  if (r.is_error) throw new Error(String(r.result || 'Claude-Fehler').slice(0, 300));
+  return r.structured_output ? JSON.stringify(r.structured_output) : String(r.result || '');
+}
+
+const OHNE_WERKZEUGE = 'WICHTIG: Benutze keine Werkzeuge, führe keine Befehle aus und lies keine Dateien. Antworte ausschließlich mit Text.';
+
+async function codexFragen(system, frage, schema = null, zeitlimit = 900e3) {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'hw-codex-'));
+  try {
+    const ergebnis = path.join(tmp, 'antwort.txt');
+    const args = ['exec', '--sandbox', 'read-only', '--skip-git-repo-check', '--ephemeral', '--color', 'never', '-C', arbeitsordner(), '-o', ergebnis];
+    if (schema) { fs.writeFileSync(path.join(tmp, 'schema.json'), JSON.stringify(schema)); args.push('--output-schema', path.join(tmp, 'schema.json')); }
+    args.push('-');
+    const eingabe = `${system}\n\n${OHNE_WERKZEUGE}${schema ? '\nAntworte NUR mit gültigem JSON nach dem vorgegebenen Schema.' : ''}\n\n---\n\n${frage}`;
+    const { fehler, code } = await ausfuehren(programmFinden('codex'), args, eingabe, zeitlimit);
+    const text = fs.existsSync(ergebnis) ? fs.readFileSync(ergebnis, 'utf8') : '';
+    if (!text.trim()) {
+      // Manche Schemas mag Codex nicht – dann ohne Schema nochmal (das JSON prüft kiJson)
+      if (schema) return codexFragen(system + `\n\nAntworte AUSSCHLIESSLICH mit gültigem JSON nach diesem Schema:\n${JSON.stringify(schema)}`, frage, null, zeitlimit);
+      throw new Error(`Codex hat nicht geantwortet${code ? ` (${fehler.trim().split('\n').at(-1)?.slice(0, 200) || code})` : ''}`);
+    }
+    return text;
+  } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
+}
+
+async function geminiFragen(system, frage, schema = null, zeitlimit = 900e3) {
+  const args = ['-p', 'Bearbeite die Aufgabe aus der Eingabe genau wie beschrieben.', '--output-format', 'json', '--approval-mode', 'default'];
+  const eingabe = `${system}\n\n${OHNE_WERKZEUGE}${schema ? `\nAntworte AUSSCHLIESSLICH mit gültigem JSON nach diesem Schema:\n${JSON.stringify(schema)}` : ''}\n\n---\n\n${frage}`;
+  const { aus, fehler } = await ausfuehren(programmFinden('gemini'), args, eingabe, zeitlimit);
+  try {
+    const r = JSON.parse(aus);
+    if (r.error) throw new Error(String(r.error.message || r.error).slice(0, 300));
+    return String(r.response || '');
+  } catch (err) {
+    if (aus.trim() && !aus.trim().startsWith('{')) return aus; // ältere Version ohne JSON-Ausgabe
+    throw new Error(`Gemini CLI: ${err.message || fehler.slice(0, 200)}`);
+  }
+}
+
+// Welches Programm? Gewähltes, sonst das erste gefundene (Claude zuerst)
+function programmFragen(ki, system, frage, schema) {
+  const id = ki?.programm && programmFinden(ki.programm) ? ki.programm : gefundeneProgramme()[0]?.id;
+  if (!id) throw new Error('Auf diesem Rechner ist kein KI-Programm (Claude Code, Codex, Gemini CLI) installiert.');
+  return { claude: claudeFragen, codex: codexFragen, gemini: geminiFragen }[id](system, frage, schema);
+}
+
+// ki = { art: 'lokal', programm: 'claude'|'codex'|'gemini' }, { art: 'anthropic', schluessel, modell } oder { art: 'frei', schluessel: { gemini, groq, … } }
 export async function kiFragen(ki, system, frage, schema = null) {
-  if (!ki || ki.art === 'lokal') return claudeFragen(system, frage, schema);
+  if (!ki || ki.art === 'lokal') return programmFragen(ki, system, frage, schema);
   if (ki.art === 'frei') return freiFragen(ki.schluessel, system, frage, schema);
   const client = new Anthropic({ apiKey: ki.schluessel });
   const stream = client.messages.stream({

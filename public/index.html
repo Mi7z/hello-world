@@ -195,10 +195,15 @@ Benachrichtigung zeigen.</pre></details>
     <p class="hinweis">Zum Bauen nutzt Hello World deine eigene KI. Gebaut wird auf dem Hello-World-Rechner – so läuft es weiter, auch wenn dein Handy aus ist. Ein eigener Schlüssel bleibt in diesem Browser und wird nur für deine Aufträge mitgeschickt, nie gespeichert.</p>
     <label for="kiArt">KI</label>
     <select id="kiArt">
-      <option value="lokal" id="lokalOption">Claude auf diesem PC (nur zu Hause)</option>
+      <option value="lokal" id="lokalOption">KI-Programm auf diesem PC</option>
       <option value="frei">Kostenlose KIs (Gratis-Konten)</option>
       <option value="anthropic">Claude – eigener API-Schlüssel</option>
     </select>
+    <div id="programmBereich" hidden>
+      <label for="kiProgramm">Welches Programm?</label>
+      <select id="kiProgramm"></select>
+      <p class="hinweis">Ohne Schlüssel – es nutzt dein eigenes Abo. Hello World gibt dem Programm nur Text, in einem leeren Arbeitsordner: Claude ohne Werkzeuge, Codex schreibgeschützt.</p>
+    </div>
     <div id="freiBereich" hidden>
       <p class="hinweis">Lege bei einem oder mehreren Anbietern ein <b>kostenloses</b> Konto an und kopiere den Schlüssel hierher. Je mehr du einträgst, desto seltener stößt du an ein Tageslimit – Hello World wechselt automatisch zum nächsten.</p>
       <div id="freiFelder"></div>
