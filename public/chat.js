@@ -101,7 +101,10 @@
       knoepfe = `<button type="button" class="klein" data-hw-oeffnen="${esc(a.ergebnis.kennung)}">Öffnen</button>`;
     }
     const status = { laeuft: 'Der PC arbeitet …', vorschau: neu ? 'Fertig – schau es dir an.' : 'Fertig – die Vorschau läuft in der App.', fertig: '✓ Übernommen', verworfen: 'Verworfen', fehler: 'Hat nicht geklappt', abgebrochen: 'Abgebrochen', abgelehnt: 'Abgelehnt', vorhanden: 'Gibt es schon' }[a.status] || a.status;
-    return `<div class="hw-auftrag ${a.status}"><div class="hw-auftrag-kopf"><b>${esc(a.titelAnzeige || 'Auftrag')}</b></div>
+    const ziel = a.zielKennung
+      ? `✎ Verbesserung für <b>${esc(a.zielKennung)}</b>${a.basis ? ` <span class="leise-text">(ab v${esc(a.basis.slice(1))})</span>` : ''}`
+      : a.typ === 'design' ? `◐ Neues Design: <b>${esc(a.titelAnzeige || '')}</b>` : `✨ Neue App: <b>${esc(a.titelAnzeige || 'wird benannt …')}</b>`;
+    return `<div class="hw-auftrag ${a.status}"><div class="hw-auftrag-kopf"><span>${ziel}</span></div>
       ${ablaufMeldungen(a)}
       ${ablaufHtml(a)}
       ${knoepfe ? `<div class="knoepfe links">${knoepfe}</div>` : ''}</div>`;
@@ -121,6 +124,7 @@
     // Verlauf
     const v = verlauf();
     $h('hwVerlauf').innerHTML = v.length ? v.map((n, i) => `<div class="hw-nachricht ${n.wer}">
+        ${n.wer === 'ich' ? `<span class="hw-fuer">${n.art === 'nachbessern' ? '✎ Nachbessern · ' : n.fuer ? '→ ' : ''}${n.fuer ? esc(n.fuer) : 'Hello World'}</span>` : ''}
         ${n.text ? `<div class="hw-blase">${esc(n.text)}</div>` : ''}
         ${n.denkt ? '<div class="hw-blase"><span class="lade">Ich denke nach …</span></div>' : ''}
         ${n.nochmal ? `<div class="knoepfe links"><button type="button" class="klein" data-hw-nochmal-text="${i}">↻ Nochmal senden</button></div>` : ''}
@@ -195,7 +199,7 @@
   async function senden(text) {
     if (nachbessernFuer) {
       const ziel = nachbessernFuer; nachbessernFuer = null;
-      hinzu({ wer: 'ich', text });
+      hinzu({ wer: 'ich', text, fuer: ziel.titel.replace(/ weiterentwickeln$/, ''), art: 'nachbessern' });
       try {
         await auftragAktion(ziel.id, 'nachbessern', { was: text });
         hinzu({ wer: 'hw', text: 'Ich bessere nach – die Vorschau aktualisiert sich gleich.', auftrag: ziel.id });
@@ -205,7 +209,7 @@
     }
     const k = ohneBezug ? null : S().kontext?.();
     const bisher = verlauf().filter((n) => n.text).map((n) => ({ wer: n.wer, text: n.text }));
-    hinzu({ wer: 'ich', text });
+    hinzu({ wer: 'ich', text, fuer: k ? k.kennung + (k.version ? '@' + k.version : '') : null });
     // Ohne Server (Web-App) oder ohne KI: nur suchen
     if (STATISCH || !kiEinstellung()) {
       const treffer = lokalSuchen(text);

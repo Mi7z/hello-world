@@ -631,3 +631,8 @@ html.hw-layout-laedt body > header.kopf, html.hw-layout-laedt body > main.seite 
 .app-zeile { position: relative; }
 .app-zeile .tab-zu-zeile { position: absolute; top: 8px; right: 30px; min-height: 30px; padding: 2px 8px; }
 .app-zeile-zahl.offen-in { border-color: var(--ak); color: var(--ak); margin-right: 34px; }
+
+/* Chat: für welche App gilt die Anfrage? */
+.hw-fuer { font-size: 11px; font-weight: 700; color: var(--ak); letter-spacing: .02em; padding: 0 4px; }
+.hw-auftrag-kopf span { font-size: 13px; color: var(--tx2); }
+.hw-auftrag-kopf span b { color: var(--tx); }
