@@ -235,6 +235,21 @@ Regeln: 1–10 Aufgaben, Namen aus kleinen Buchstaben/Ziffern/`_`, Anweisung
 20–6000 Zeichen, Schema mit `"type": "object"`. Es kann bis zu einer Minute dauern –
 „Deine KI denkt nach …" anzeigen. Fehler (abgelehnt, keine KI verbunden) freundlich zeigen.
 
+### Designs mit eigenem Layout
+
+Ein Design darf die Startseite **komplett neu anordnen** – Bausteine verschieben,
+weglassen, eigene Panels, Leisten und Knöpfe ergänzen. Dafür steht am Ende von
+`design.css` eine Vorlage zwischen `/* hw-layout` und `hw-layout */`:
+
+- `<hw-baustein name="suche"></hw-baustein>` setzt einen festen Baustein (mit voller Funktion).
+- `<button data-hw-aktion="chat">Chat</button>` – Knöpfe lösen nur Aktionen aus der festen Liste aus.
+- `<hw-wert name="anzahl-apps"></hw-wert>` zeigt Live-Werte.
+- `<section data-hw-ansicht="mehr">` ist ein Bereich (Navigation wechselt zwischen ihnen).
+
+Die vollständige Liste aller Bausteine, Aktionen und Werte steht in `bausteine.js`
+(auch unter `/api/design/bausteine`). Kein JavaScript, kein `style`-Attribut, keine
+Formulare/iframes/svg, keine fremden Adressen – die Prüfung achtet darauf. Beispiel: `design.cockpit`.
+
 ## Hello-World-Helfer: Apps, die den Computer steuern
 
 Browser-Apps können über den Hello-World-Helfer (kleines Programm auf dem

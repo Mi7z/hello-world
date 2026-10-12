@@ -17,15 +17,15 @@
 </head>
 <body class="mit-nav">
 <header class="kopf">
-  <a href="#entdecken" class="logo" aria-label="Hello World – Entdecken"><span class="logo-zeichen" aria-hidden="true">hw</span><span>Hello World</span></a>
-  <nav class="nav" id="nav" aria-label="Bereiche">
+  <a href="#entdecken" data-baustein="logo" class="logo" aria-label="Hello World – Entdecken"><span class="logo-zeichen" aria-hidden="true">hw</span><span>Hello World</span></a>
+  <nav data-baustein="navigation" class="nav" id="nav" aria-label="Bereiche">
     <a href="#entdecken" data-ziel="entdecken"><span class="nav-zeichen" aria-hidden="true">⌕</span>Entdecken</a>
     <a href="#auftraege" data-ziel="auftraege" data-nur-server><span class="nav-zeichen" aria-hidden="true">⚒</span>Aufträge<span class="zahl" id="auftragZahl" hidden></span></a>
     <a href="#geraete" data-ziel="geraete" data-nur-server><span class="nav-zeichen" aria-hidden="true">⌂</span>Geräte</a>
     <a href="#mehr" data-ziel="mehr"><span class="nav-zeichen" aria-hidden="true">☰</span>Mehr</a>
     <a href="https://github.com/Mi7z/hello-world/releases/latest" target="_blank" rel="noopener" data-nur-statisch><span class="nav-zeichen" aria-hidden="true">⬇</span>Programm</a>
   </nav>
-  <div class="kopf-rechts" data-nur-server>
+  <div class="kopf-rechts" data-baustein="konto" data-nur-server>
     <button type="button" class="konto" data-anmelde-knopf>Anmelden</button>
   </div>
 </header>
@@ -33,21 +33,21 @@
 <main class="seite">
   <!-- ========== Entdecken ========== -->
   <div data-ansicht="entdecken">
-    <div class="flaeche install-banner" id="installBanner" hidden>
+    <div class="flaeche install-banner" data-baustein="install-hinweis" id="installBanner" hidden>
       <span class="logo-zeichen" aria-hidden="true">hw</span>
       <div><b>Hello World als App</b><span class="hinweis">Mit eigenem Symbol auf dem Startbildschirm</span></div>
       <button type="button" class="klein" id="installBannerKnopf">Installieren</button>
       <button type="button" class="leise klein" id="installBannerZu" aria-label="Ausblenden">✕</button>
     </div>
     <section class="held">
-      <h1 class="hw-titel">Was brauchst du?</h1>
-      <p class="unterzeile">Gibt es das schon, öffnet es sich. Sonst baut deine KI es – kostenlos, für alle.</p>
-      <form class="suche" id="suche" autocomplete="off" role="search">
+      <h1 class="hw-titel" data-baustein="titel">Was brauchst du?</h1>
+      <p class="unterzeile" data-baustein="einleitung">Gibt es das schon, öffnet es sich. Sonst baut deine KI es – kostenlos, für alle.</p>
+      <form class="suche" data-baustein="suche" id="suche" autocomplete="off" role="search">
         <span class="suche-zeichen" aria-hidden="true">⌕</span>
         <input id="anfrage" type="search" placeholder="z. B. Aus einem PDF ein Bild machen" aria-label="Was brauchst du?" enterkeyhint="search">
         <button type="submit">Suchen</button>
       </form>
-      <div class="vorschlaege" id="vorschlaege">
+      <div class="vorschlaege" data-baustein="vorschlaege" id="vorschlaege">
         <button type="button">Bilder verkleinern</button>
         <button type="button">QR-Code erstellen</button>
         <button type="button">PC später ausschalten</button>
@@ -55,7 +55,7 @@
       </div>
     </section>
 
-    <section id="treffer" hidden>
+    <section id="treffer" data-baustein="treffer" hidden>
       <h2 class="hw-abschnitt" id="trefferTitel">Treffer</h2>
       <div class="raster" id="trefferListe"></div>
       <div class="lade" id="kiSucht" hidden>Die KI sucht weitere passende Einträge …</div>
@@ -65,7 +65,7 @@
       </div>
     </section>
 
-    <section id="alle">
+    <section id="alle" data-baustein="katalog">
       <h2 class="hw-abschnitt">Alle Einträge <span class="anzahl" id="anzahl"></span></h2>
       <div class="chips" id="filter" role="group" aria-label="Filter">
         <button type="button" data-filter="alle" aria-pressed="true">Alle</button>
@@ -85,7 +85,7 @@
       <p class="unterzeile">Der PC baut weiter, auch wenn dein Handy aus ist.</p>
     </section>
 
-    <section id="bau" class="flaeche" hidden>
+    <section id="bau" data-baustein="bau" class="flaeche" hidden>
       <h2 style="margin:0 0 4px">Neu: <span id="bauTitel"></span></h2>
       <p class="hinweis" id="bauAnfrage"></p>
       <div id="ablauf"></div>
@@ -104,7 +104,7 @@
       </div>
     </section>
 
-    <section>
+    <section data-baustein="auftragsliste">
       <h2 class="hw-abschnitt">Laufend und offen</h2>
       <div class="raster" id="auftragListe"></div>
     </section>
@@ -116,7 +116,7 @@
       <h1 class="hw-titel">Geräte</h1>
       <p class="unterzeile">Manche Apps steuern deinen Computer, z. B. ein Ausschalt-Timer. Das geht über den <b>Hello-World-Helfer</b>: ein kleines Programm, das nur eine feste Liste geprüfter Dinge kann – und jedes Mal um Erlaubnis fragt.</p>
     </section>
-    <div class="zweispaltig">
+    <div class="zweispaltig" data-baustein="geraete">
       <section class="flaeche">
         <h3>Deine Computer</h3>
         <div id="geraeteListe"></div>
@@ -150,19 +150,19 @@ Benachrichtigung zeigen.</pre></details>
       <h1 class="hw-titel">Mehr</h1>
     </section>
 
-    <section class="flaeche" id="installBereich" style="margin-bottom:14px" hidden>
+    <section class="flaeche" id="installBereich" data-baustein="installieren" style="margin-bottom:14px" hidden>
       <h3>Als App installieren</h3>
       <p class="hinweis">Hello World aufs Handy oder den PC holen – mit eigenem Symbol und Vollbild, wie eine richtige App. Geht auf Android, iPhone und am PC.</p>
       <div class="knoepfe links"><button type="button" id="installKnopf">Installieren</button></div>
     </section>
 
-    <section class="flaeche" id="handyBereich" style="margin-bottom:14px" hidden>
+    <section class="flaeche" id="handyBereich" data-baustein="handy" style="margin-bottom:14px" hidden>
       <h3>Vom Handy aus nutzen</h3>
       <p class="hinweis">Bediene Hello World vom Handy – zu Hause im WLAN und mit <a href="https://tailscale.com/download" target="_blank" rel="noopener">Tailscale</a> (kostenlos) auch unterwegs. Gebaut wird hier auf diesem Rechner mit deiner KI. Nur Geräte, die du hier koppelst, kommen hinein.</p>
       <div id="handyInhalt"></div>
     </section>
 
-    <section class="flaeche">
+    <section class="flaeche" data-baustein="aussehen">
       <h3>Aussehen</h3>
       <p class="hinweis">Gilt für Hello World und alle Apps. Designs sind Einträge wie Apps – jeder kann neue bauen oder vorhandene weiterentwickeln.</p>
       <div class="design-raster" id="designWahl"></div>
@@ -176,18 +176,18 @@ Benachrichtigung zeigen.</pre></details>
     </section>
 
     <div class="zweispaltig" style="margin-top:14px">
-      <section class="flaeche" data-nur-statisch>
+      <section class="flaeche" data-nur-statisch data-baustein="neues-bauen">
         <h3>Neues bauen</h3>
         <p class="hinweis">Neue Apps und Designs baust du mit dem kostenlosen <b>Hello-World-Programm</b> für Windows, Mac und Linux – mit deiner eigenen KI oder kostenlosen KIs. Danach sind sie hier für alle da.</p>
         <div class="knoepfe links"><a class="knopf" href="https://github.com/Mi7z/hello-world/releases/latest" target="_blank" rel="noopener">Programm herunterladen</a></div>
       </section>
-      <section class="flaeche" data-nur-server>
+      <section class="flaeche" data-nur-server data-baustein="konto-ki">
         <h3>Konto &amp; KI</h3>
         <div class="liste-zeile"><div><b>Konto</b><span class="hinweis" id="kontoText">Nicht angemeldet</span></div><button type="button" class="zweit klein" data-anmelde-knopf>Anmelden</button></div>
         <div class="liste-zeile"><div><b>Deine KI</b><span class="hinweis" id="kiName">nicht verbunden</span></div><button type="button" class="zweit klein" id="kiKnopf">Ändern</button></div>
         <div class="liste-zeile"><div><b>Apps mit KI-Erlaubnis</b><span class="hinweis" id="kiErlaubtText"></span></div><button type="button" class="zweit klein" id="kiErlaubtZurueck" hidden>Zurücknehmen</button></div>
       </section>
-      <section class="flaeche">
+      <section class="flaeche" data-baustein="regeln">
         <h3>So funktioniert's</h3>
         <ul class="regeln">
           <li><span>🛡️</span><span><b>Nur Sinnvolles:</b> Eine KI prüft jeden Wunsch – Schädliches, Unsinniges oder Doppeltes wird nicht gebaut.</span></li>
@@ -198,7 +198,7 @@ Benachrichtigung zeigen.</pre></details>
       </section>
     </div>
 
-    <section class="flaeche" style="margin-top:14px">
+    <section class="flaeche" style="margin-top:14px" data-baustein="ki-holen">
       <h3>In deine KI holen</h3>
       <p class="hinweis">Installiere Hello World in Claude Code, Codex oder jeder KI mit MCP. Dann findet sie selbst passende Apps, Skills und Werkzeuge und kann Neues beitragen.</p>
       <div class="code-zeile"><code>claude plugin marketplace add &lt;github-name&gt;/hello-world</code><code>claude plugin install hello-world@hello-world</code></div>
@@ -263,5 +263,6 @@ Benachrichtigung zeigen.</pre></details>
 <script src="/qrcode.js"></script>
 <script src="/haupt.js"></script>
 <script src="/chat.js"></script>
+<script src="/layout.js"></script>
 </body>
 </html>

@@ -70,7 +70,7 @@ schreiben('api/installieren.json', JSON.stringify(fs.readFileSync(path.join(wurz
 // ---------- Oberfläche ----------
 // Adressen anpassen: /a/<name> → app.html?e=<name>, /b/<name> → baum.html?e=<name>,
 // und alles unter die Basis-Adresse (z. B. /hello-world/ bei GitHub Pages)
-const ZIELE = '(?:api|apps|muster|style\\.css|kern\\.js|haupt\\.js|chat\\.js|qrcode\\.js|design\\.js|statisch\\.js|icon|manifest|sw\\.js|app\\.html|baum\\.html)';
+const ZIELE = '(?:api|apps|muster|style\\.css|kern\\.js|haupt\\.js|chat\\.js|layout\\.js|qrcode\\.js|design\\.js|statisch\\.js|icon|manifest|sw\\.js|app\\.html|baum\\.html)';
 function anpassen(text) {
   return text
     .replace(/(["'`])\/a\//g, '$1/app.html?e=')

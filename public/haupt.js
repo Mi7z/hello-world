@@ -4,7 +4,8 @@ let stand = { apps: [], lokaleKi: false, csp: '', basisCss: '' };
 // ---------- Bereiche (unten auf dem Handy, oben auf dem Desktop) ----------
 const BEREICHE = ['entdecken', 'auftraege', 'geraete', 'mehr'];
 function bereich(name, scrollen = true) {
-  if (!BEREICHE.includes(name)) name = 'entdecken';
+  // Auch eigene Bereiche aus Layout-Designs (data-hw-ansicht)
+  if (!name || !document.querySelector(`[data-ansicht="${CSS.escape(name)}"]`)) name = 'entdecken';
   for (const el of document.querySelectorAll('[data-ansicht]')) el.hidden = el.dataset.ansicht !== name;
   for (const a of document.querySelectorAll('#nav a')) {
     if (a.dataset.ziel === name) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');

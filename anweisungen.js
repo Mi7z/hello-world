@@ -1,4 +1,5 @@
 import { faehigkeitenText } from './faehigkeiten.js';
+import { LAYOUT_ANLEITUNG } from './bausteine.js';
 // Anweisungen für die KI (Prüfen, GitHub-Auswahl, Bauen, Verbessern, Funktions-Check).
 // Werden nur auf dem Server benutzt – der ganze Bau-Ablauf läuft auf dem PC.
 
@@ -137,7 +138,9 @@ Pflicht-Aufbau:
 2. Optional: ein zweiter Block für die andere Tageszeit in \`@media (prefers-color-scheme: dark) { :root:root { … } }\`.
 3. Optional: wenige „Eigenarten" – rein optische Regeln für diese Elemente: .hw-titel (Seitentitel), .hw-abschnitt (Abschnitts-Überschriften), .hw-karte (Kacheln in Hello World), body > h1 und .karte (in Apps), button, .knopf. Erlaubt: Farben, Verläufe, Rahmen, Rundungen, Schatten, Schrift (Größe/Gewicht/Abstand/Großbuchstaben), ::before/::after-Verzierungen. NICHT erlaubt: Layout umbauen (display, position, width, height, grid, flex), etwas ausblenden, Animationen, die stören.
 Regeln: gut lesbar (Text auf Hintergrund Kontrast mind. 4.5, Knopf-Schrift auf Akzent mind. 3), kein @import, url() nur mit data:, keine Web-Schriften laden. Der Stil soll den Wunsch klar treffen und trotzdem ruhig und übersichtlich bleiben.
-Antworte NUR mit dem CSS in einem \`\`\`css Block.`;
+${LAYOUT_ANLEITUNG()}
+Nutze ein Layout nur, wenn der Wunsch eine andere Anordnung/Bedienung verlangt (z. B. „Seitenleiste", „Cockpit", „alles auf einen Blick", „große Kacheln"); für reine Farb-/Stilwünsche reicht CSS.
+Antworte NUR mit dem CSS (inkl. optionalem hw-layout-Kommentar am Ende) in einem \`\`\`css Block.`;
 
 export const VORBILDER_SYSTEM = `Bevor für „Hello World" eine App gebaut oder erweitert wird, recherchierst du Vorbilder. Schau dir 3–5 ähnliche Apps und Tools an – gern auch bekannte kostenpflichtige Marktführer, beliebte kostenlose Web-Tools und Open-Source-Projekte: Wie sind sie aufgebaut (Bildschirm-Aufteilung, Navigation, Reihenfolge der Schritte, wo liegen Werkzeuge/Einstellungen), welche Funktionen erwarten Nutzer, was machen sie besonders klug und intuitiv, was nervt an ihnen? Wenn du im Internet suchen kannst, tu es.
 Ergebnis: eine kompakte Bau-Notiz auf Deutsch (höchstens 25 Zeilen, Stichpunkte):

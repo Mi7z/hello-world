@@ -1,0 +1,91 @@
+/* design.cockpit – dunkles Cockpit: Seitenleiste mit Schnellknöpfen, Suche oben,
+   Katalog und Schnellstart nebeneinander. Zeigt, dass Designs auch das Layout ändern. */
+:root:root {
+  color-scheme: dark;
+  --bg: #0f1218; --fl: #161b24; --fl2: #1d2430; --li: #263042; --li2: #34405a;
+  --tx: #e6eaf2; --tx2: #9aa6bd; --tx3: #6b7891;
+  --ak: #5b9cff; --ak2: #1a2a45; --ak-tx: #08101f;
+  --rot: #ff6b6b; --gelb: #f5c451; --gruen: #4fd18b;
+  --r: 12px; --r-klein: 8px;
+  --schrift: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --schrift-titel: var(--schrift);
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --schatten: none;
+}
+/* Aufbau */
+.cockpit { min-height: 100vh; }
+.cockpit-leiste { display: none; }
+.cockpit-haupt { padding: 0 14px 20px; max-width: 1200px; margin: 0 auto; }
+.cockpit-oben { display: flex; align-items: center; gap: 10px; padding: max(10px, env(safe-area-inset-top)) 0 10px; }
+.cockpit-oben .suche { flex: 1; box-shadow: none; }
+.cockpit-titel.oben { margin-top: 0; }
+.cockpit-knoepfe.abstand { margin-top: 12px; }
+.cockpit-marke { font: 700 12px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ak); padding: 4px 2px; }
+.cockpit-titel { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--tx3); margin: 18px 0 8px; font-weight: 700; }
+.cockpit-raster { display: grid; gap: 14px; }
+.cockpit-panel { background: var(--fl); border: 1px solid var(--li); border-radius: var(--r); padding: 14px; }
+.cockpit-zahlen { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+.cockpit-zahl { background: var(--fl2); border-radius: var(--r-klein); padding: 10px; text-align: center; }
+.cockpit-zahl hw-wert { display: block; font: 700 22px/1.1 var(--mono); color: var(--ak); }
+.cockpit-zahl span { font-size: 11px; color: var(--tx3); }
+.cockpit-knoepfe { display: grid; gap: 6px; }
+.cockpit-knoepfe button { justify-content: flex-start; background: var(--fl2); color: var(--tx); border-color: var(--li); }
+.cockpit-knoepfe button:hover { background: var(--ak2); border-color: var(--ak); filter: none; }
+.cockpit-knoepfe button.haupt { background: var(--ak); color: var(--ak-tx); border-color: var(--ak); }
+.cockpit-unten { font-size: 12px; color: var(--tx3); margin-top: 10px; }
+@media (min-width: 900px) {
+  .cockpit { display: grid; grid-template-columns: 230px 1fr; }
+  .cockpit-leiste { display: flex; flex-direction: column; gap: 14px; position: sticky; top: 0; height: 100vh; padding: 18px 14px; background: var(--fl); border-right: 1px solid var(--li); }
+  .cockpit-leiste .nav { flex-direction: column; align-items: stretch; margin: 0; gap: 2px; }
+  .cockpit-leiste .nav a { justify-content: flex-start; min-height: 38px; }
+  .cockpit-haupt { padding: 0 28px 30px; width: 100%; }
+  .cockpit-raster { grid-template-columns: minmax(0, 1fr) 300px; align-items: start; }
+  .cockpit-raster .raster { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+/* hw-layout
+<div class="cockpit">
+  <aside class="cockpit-leiste">
+    <div class="cockpit-marke">Cockpit</div>
+    <hw-baustein name="navigation"></hw-baustein>
+    <div class="cockpit-titel">Schnell</div>
+    <div class="cockpit-knoepfe">
+      <button class="haupt" data-hw-aktion="chat">💬 Chat öffnen</button>
+      <button data-hw-aktion="suchfeld">🔎 Suchen</button>
+      <button data-hw-aktion="chat:Ich möchte eine neue App bauen lassen">✨ Neue App bauen</button>
+      <button data-hw-aktion="ki-verbinden">🤖 KI verbinden</button>
+      <button data-hw-aktion="design:terminal">🖥️ Zurück zu Terminal</button>
+    </div>
+    <div class="cockpit-unten">Design: <hw-wert name="design"></hw-wert> · <hw-wert name="konto"></hw-wert></div>
+  </aside>
+  <main class="cockpit-haupt">
+    <div class="cockpit-oben">
+      <hw-baustein name="logo"></hw-baustein>
+      <hw-baustein name="suche"></hw-baustein>
+      <hw-baustein name="konto"></hw-baustein>
+    </div>
+    <section data-hw-ansicht="entdecken">
+      <hw-baustein name="install-hinweis"></hw-baustein>
+      <div class="cockpit-raster">
+        <div><hw-baustein name="katalog"></hw-baustein></div>
+        <aside class="cockpit-panel">
+          <div class="cockpit-titel oben">Schnellstart</div>
+          <div class="cockpit-zahlen">
+            <div class="cockpit-zahl"><hw-wert name="anzahl-apps"></hw-wert><span>Apps</span></div>
+            <div class="cockpit-zahl"><hw-wert name="anzahl-eintraege"></hw-wert><span>Einträge</span></div>
+            <div class="cockpit-zahl"><hw-wert name="anzahl-auftraege"></hw-wert><span>Aufträge</span></div>
+          </div>
+          <hw-baustein name="vorschlaege"></hw-baustein>
+          <div class="cockpit-knoepfe abstand">
+            <button data-hw-aktion="filter:apps">Nur Apps</button>
+            <button data-hw-aktion="filter:design">Nur Designs</button>
+            <button data-hw-aktion="bereich:auftraege">Aufträge ansehen</button>
+          </div>
+        </aside>
+      </div>
+    </section>
+    <section data-hw-ansicht="auftraege"><div class="cockpit-titel">Aufträge</div><hw-baustein name="bau"></hw-baustein><hw-baustein name="auftragsliste"></hw-baustein></section>
+    <section data-hw-ansicht="geraete"><div class="cockpit-titel">Geräte</div><hw-baustein name="geraete"></hw-baustein></section>
+    <section data-hw-ansicht="mehr"><div class="cockpit-titel">Einstellungen</div><hw-baustein name="installieren"></hw-baustein><hw-baustein name="handy"></hw-baustein><hw-baustein name="aussehen"></hw-baustein><hw-baustein name="neues-bauen"></hw-baustein><hw-baustein name="konto-ki"></hw-baustein><hw-baustein name="regeln"></hw-baustein><hw-baustein name="ki-holen"></hw-baustein></section>
+  </main>
+</div>
+hw-layout */

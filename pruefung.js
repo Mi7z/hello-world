@@ -1,3 +1,4 @@
+import { layoutAus, pruefeLayout } from './bausteine.js';
 // Statische Sicherheits- und Qualitätsprüfung einer App (eine HTML-Datei).
 // Läuft immer auf dem Server – der KI im Browser des Nutzers wird nicht vertraut.
 // Die eigentliche Absicherung ist zusätzlich die strenge CSP + iframe-Sandbox,
@@ -102,7 +103,10 @@ export const DESIGN_BAUSTEINE = ['--bg', '--fl', '--fl2', '--li', '--li2', '--tx
 export function pruefeDesign(css) {
   const fehler = [];
   if (typeof css !== 'string' || !css.trim()) return { ok: false, fehler: ['Leeres Design'], hinweise: [] };
-  if (css.length > 40000) fehler.push('Design ist zu groß (über 40 KB)');
+  if (css.length > 70000) fehler.push('Design ist zu groß (über 70 KB)');
+  // Optionales Layout (neue Anordnung der Startseite) separat prüfen, dann aus dem CSS herausnehmen
+  const layout = layoutAus(css);
+  if (layout !== null) { fehler.push(...pruefeLayout(layout)); css = css.replace(/\/\*\s*hw-layout\b[\s\S]*?\bhw-layout\s*\*\//, ''); }
   if (/@import/i.test(css)) fehler.push('Nicht erlaubt: @import (keine fremden Dateien)');
   if (/url\s*\(\s*(?!["']?data:)/i.test(css)) fehler.push('Nicht erlaubt: url() mit fremder Adresse (nur data: erlaubt)');
   if (/expression\s*\(|javascript:|behavior\s*:|-moz-binding/i.test(css)) fehler.push('Nicht erlaubt: ausführbarer Inhalt im CSS');

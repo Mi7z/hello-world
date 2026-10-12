@@ -14,6 +14,7 @@ import * as geraete from './geraete.js';
 import * as suchtexte from './beschreibung.js';
 import * as appki from './appki.js';
 import * as gespraech from './gespraech.js';
+import { BAUSTEINE, AKTIONEN, WERTE, TAGS } from './bausteine.js';
 import * as zugang from './zugang.js';
 import { ANBIETER } from './freiki.js';
 import { FAEHIGKEITEN } from './faehigkeiten.js';
@@ -285,6 +286,7 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/api/github/details' && req.method === 'GET') {
       return json(res, 200, await githubDetails(String(url.searchParams.get('repo') || '')));
     }
+    if (url.pathname === '/api/design/bausteine' && req.method === 'GET') return json(res, 200, { bausteine: BAUSTEINE, aktionen: AKTIONEN, werte: WERTE, elemente: TAGS });
     const designWeg = url.pathname.match(/^\/api\/design\/([a-z0-9.-]+?)(?:@(v\d+))?\.css$/);
     if (designWeg && req.method === 'GET') {
       res.writeHead(200, { 'Content-Type': 'text/css; charset=utf-8', 'Cache-Control': 'no-cache' });

@@ -496,3 +496,6 @@ input, select, textarea { min-height: 40px; padding: 9px 12px; font-size: 16px; 
 #bauAnfrage.ganz { -webkit-line-clamp: unset; display: block; }
 .ablauf-detail { max-height: 280px; overflow: auto; }
 .hw-auftrag-kopf b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+
+/* Layout-Designs: kurz verbergen, bis die Startseite umgebaut ist */
+html.hw-layout-laedt body > header.kopf, html.hw-layout-laedt body > main.seite { visibility: hidden; }
