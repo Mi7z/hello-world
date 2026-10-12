@@ -7,7 +7,15 @@ import { execFile } from 'node:child_process';
 import { kiJson } from './ki.js';
 
 export const REPO = process.env.HW_REPO || 'Mi7z/hello-world';
-export const SCHWELLE = Number(process.env.HW_PITCH_SCHWELLE || 3); // Stimmen, ab denen gebaut wird
+// Entscheidung: mindestens 10 Stimmen (👍 + 👎) und mindestens 80 % dafür
+export const MIN_STIMMEN = Number(process.env.HW_PITCH_MIN_STIMMEN || 10);
+export const QUOTE = Number(process.env.HW_PITCH_QUOTE || 0.8);
+export function bewertung(dafuer, dagegen) {
+  const gesamt = dafuer + dagegen;
+  const anteil = gesamt ? dafuer / gesamt : 0;
+  const status = gesamt < MIN_STIMMEN ? 'offen' : anteil >= QUOTE ? 'angenommen' : 'zu wenig Zustimmung';
+  return { gesamt, anteil, status };
+}
 
 const gh = (args, eingabe) => new Promise((resolve) => {
   const k = execFile('gh', args, { timeout: 20000, maxBuffer: 5e6 }, (err, aus, fehler) => resolve({ ok: !err, aus: String(aus || ''), fehler: String(fehler || err?.message || '') }));
@@ -28,14 +36,15 @@ export async function liste(frisch = false) {
   }
   const liste = roh.filter((i) => !i.pull_request).map((i) => {
     const marken = i.labels.map((l) => (typeof l === 'string' ? l : l.name));
-    const stimmen = i.reactions?.['+1'] || 0;
+    const dafuer = i.reactions?.['+1'] || 0, dagegen = i.reactions?.['-1'] || 0;
+    const b = bewertung(dafuer, dagegen);
     return {
       nummer: i.number, titel: String(i.title).replace(/^Pitch:\s*/i, ''), plan: String(i.body || '').replace(/^### Plan\s*/i, '').trim(),
-      von: i.user?.login, zeit: i.created_at, stimmen, url: i.html_url,
-      status: marken.includes('pitch: umgesetzt') || i.state === 'closed' ? 'umgesetzt' : marken.includes('pitch: wird gebaut') ? 'wird gebaut' : stimmen >= SCHWELLE ? 'genug Stimmen' : 'offen',
+      von: i.user?.login, zeit: i.created_at, dafuer, dagegen, gesamt: b.gesamt, anteil: b.anteil, url: i.html_url,
+      status: marken.includes('pitch: umgesetzt') || i.state === 'closed' ? 'umgesetzt' : marken.includes('pitch: wird gebaut') ? 'wird gebaut' : b.status,
       geschlossen: i.state === 'closed',
     };
-  }).sort((a, b) => (a.geschlossen - b.geschlossen) || (b.stimmen - a.stimmen) || b.zeit.localeCompare(a.zeit));
+  }).sort((a, b) => (a.geschlossen - b.geschlossen) || (b.dafuer - b.dagegen) - (a.dafuer - a.dagegen) || b.zeit.localeCompare(a.zeit));
   cache = { zeit: Date.now(), liste };
   return liste;
 }
@@ -69,9 +78,24 @@ export async function einreichen({ titel, plan, autor }) {
   const i = JSON.parse(r.aus);
   return { nummer: i.number, url: i.html_url };
 }
-export async function abstimmen(nummer) {
-  const r = await gh(['api', `repos/${REPO}/issues/${Number(nummer)}/reactions`, '-X', 'POST', '-f', 'content=+1']);
-  if (!r.ok) throw new Error(`Abstimmen hat nicht geklappt: ${r.fehler.slice(0, 200)}`);
+// Abstimmen über das GitHub-Konto des Besitzers: 👍 (+1) oder 👎 (-1).
+// Nochmal dasselbe nimmt die Stimme zurück, die andere Richtung wechselt sie.
+let ich = null;
+export async function abstimmen(nummer, richtung) {
+  const inhalt = richtung === '-1' ? '-1' : '+1';
+  const n = Number(nummer);
+  if (!ich) { const u = await gh(['api', 'user']); ich = u.ok ? JSON.parse(u.aus).login : null; }
+  const r = await gh(['api', `repos/${REPO}/issues/${n}/reactions?per_page=100`]);
+  const meine = r.ok ? JSON.parse(r.aus).filter((x) => x.user?.login === ich && ['+1', '-1'].includes(x.content)) : [];
+  let zurueck = false;
+  for (const x of meine) {
+    await gh(['api', '-X', 'DELETE', `repos/${REPO}/issues/${n}/reactions/${x.id}`]);
+    if (x.content === inhalt) zurueck = true;
+  }
+  if (!zurueck) {
+    const neu = await gh(['api', `repos/${REPO}/issues/${n}/reactions`, '-X', 'POST', '-f', `content=${inhalt}`]);
+    if (!neu.ok) throw new Error(`Abstimmen hat nicht geklappt: ${neu.fehler.slice(0, 200)}`);
+  }
   cache.zeit = 0;
-  return { ok: true };
+  return { ok: true, stimme: zurueck ? null : inhalt };
 }

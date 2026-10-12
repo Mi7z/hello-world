@@ -1,7 +1,7 @@
 {
   "name": "hello-world-desktop",
   "productName": "Hello World",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "Hello World – die freie App-Wolke als eigenes Programm",
   "main": "main.cjs",
   "author": "Hello World",

@@ -395,7 +395,7 @@ const server = http.createServer(async (req, res) => {
     // ---------- Pitches: Vorschläge zur Weiterentwicklung von Hello World (auf GitHub) ----------
     if (url.pathname === '/api/pitches' && req.method === 'GET') {
       const direkt = ausHeimnetz(req) && await pitches.ghBereit();
-      return json(res, 200, { pitches: await pitches.liste(url.searchParams.has('frisch')), schwelle: pitches.SCHWELLE, direkt, repo: pitches.REPO });
+      return json(res, 200, { pitches: await pitches.liste(url.searchParams.has('frisch')), minStimmen: pitches.MIN_STIMMEN, quote: pitches.QUOTE, direkt, repo: pitches.REPO });
     }
     if (url.pathname === '/api/pitches/entwurf' && req.method === 'POST') {
       const d = await body(req);
@@ -413,8 +413,8 @@ const server = http.createServer(async (req, res) => {
     }
     const pitchStimme = url.pathname.match(/^\/api\/pitches\/(\d+)\/stimme$/);
     if (pitchStimme && req.method === 'POST') {
-      if (!ausHeimnetz(req) || !(await pitches.ghBereit())) return json(res, 403, { fehler: 'Bitte auf GitHub mit 👍 abstimmen.', link: `https://github.com/${pitches.REPO}/issues/${pitchStimme[1]}` });
-      return json(res, 200, await pitches.abstimmen(pitchStimme[1]));
+      if (!ausHeimnetz(req) || !(await pitches.ghBereit())) return json(res, 403, { fehler: 'Bitte auf GitHub mit 👍 oder 👎 abstimmen.', link: `https://github.com/${pitches.REPO}/issues/${pitchStimme[1]}` });
+      return json(res, 200, await pitches.abstimmen(pitchStimme[1], String((await body(req)).richtung || '+1')));
     }
     // ---------- Chat: versteht den Wunsch (im Zusammenhang mit der offenen App) ----------
     if (url.pathname === '/api/chat' && req.method === 'POST') {

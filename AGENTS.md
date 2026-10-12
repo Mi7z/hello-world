@@ -250,6 +250,14 @@ Die vollständige Liste aller Bausteine, Aktionen und Werte steht in `bausteine.
 (auch unter `/api/design/bausteine`). Kein JavaScript, kein `style`-Attribut, keine
 Formulare/iframes/svg, keine fremden Adressen – die Prüfung achtet darauf. Beispiel: `design.cockpit`.
 
+## Pitches: Hello World selbst weiterentwickeln
+
+Änderungen an Hello World selbst (Oberfläche, Chat, Bauablauf, Programm) werden als
+**Pitch** vorgeschlagen: ein GitHub-Issue mit der Markierung `pitch` und einem Plan
+(„Worum geht's", „Was ändert sich", „Umfang und Risiken"). Abgestimmt wird mit 👍
+(dafür) und 👎 (dagegen). **Entschieden ist ein Pitch ab 10 Stimmen; angenommen bei
+mindestens 80 % dafür.** Erst angenommene Pitches werden gebaut.
+
 ## Hello-World-Helfer: Apps, die den Computer steuern
 
 Browser-Apps können über den Hello-World-Helfer (kleines Programm auf dem

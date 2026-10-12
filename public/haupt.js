@@ -446,36 +446,46 @@ document.addEventListener('hw-installierbar', installZeigen);
 installZeigen();
 
 // ---------- Pitches: Hello World weiterentwickeln (auf GitHub, Sterne = 👍) ----------
-let pitchStand = { pitches: [], schwelle: 3, direkt: false, repo: 'Mi7z/hello-world' };
+let pitchStand = { pitches: [], minStimmen: 10, quote: 0.8, direkt: false, repo: 'Mi7z/hello-world' };
 const pitchOffen = new Set();
 async function pitchesLaden(frisch = false) {
   try {
     if (STATISCH) {
       // Ohne Server direkt bei GitHub lesen (öffentlich)
       const roh = await (await fetch(`https://api.github.com/repos/${pitchStand.repo}/issues?labels=pitch&state=all&per_page=100`)).json();
-      pitchStand.pitches = roh.filter((i) => !i.pull_request).map((i) => ({ nummer: i.number, titel: i.title.replace(/^Pitch:\s*/i, ''), plan: String(i.body || '').replace(/^### Plan\s*/i, ''), von: i.user?.login, zeit: i.created_at, stimmen: i.reactions?.['+1'] || 0, url: i.html_url, status: i.state === 'closed' ? 'umgesetzt' : 'offen', geschlossen: i.state === 'closed' })).sort((a, b) => b.stimmen - a.stimmen);
+      pitchStand.pitches = roh.filter((i) => !i.pull_request).map((i) => {
+        const dafuer = i.reactions?.['+1'] || 0, dagegen = i.reactions?.['-1'] || 0, gesamt = dafuer + dagegen, anteil = gesamt ? dafuer / gesamt : 0;
+        return { nummer: i.number, titel: i.title.replace(/^Pitch:\s*/i, ''), plan: String(i.body || '').replace(/^### Plan\s*/i, ''), von: i.user?.login, zeit: i.created_at, dafuer, dagegen, gesamt, anteil, url: i.html_url, geschlossen: i.state === 'closed',
+          status: i.state === 'closed' ? 'umgesetzt' : gesamt < pitchStand.minStimmen ? 'offen' : anteil >= pitchStand.quote ? 'angenommen' : 'zu wenig Zustimmung' };
+      }).sort((a, b) => (b.dafuer - b.dagegen) - (a.dafuer - a.dagegen));
     } else pitchStand = await api(`/api/pitches${frisch ? '?frisch=1' : ''}`);
   } catch (err) { $('pitchListe').innerHTML = `<p class="fehler-text">Pitches konnten nicht geladen werden (${esc(err.message)}).</p>`; return; }
   pitchesZeigen();
 }
 function pitchesZeigen() {
-  const { pitches, schwelle, direkt } = pitchStand;
-  $('pitchSchwelle').textContent = schwelle;
+  const { pitches, minStimmen, quote, direkt } = pitchStand;
+  $('pitchMin').textContent = minStimmen;
+  $('pitchQuote').textContent = `${Math.round(quote * 100)} %`;
   $('pitchAnzahl').textContent = pitches.length || '';
   $('pitchEinreichen').textContent = direkt ? 'Einreichen' : 'Auf GitHub einreichen ↗';
   $('pitchListe').innerHTML = pitches.length ? pitches.map((p) => {
-    const anteil = Math.min(100, Math.round((p.stimmen / schwelle) * 100));
+    const prozent = Math.round(p.anteil * 100);
+    const fehlen = Math.max(0, minStimmen - p.gesamt);
     const offen = pitchOffen.has(p.nummer);
+    const STATUS = { offen: fehlen ? `noch ${fehlen} ${fehlen === 1 ? 'Stimme' : 'Stimmen'} bis zur Entscheidung` : 'offen', angenommen: '✓ angenommen – wird gebaut', 'zu wenig Zustimmung': `zu wenig Zustimmung (nötig ${Math.round(quote * 100)} %)`, 'wird gebaut': '⚙ wird gebaut', umgesetzt: '✓ umgesetzt' };
     return `<article class="pitch flaeche${p.geschlossen ? ' zu' : ''}">
       <div class="pitch-kopf">
-        <div class="pitch-sterne" title="${p.stimmen} von ${schwelle} Sternen"><b>⭐ ${p.stimmen}</b><span>/ ${schwelle}</span><i style="--anteil:${anteil}%"></i></div>
         <div class="pitch-titel"><b>${esc(p.titel)}</b><span class="hinweis">#${p.nummer} · @${esc(p.von || '')} · ${new Date(p.zeit).toLocaleDateString('de-DE')}</span></div>
-        <span class="marke${p.status === 'genug Stimmen' || p.status === 'wird gebaut' ? ' akzent' : ''}">${esc(p.status)}</span>
+        ${p.geschlossen ? '' : `<div class="pitch-stimmen">
+          <button type="button" class="zweit klein" data-pitch-stimme="+1" data-nummer="${p.nummer}" aria-label="Dafür">👍 ${p.dafuer}</button>
+          <button type="button" class="zweit klein" data-pitch-stimme="-1" data-nummer="${p.nummer}" aria-label="Dagegen">👎 ${p.dagegen}</button>
+        </div>`}
       </div>
+      <div class="pitch-balken" title="${prozent} % dafür"><i class="dafuer" style="width:${p.gesamt ? prozent : 0}%"></i><i class="dagegen" style="width:${p.gesamt ? 100 - prozent : 0}%"></i><span class="schwelle" style="left:${Math.round(quote * 100)}%"></span></div>
+      <div class="pitch-stand"><span>${p.gesamt} ${p.gesamt === 1 ? 'Stimme' : 'Stimmen'}${p.gesamt ? ` · ${prozent} % dafür` : ''}</span><span class="marke${['angenommen', 'wird gebaut', 'umgesetzt'].includes(p.status) ? ' akzent' : ''}">${esc(STATUS[p.status] || p.status)}</span></div>
       ${offen ? `<div class="pitch-plan text-inhalt">${markdown(p.plan)}</div>` : ''}
       <div class="knoepfe links">
-        <button type="button" class="zweit klein" data-pitch-auf="${p.nummer}">${offen ? 'Plan zuklappen' : 'Plan ansehen'}</button>
-        ${p.geschlossen ? '' : `<button type="button" class="klein" data-pitch-stern="${p.nummer}">⭐ Stern geben</button>`}
+        <button type="button" class="leise klein" data-pitch-auf="${p.nummer}">${offen ? 'Plan zuklappen' : 'Plan ansehen'}</button>
         <a class="knopf leise klein" href="${esc(p.url)}" target="_blank" rel="noopener">Auf GitHub ↗</a>
       </div>
     </article>`;
@@ -484,13 +494,13 @@ function pitchesZeigen() {
 $('pitchListe').addEventListener('click', async (ev) => {
   const auf = ev.target.closest('[data-pitch-auf]');
   if (auf) { const n = Number(auf.dataset.pitchAuf); pitchOffen.has(n) ? pitchOffen.delete(n) : pitchOffen.add(n); pitchesZeigen(); return; }
-  const stern = ev.target.closest('[data-pitch-stern]');
-  if (!stern) return;
-  const n = stern.dataset.pitchStern;
+  const b = ev.target.closest('[data-pitch-stimme]');
+  if (!b) return;
+  const n = b.dataset.nummer;
   if (STATISCH || !pitchStand.direkt) { open(`https://github.com/${pitchStand.repo}/issues/${n}`, '_blank', 'noopener'); return; }
-  stern.disabled = true;
-  try { await api(`/api/pitches/${n}/stimme`, { method: 'POST' }); stern.textContent = '⭐ Danke!'; setTimeout(() => pitchesLaden(true), 800); }
-  catch (err) { alert(err.message); stern.disabled = false; }
+  b.disabled = true;
+  try { await api(`/api/pitches/${n}/stimme`, { method: 'POST', body: JSON.stringify({ richtung: b.dataset.pitchStimme }) }); await pitchesLaden(true); }
+  catch (err) { alert(err.message); b.disabled = false; }
 });
 $('pitchForm').addEventListener('submit', async (ev) => {
   ev.preventDefault();

@@ -1,12 +1,12 @@
 name: Pitch – Hello World weiterentwickeln
-description: Schlage eine Änderung an Hello World selbst vor. Mit genug 👍 wird sie gebaut.
+description: Schlage eine Änderung an Hello World selbst vor. Ab 10 Stimmen mit mindestens 80 % 👍 wird sie gebaut.
 title: "Pitch: "
 labels: ["pitch"]
 body:
   - type: markdown
     attributes:
       value: |
-        **So geht's:** Beschreibe, was an Hello World besser werden soll. Andere geben mit 👍 ihre Stimme – mit genug Stimmen baut eine KI die Änderung.
+        **So geht's:** Beschreibe, was an Hello World besser werden soll. Andere stimmen mit 👍 (dafür) oder 👎 (dagegen) ab. Ab 10 Stimmen und mindestens 80 % dafür baut eine KI die Änderung.
   - type: textarea
     id: plan
     attributes:
