@@ -85,7 +85,8 @@ immer als **`typ.name`**: `app.paintboard`, `server.weatherbot`,
 Diese Apps laufen direkt im Katalog, abgeschottet in einer Sandbox.
 
 - Genau eine Datei `index.html` mit `<title>`, `<meta name="viewport">` und `lang`.
-- Die App läuft im **Vollbild**. Oben rechts liegen die Knöpfe „←" und „helloworld" (zusammen ca. 200×44 px) für das Hello-World-Menü – diese Ecke frei lassen.
+- Die App läuft im **Vollbild, ohne Scrollen** – wie eine echte App, auch auf dem Handy: `<body class="app">` mit `.app-kopf`, `.app-inhalt` (füllt den Rest) und `.app-fuss`. Viel Inhalt → Reiter (`.reiter`), Schritte oder ein Bereich, der in sich scrollt (`.scroll`). Die ganze Seite scrollt nur, wenn es wirklich nicht anders geht.
+- Am rechten Rand liegt ein kleiner, verschiebbarer Griff von Hello World (öffnet das Hello-World-Fenster mit Tabs und Chat) – keine wichtigen Bedienelemente direkt an den rechten Rand.
 - Kein Netzwerk: kein `fetch` oder XMLHttpRequest zu fremden Adressen, kein
   WebSocket, keine Formulare nach außen, keine iframes, kein `window.open`,
   kein `eval` oder `new Function`, keine Cookies, kein Standort und keine Kamera.

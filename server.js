@@ -13,6 +13,7 @@ import * as anmeldung from './anmeldung.js';
 import * as geraete from './geraete.js';
 import * as suchtexte from './beschreibung.js';
 import * as appki from './appki.js';
+import * as gespraech from './gespraech.js';
 import * as zugang from './zugang.js';
 import { ANBIETER } from './freiki.js';
 import { FAEHIGKEITEN } from './faehigkeiten.js';
@@ -387,6 +388,17 @@ const server = http.createServer(async (req, res) => {
       return { art: 'lokal', ...(KI_PROGRAMME[k?.programm] ? { programm: k.programm } : {}) };
     };
     const darf = (k) => k.art !== 'lokal' || ausHeimnetz(req);
+    // ---------- Chat: versteht den Wunsch (im Zusammenhang mit der offenen App) ----------
+    if (url.pathname === '/api/chat' && req.method === 'POST') {
+      const d = await body(req);
+      const ki = kiAusAnfrage(d.ki);
+      if (!darf(ki)) return json(res, 403, { fehler: 'Die KI auf diesem PC geht nur zu Hause bzw. mit gekoppeltem Gerät.' });
+      const nachricht = String(d.nachricht || '').trim().slice(0, 2000);
+      if (!nachricht) return json(res, 400, { fehler: 'Leere Nachricht' });
+      return json(res, 200, gespraech.starten({ ki, nachricht, kontext: d.kontext || null, verlauf: Array.isArray(d.verlauf) ? d.verlauf : [], katalog: katalogLaden() }));
+    }
+    const chatStand = url.pathname.match(/^\/api\/chat\/([a-f0-9]+)$/);
+    if (chatStand && req.method === 'GET') return json(res, 200, gespraech.stand(chatStand[1]));
     if (url.pathname === '/api/bau' && req.method === 'POST') {
       const d = await body(req);
       const ich = anmeldung.person(req);

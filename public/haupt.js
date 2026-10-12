@@ -162,41 +162,29 @@ $('vorschlaege').addEventListener('click', (ev) => {
 });
 
 let letzteAnfrage = '';
-let suchNummer = 0;
-$('suche').addEventListener('submit', async (ev) => {
+// Suche → Hello-World-Chat: schlägt passende Apps vor (öffnen direkt aus dem Chat)
+// oder baut Neues; der Chat bleibt danach als ausklappbares Fenster erhalten.
+$('suche').addEventListener('submit', (ev) => {
   ev.preventDefault();
   const anfrage = $('anfrage').value.trim();
   if (!anfrage) return;
-  $('anfrage').blur();
   letzteAnfrage = anfrage;
-  const nummer = ++suchNummer;
-  // 1. sofort: Treffer über Beschreibung, Beispiele und Stichworte
-  const lokal = stand.apps.map((a) => ({ a, p: bewerten(a, anfrage) })).filter((x) => x.p >= 0.5).sort((x, y) => y.p - x.p).slice(0, 6);
-  const zeigen = (liste, kiLaeuft) => {
-    $('treffer').hidden = false;
-    $('trefferTitel').textContent = liste.length ? `Passt zu „${anfrage}"` : kiLaeuft ? `Suche „${anfrage}" …` : `Nichts gefunden für „${anfrage}"`;
-    $('trefferListe').innerHTML = liste.map((x, i) => karte(x.a, { top: i === 0 && (x.p >= 1 || x.ki >= 80), grund: x.grund })).join('');
-    $('kiSucht').hidden = !kiLaeuft;
-  };
-  zeigen(lokal, true);
-  $('treffer').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  // 2. die KI versteht den Wunsch, auch bei ganz anderem Wortlaut (braucht den Server)
-  if (STATISCH) return zeigen(lokal, false);
-  try {
-    const { treffer } = await api('/api/suche', { method: 'POST', body: JSON.stringify({ anfrage }) });
-    if (nummer !== suchNummer) return;
-    const zusammen = [...lokal];
-    for (const t of treffer || []) {
-      const a = stand.apps.find((x) => x.slug === t.slug);
-      if (!a) continue;
-      const vorhanden = zusammen.find((x) => x.a.slug === t.slug);
-      if (vorhanden) Object.assign(vorhanden, { grund: t.grund, ki: t.passt });
-      else zusammen.push({ a, p: 0, ki: t.passt, grund: t.grund });
-    }
-    zusammen.sort((x, y) => (y.ki || y.p * 50) - (x.ki || x.p * 50));
-    zeigen(zusammen.slice(0, 6), false);
-  } catch { if (nummer === suchNummer) zeigen(lokal, false); }
+  $('anfrage').value = '';
+  $('anfrage').blur();
+  window.hwChat?.senden(anfrage);
 });
+
+// Hello-World-Fenster auf der Startseite: offene Apps als Tabs, keine aktuelle App
+const offeneTabs = () => { try { return JSON.parse(localStorage.getItem('hw-tabs') || '[]'); } catch { return []; } };
+window.HW_SEITE = {
+  kontext: () => null,
+  tabs: () => offeneTabs().map((t) => { const a = stand.apps.find((x) => x.slug === t.slug); return { kennung: t.kennung, name: t.kennung + (t.version ? '@' + t.version : ''), symbol: a ? symbolHtml(a) : '' }; }),
+  tabWahl: (i) => { const t = offeneTabs()[i]; if (t) location.href = `/a/${t.kennung}${t.version ? '@' + t.version : ''}`; },
+  tabZu: (i) => { const l = offeneTabs(); l.splice(i, 1); localStorage.setItem('hw-tabs', JSON.stringify(l)); },
+  oeffnen: (k) => { location.href = `/a/${k}`; },
+  vorschau: () => {},
+  vorschauOeffnen: (a) => { window.hwChat?.schliessen(); zeigeAuftrag(a.id); },
+};
 
 // ---------- Neu bauen: der PC arbeitet, die Seite zeigt nur den Stand ----------
 let aktuell = null; // laufender Auftrag (id)

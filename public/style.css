@@ -318,3 +318,77 @@ details summary { cursor: pointer; color: var(--ak); font-weight: 600; margin-to
 /* Ohne Server (Web-App / Android): Dinge, die nur mit Server gehen, ausblenden */
 .hw-statisch [data-nur-server] { display: none !important; }
 html:not(.hw-statisch) [data-nur-statisch] { display: none !important; }
+
+/* ---------- Hello-World-Fenster: Griff, Tabs, Chat ---------- */
+:root { --z-griff: 350; --z-fenster: 400; }
+.hw-griff {
+  position: fixed; right: 0; top: 50%; z-index: var(--z-griff); transform: translateY(-50%);
+  width: 26px; height: 64px; min-height: 0; padding: 0; border-radius: 14px 0 0 14px;
+  background: color-mix(in srgb, var(--ak) 88%, transparent); color: var(--ak-tx); border: 0;
+  box-shadow: var(--schatten); font-size: 22px; font-weight: 700; touch-action: none; user-select: none; opacity: .82;
+}
+.hw-griff:hover { opacity: 1; filter: none; }
+.hw-griff.links { right: auto; left: 0; border-radius: 0 14px 14px 0; }
+.hw-griff.zieht { opacity: 1; width: 36px; border-radius: 18px; transition: none; box-shadow: 0 6px 24px rgba(0,0,0,.3); }
+.hw-fenster {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: var(--z-fenster); width: min(440px, 100vw);
+  display: flex; flex-direction: column; background: var(--bg); border-left: 1px solid var(--li); box-shadow: -20px 0 60px rgba(0,0,0,.25);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.hw-fenster[open], .hw-fenster:not([hidden]) { animation: reinSeite .2s ease-out; }
+@keyframes reinSeite { from { transform: translateX(30px); opacity: .6; } }
+@media (prefers-reduced-motion: reduce) { .hw-fenster:not([hidden]) { animation: none; } }
+@media (max-width: 700px) { .hw-fenster { width: 100vw; border-left: 0; } }
+.hw-fenster-kopf { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: max(10px, env(safe-area-inset-top)) 12px 8px 16px; }
+.hw-tabs { display: flex; gap: 6px; overflow-x: auto; padding: 2px 12px 10px; scrollbar-width: none; border-bottom: 1px solid var(--li); flex: none; }
+.hw-tabs::-webkit-scrollbar { display: none; }
+.hw-tab {
+  flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 38px; padding: 4px 8px 4px 6px; font-size: 13px; font-weight: 600;
+  background: var(--fl); color: var(--tx); border: 1px solid var(--li); border-radius: var(--r-klein); max-width: 180px; text-decoration: none;
+}
+.hw-tab:hover { background: var(--fl2); filter: none; text-decoration: none; }
+.hw-tab.an { border-color: var(--ak); box-shadow: 0 0 0 1px var(--ak); }
+.hw-tab span:not(.logo-zeichen):not(.symbol) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hw-tab .symbol, .hw-tab .logo-zeichen { width: 24px; height: 24px; font-size: 13px; border-radius: 7px; grid-row: auto; }
+.hw-tab .symbol.farben { display: grid; }
+.hw-tab i { font-style: normal; color: var(--tx3); padding: 2px 4px; border-radius: 6px; }
+.hw-tab i:hover { background: var(--fl2); color: var(--tx); }
+.hw-app { padding: 10px 14px; border-bottom: 1px solid var(--li); flex: none; }
+.hw-app-kopf { display: flex; align-items: center; gap: 10px; }
+.hw-app-kopf .symbol { width: 36px; height: 36px; font-size: 18px; grid-row: auto; }
+.hw-app-kopf b { display: block; font-size: 15px; }
+.hw-app-kopf small { color: var(--tx2); font-size: 12px; }
+.hw-app .menu-links { margin-top: 8px; }
+.hw-app .menu-links .knopf, .hw-app .menu-links button { min-height: 34px; font-size: 13px; padding: 4px 10px; }
+.hw-verlauf { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; overscroll-behavior: contain; }
+.hw-leer { margin: auto 0; color: var(--tx2); font-size: 15px; text-align: center; padding: 20px; }
+.hw-nachricht { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.hw-nachricht.ich { align-items: flex-end; }
+.hw-blase { max-width: 88%; padding: 9px 13px; border-radius: 16px 16px 16px 4px; background: var(--fl); border: 1px solid var(--li); font-size: 15px; line-height: 1.45; white-space: pre-wrap; }
+.hw-nachricht.ich .hw-blase { background: var(--ak); color: var(--ak-tx); border-color: var(--ak); border-radius: 16px 16px 4px 16px; }
+.hw-vorschlag { display: grid; grid-template-columns: 36px 1fr auto; gap: 10px; align-items: center; width: 100%; padding: 10px; background: var(--fl); border: 1px solid var(--li); border-radius: var(--r-klein); }
+.hw-vorschlag .symbol { width: 36px; height: 36px; font-size: 18px; grid-row: auto; }
+.hw-vorschlag b { display: block; font-size: 14px; }
+.hw-vorschlag span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 12px; color: var(--tx2); }
+.hw-auftrag { width: 100%; padding: 12px; background: var(--fl); border: 1px solid var(--li); border-left: 4px solid var(--ak); border-radius: var(--r-klein); }
+.hw-auftrag.fehler, .hw-auftrag.abgebrochen, .hw-auftrag.abgelehnt { border-left-color: var(--rot); }
+.hw-auftrag.fertig { border-left-color: var(--gruen); }
+.hw-auftrag-kopf { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
+.hw-auftrag-kopf span { color: var(--tx2); font-size: 13px; }
+.hw-schritte { display: flex; gap: 4px; margin: 8px 0 2px; flex-wrap: wrap; }
+.hw-schritt { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--fl2); color: var(--tx3); border: 1px solid var(--li); }
+.hw-schritt.ok { background: var(--ak2); color: var(--ak); border-color: transparent; }
+.hw-schritt.laeuft { color: var(--tx); border-color: var(--ak); }
+.hw-schritt.nein { color: var(--rot); border-color: var(--rot); }
+.hw-auftrag .knoepfe { margin-top: 8px; gap: 6px; }
+.hw-eingabe { border-top: 1px solid var(--li); padding: 8px 12px 10px; background: var(--bg); flex: none; }
+.hw-bezug { font-size: 12px; color: var(--tx2); display: flex; align-items: center; gap: 4px; margin-bottom: 6px; }
+.hw-bezug button { min-height: 26px; padding: 0 8px; font-size: 12px; }
+.hw-zeile { display: flex; gap: 8px; align-items: flex-end; }
+.hw-zeile textarea { flex: 1; min-height: 46px; max-height: 140px; resize: none; border-radius: calc(var(--r-klein) + 6px); }
+.hw-zeile button { min-width: 46px; padding: 0; border-radius: calc(var(--r-klein) * 100); font-size: 18px; }
+/* Arbeitsfläche: mehrere Apps als Tabs */
+.hw-flaeche { position: fixed; inset: 0; }
+.hw-flaeche iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: var(--bg); }
+.hw-flaeche iframe[hidden] { display: block !important; visibility: hidden; pointer-events: none; }
+@media (min-width: 1100px) { body.hw-fenster-offen .hw-flaeche { right: 440px; } }
