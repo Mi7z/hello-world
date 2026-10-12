@@ -526,3 +526,4 @@ html.hw-layout-laedt body > header.kopf, html.hw-layout-laedt body > main.seite 
 .pitch-stand { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 6px; font-size: 12px; color: var(--tx2); flex-wrap: wrap; }
 .knopf.leise { background: none; border-color: transparent; color: var(--tx2); }
 .knopf.leise:hover { background: var(--fl2); color: var(--tx); filter: none; }
+.marke.warn { color: var(--rot); border-color: var(--rot); }

@@ -472,7 +472,7 @@ function pitchesZeigen() {
     const prozent = Math.round(p.anteil * 100);
     const fehlen = Math.max(0, minStimmen - p.gesamt);
     const offen = pitchOffen.has(p.nummer);
-    const STATUS = { offen: fehlen ? `noch ${fehlen} ${fehlen === 1 ? 'Stimme' : 'Stimmen'} bis zur Entscheidung` : 'offen', angenommen: '✓ angenommen – wird gebaut', 'zu wenig Zustimmung': `zu wenig Zustimmung (nötig ${Math.round(quote * 100)} %)`, 'wird gebaut': '⚙ wird gebaut', umgesetzt: '✓ umgesetzt' };
+    const STATUS = { offen: fehlen ? `noch ${fehlen} ${fehlen === 1 ? 'Stimme' : 'Stimmen'} bis zur Entscheidung` : 'offen', angenommen: '✓ angenommen – wird gebaut', 'zu wenig Zustimmung': `zu wenig Zustimmung (nötig ${Math.round(quote * 100)} %)`, 'wird gebaut': '⚙ wird gerade automatisch gebaut', umgesetzt: '✓ umgesetzt', fehlgeschlagen: '✗ Bau fehlgeschlagen – Grund auf GitHub' };
     return `<article class="pitch flaeche${p.geschlossen ? ' zu' : ''}">
       <div class="pitch-kopf">
         <div class="pitch-titel"><b>${esc(p.titel)}</b><span class="hinweis">#${p.nummer} · @${esc(p.von || '')} · ${new Date(p.zeit).toLocaleDateString('de-DE')}</span></div>
@@ -482,7 +482,7 @@ function pitchesZeigen() {
         </div>`}
       </div>
       <div class="pitch-balken" title="${prozent} % dafür"><i class="dafuer" style="width:${p.gesamt ? prozent : 0}%"></i><i class="dagegen" style="width:${p.gesamt ? 100 - prozent : 0}%"></i><span class="schwelle" style="left:${Math.round(quote * 100)}%"></span></div>
-      <div class="pitch-stand"><span>${p.gesamt} ${p.gesamt === 1 ? 'Stimme' : 'Stimmen'}${p.gesamt ? ` · ${prozent} % dafür` : ''}</span><span class="marke${['angenommen', 'wird gebaut', 'umgesetzt'].includes(p.status) ? ' akzent' : ''}">${esc(STATUS[p.status] || p.status)}</span></div>
+      <div class="pitch-stand"><span>${p.gesamt} ${p.gesamt === 1 ? 'Stimme' : 'Stimmen'}${p.gesamt ? ` · ${prozent} % dafür` : ''}</span><span class="marke${['angenommen', 'wird gebaut', 'umgesetzt'].includes(p.status) ? ' akzent' : ''}${p.status === 'fehlgeschlagen' ? ' warn' : ''}">${esc(STATUS[p.status] || p.status)}</span></div>
       ${offen ? `<div class="pitch-plan text-inhalt">${markdown(p.plan)}</div>` : ''}
       <div class="knoepfe links">
         <button type="button" class="leise klein" data-pitch-auf="${p.nummer}">${offen ? 'Plan zuklappen' : 'Plan ansehen'}</button>

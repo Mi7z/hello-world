@@ -256,7 +256,12 @@ Formulare/iframes/svg, keine fremden Adressen – die Prüfung achtet darauf. Be
 **Pitch** vorgeschlagen: ein GitHub-Issue mit der Markierung `pitch` und einem Plan
 („Worum geht's", „Was ändert sich", „Umfang und Risiken"). Abgestimmt wird mit 👍
 (dafür) und 👎 (dagegen). **Entschieden ist ein Pitch ab 10 Stimmen; angenommen bei
-mindestens 80 % dafür.** Erst angenommene Pitches werden gebaut.
+mindestens 80 % dafür.** Angenommene Pitches baut der Rechner des Repository-Besitzers
+**automatisch** (`pitchbau.js`): eigene Arbeitskopie, Claude Code setzt den Plan um, dann
+Sicherungen – geschützte Dateien unverändert (Sicherheit, Konten, Kopplung, Abstimmung,
+Helfer, Prüfungen, Workflows, Pakete), Syntax, Hello-World-Prüfung, Probestart und eine
+zweite KI-Prüfung auf Gefahren und Plantreue. Alles grün → automatisch übernommen und
+als neue Version veröffentlicht; sonst bleibt alles, wie es ist, und am Pitch steht der Grund.
 
 ## Hello-World-Helfer: Apps, die den Computer steuern
 

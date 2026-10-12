@@ -15,6 +15,7 @@ import * as suchtexte from './beschreibung.js';
 import * as appki from './appki.js';
 import * as gespraech from './gespraech.js';
 import * as pitches from './pitches.js';
+import * as pitchbau from './pitchbau.js';
 import { BAUSTEINE, AKTIONEN, WERTE, TAGS } from './bausteine.js';
 import * as zugang from './zugang.js';
 import { ANBIETER } from './freiki.js';
@@ -626,6 +627,7 @@ function lauschen() {
   if (server.listening) { server.close(neu); server.closeAllConnections(); } else neu();
 }
 lauschen();
+pitchbau.starten(); // baut angenommene Pitches automatisch (nur beim Besitzer, HW_PITCH_BAU=1)
 if (zugang.AN && zugang.offen()) {
   // Für Server ohne Bildschirm: Kopplungscode beim Start ausgeben
   const { code } = zugang.codeErstellen();

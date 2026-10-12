@@ -41,7 +41,7 @@ export async function liste(frisch = false) {
     return {
       nummer: i.number, titel: String(i.title).replace(/^Pitch:\s*/i, ''), plan: String(i.body || '').replace(/^### Plan\s*/i, '').trim(),
       von: i.user?.login, zeit: i.created_at, dafuer, dagegen, gesamt: b.gesamt, anteil: b.anteil, url: i.html_url,
-      status: marken.includes('pitch: umgesetzt') || i.state === 'closed' ? 'umgesetzt' : marken.includes('pitch: wird gebaut') ? 'wird gebaut' : b.status,
+      status: marken.includes('pitch: umgesetzt') || i.state === 'closed' ? 'umgesetzt' : marken.includes('pitch: wird gebaut') ? 'wird gebaut' : marken.includes('pitch: fehlgeschlagen') ? 'fehlgeschlagen' : b.status,
       geschlossen: i.state === 'closed',
     };
   }).sort((a, b) => (a.geschlossen - b.geschlossen) || (b.dafuer - b.dagegen) - (a.dafuer - a.dagegen) || b.zeit.localeCompare(a.zeit));
