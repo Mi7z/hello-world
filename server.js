@@ -12,6 +12,7 @@ import * as anmeldung from './anmeldung.js';
 import * as geraete from './geraete.js';
 import * as suchtexte from './beschreibung.js';
 import * as appki from './appki.js';
+import * as zugang from './zugang.js';
 import { ANBIETER } from './freiki.js';
 import { FAEHIGKEITEN } from './faehigkeiten.js';
 import { MELDER, CHROME, SDK, SDK_PROBE, einsetzen } from './testlauf.js';
@@ -45,6 +46,8 @@ function steckbriefSpeichern(eintrag) {
 // ---------- „Claude auf diesem PC" (nur aus dem Heimnetz) ----------
 // Erlaubt nur Anfragen vom PC selbst, aus dem WLAN (192.168.x) und aus Tailscale (100.x).
 function ausHeimnetz(req) {
+  // Programm/Server-Installation: nur der Rechner selbst und gekoppelte Geräte
+  if (zugang.AN) return zugang.istRechner(req) || Boolean(zugang.geraet(req));
   const ip = (req.socket.remoteAddress || '').replace('::ffff:', '');
   return ip === '127.0.0.1' || ip === '::1' || ip.startsWith('192.168.') || ip.startsWith('100.');
 }
@@ -190,6 +193,32 @@ function body(req, max = 600_000) {
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');
   try {
+    // ---------- Handy-Zugang: ohne Kopplung nur die Kopplungsseite ----------
+    if (!zugang.erlaubt(req) && !zugang.ohneKopplung(url.pathname)) {
+      if (url.pathname.startsWith('/api/')) return json(res, 401, { fehler: 'Dieses Gerät ist nicht gekoppelt.', koppeln: true });
+      res.writeHead(302, { Location: '/koppeln' });
+      return res.end();
+    }
+    if (url.pathname === '/api/koppeln' && req.method === 'POST') {
+      const r = zugang.koppeln(req, await body(req));
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Set-Cookie': r.keks, 'Cache-Control': 'no-store' });
+      return res.end(JSON.stringify({ ok: true }));
+    }
+    if (url.pathname === '/api/zugang' && req.method === 'GET') {
+      return json(res, 200, {
+        an: zugang.AN, offen: zugang.offen(), port: PORT, rechner: zugang.istRechner(req),
+        adressen: zugang.AN ? await zugang.adressen(PORT) : [], tailscale: zugang.tailscaleInstalliert(),
+        geraete: zugang.AN ? zugang.liste() : [],
+      });
+    }
+    if (url.pathname.startsWith('/api/zugang/') && req.method === 'POST') {
+      if (!zugang.AN) return json(res, 400, { fehler: 'Handy-Zugang gibt es im Programm und in der Server-Installation.' });
+      const d = await body(req);
+      if (url.pathname === '/api/zugang/entfernen') { zugang.entfernen(String(d.id || '')); return json(res, 200, { ok: true }); }
+      if (!zugang.istRechner(req)) return json(res, 403, { fehler: 'Das geht nur direkt am PC.' });
+      if (url.pathname === '/api/zugang/offen') { zugang.offenSetzen(d.an); lauschen(); return json(res, 200, { offen: zugang.offen() }); }
+      if (url.pathname === '/api/zugang/code') return json(res, 200, zugang.codeErstellen());
+    }
     if (url.pathname === '/api/apps' && req.method === 'GET') {
       return json(res, 200, {
         apps: katalogLaden().map((a) => (a.typ === 'design' ? { ...a, farben: designFarben(a.slug) } : a)),
@@ -465,7 +494,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     // Oberfläche; /a/<slug> zeigt die App-Ansicht
-    let pfad = url.pathname === '/' ? 'index.html' : url.pathname;
+    let pfad = url.pathname === '/' ? 'index.html' : url.pathname === '/koppeln' ? 'koppeln.html' : url.pathname;
     const baumSeite = url.pathname.match(/^\/b\/([a-z0-9.-]+)\/?$/);
     if (baumSeite) pfad = 'baum.html';
     const ansicht = url.pathname.match(/^\/a\/([a-z0-9.-]+?)(@v\d+)?\/?$/);
@@ -493,6 +522,7 @@ const server = http.createServer(async (req, res) => {
 });
 
 anmeldung.einrichten({ daten: DATEN });
+zugang.einrichten({ daten: DATEN });
 geraete.einrichten({ datei: path.join(DATEN, 'helfer.json') });
 baum.einrichten({ apps: APPS, bewertungen: path.join(DATEN, 'bewertungen.json') });
 for (const a of katalogLaden()) {
@@ -513,4 +543,16 @@ bau.einrichten({
 console.log(CHROME ? `Testlauf-Browser: ${CHROME}` : 'Kein Testlauf-Browser gefunden – Testlauf wird übersprungen');
 
 server.requestTimeout = 0; // lange Anfragen nicht abbrechen
-server.listen(PORT, process.env.HW_HOST || '0.0.0.0', () => console.log(`Hello World läuft auf Port ${PORT}`));
+// Wo Hello World lauscht: Programm/Server-Installation mit Handy-Zugang → im Netz
+// (nur gekoppelte Geräte kommen hinein), sonst nur am Rechner selbst
+const gastgeber = () => (zugang.AN ? (zugang.offen() ? '0.0.0.0' : '127.0.0.1') : process.env.HW_HOST || '0.0.0.0');
+function lauschen() {
+  const neu = () => server.listen(PORT, gastgeber(), () => console.log(`Hello World läuft auf ${gastgeber()}:${PORT}`));
+  if (server.listening) { server.close(neu); server.closeAllConnections(); } else neu();
+}
+lauschen();
+if (zugang.AN && zugang.offen()) {
+  // Für Server ohne Bildschirm: Kopplungscode beim Start ausgeben
+  const { code } = zugang.codeErstellen();
+  zugang.adressen(PORT).then((a) => console.log(`Handy koppeln: ${a[0]?.url || `http://<adresse>:${PORT}`}/koppeln – Code ${code} (10 Minuten gültig)`));
+}

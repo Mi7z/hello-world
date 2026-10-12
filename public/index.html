@@ -6,6 +6,7 @@
 <meta name="theme-color" content="#f6f5f2">
 <title>Hello World – die freie App-Wolke</title>
 <link rel="icon" href="/icon.svg">
+<link rel="manifest" href="/manifest.webmanifest">
 <link rel="stylesheet" href="/style.css">
 <script src="/design.js"></script>
 </head>
@@ -144,6 +145,12 @@ Benachrichtigung zeigen.</pre></details>
       <h1 class="hw-titel">Mehr</h1>
     </section>
 
+    <section class="flaeche" id="handyBereich" style="margin-bottom:14px" hidden>
+      <h3>Vom Handy aus nutzen</h3>
+      <p class="hinweis">Bediene Hello World vom Handy – zu Hause im WLAN und mit <a href="https://tailscale.com/download" target="_blank" rel="noopener">Tailscale</a> (kostenlos) auch unterwegs. Gebaut wird hier auf diesem Rechner mit deiner KI. Nur Geräte, die du hier koppelst, kommen hinein.</p>
+      <div id="handyInhalt"></div>
+    </section>
+
     <section class="flaeche">
       <h3>Aussehen</h3>
       <p class="hinweis">Gilt für Hello World und alle Apps. Designs sind Einträge wie Apps – jeder kann neue bauen oder vorhandene weiterentwickeln.</p>
@@ -242,6 +249,7 @@ Benachrichtigung zeigen.</pre></details>
 </dialog>
 
 <script src="/kern.js"></script>
+<script src="/qrcode.js"></script>
 <script src="/haupt.js"></script>
 </body>
 </html>

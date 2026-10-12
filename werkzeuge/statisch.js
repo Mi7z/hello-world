@@ -79,13 +79,14 @@ function anpassen(text) {
     .replace(/url\(\//g, `url(${basis}`)
     .replace(/href=(["'])\/\1/g, `href=$1${basis}$1`);
 }
-for (const datei of fs.readdirSync(path.join(wurzel, 'public'))) {
+for (const datei of fs.readdirSync(path.join(wurzel, 'public')).filter((d) => d !== 'koppeln.html')) {
   const quelle = path.join(wurzel, 'public', datei);
   if (/\.(html|js|css|webmanifest)$/.test(datei)) {
     let t = anpassen(fs.readFileSync(quelle, 'utf8'));
     if (datei.endsWith('.html')) {
       // Einstellungen für die Seite ohne Server – vor allen anderen Skripten laden
-      t = t.replace(/<head>/i, `<head>\n<script src="${basis}statisch.js"></script>\n<link rel="manifest" href="${basis}manifest.webmanifest">`);
+      t = t.replace(/<head>/i, `<head>\n<script src="${basis}statisch.js"></script>`);
+      if (!/rel="manifest"/.test(t)) t = t.replace('</head>', `<link rel="manifest" href="${basis}manifest.webmanifest">\n</head>`);
     }
     schreiben(datei, t);
   } else fs.cpSync(quelle, path.join(ziel, datei), { recursive: true });

@@ -25,15 +25,23 @@ function appsVorbereiten() {
   }
 }
 
-const freierPort = () => new Promise((resolve) => {
-  const s = net.createServer().listen(0, '127.0.0.1', () => { const { port } = s.address(); s.close(() => resolve(port)); });
+// Fester Port (ab 8810), damit gekoppelte Handys ihre Adresse behalten
+const frei = (port) => new Promise((resolve) => {
+  const s = net.createServer().once('error', () => resolve(false)).listen(port, '0.0.0.0', () => s.close(() => resolve(true)));
 });
+async function freierPort() {
+  const datei = path.join(ORDNER, 'port.txt');
+  const alt = Number(fs.existsSync(datei) ? fs.readFileSync(datei, 'utf8') : 0);
+  if (alt && await frei(alt)) return alt;
+  for (let p = 8810; p < 8900; p++) if (await frei(p)) { fs.writeFileSync(datei, String(p)); return p; }
+  throw new Error('Kein freier Port');
+}
 
 async function dienstStarten() {
   const port = await freierPort();
   dienst = spawn(process.execPath, [path.join(KERN, 'server.js')], {
     cwd: KERN,
-    env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', PORT: String(port), HW_HOST: '127.0.0.1', HW_APPS: APPS, HW_DATEN: path.join(ORDNER, 'daten'), HW_PROGRAMM: '1' },
+    env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', PORT: String(port), HW_ZUGANG: '1', HW_APPS: APPS, HW_DATEN: path.join(ORDNER, 'daten'), HW_PROGRAMM: '1' },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   dienst.stdout.on('data', (d) => process.stdout.write(d));

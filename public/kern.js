@@ -58,6 +58,7 @@ async function api(url, opts = {}) {
   if (opts.body && !headers['Content-Type']) headers['Content-Type'] = 'application/json';
   const res = await fetch(url, { cache: 'no-store', ...opts, headers });
   const d = await res.json().catch(() => ({}));
+  if (res.status === 401 && d.koppeln) { location.href = '/koppeln'; throw new Error(d.fehler); } // Handy noch nicht gekoppelt
   if (res.status === 401) { anmelden(); throw new Error(d.fehler || 'Bitte zuerst anmelden'); }
   if (!res.ok) throw new Error(d.fehler || 'Hat nicht geklappt');
   return d;

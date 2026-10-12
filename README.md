@@ -18,6 +18,26 @@
 baut deine KI es. Als KI geht Claude auf deinem PC, ein eigener Schlüssel oder
 **kostenlose KIs** (Gratis-Konten bei Gemini, OpenRouter, Groq, Cerebras, Mistral).
 
+## Vom Handy aus nutzen – auch unterwegs
+
+Hello World läuft auf deinem PC (Programm) oder einem eigenen Server und nutzt dort
+deine KI – **ohne API-Schlüssel**, wenn Claude Code, OpenAI Codex oder Gemini CLI
+installiert sind. Vom Handy aus bedienst du alles, auch Apps bauen und erweitern:
+
+1. Im Programm unter **Mehr → Vom Handy aus nutzen** den Zugang einschalten.
+2. **Handy verbinden** → QR-Code mit dem Handy scannen. Fertig.
+3. Unterwegs: [Tailscale](https://tailscale.com/download) auf PC und Handy (kostenlos) – dann gibt es dort eine zweite Adresse.
+
+Sicher: Nur Geräte, die du einmal am PC koppelst, kommen hinein – auch im selben WLAN nicht ohne.
+
+**Eigener Server ohne Bildschirm (Linux, z. B. Raspberry Pi):**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Mi7z/hello-world/main/server/installieren.sh | sh
+```
+
+Das Skript richtet Hello World als Dienst ein und zeigt den Kopplungscode fürs Handy.
+
 ## Mitmachen
 
 1. Repository klonen und deine KI darin arbeiten lassen (z. B. Claude Code). Die Regeln stehen in [AGENTS.md](AGENTS.md).

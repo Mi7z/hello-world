@@ -333,6 +333,54 @@ $('designWahl').addEventListener('click', (ev) => {
   zeigeAlle();
 });
 
+// ---------- Vom Handy aus nutzen (Programm / Server-Installation) ----------
+async function zeigeHandy() {
+  let z;
+  try { z = await api('/api/zugang'); } catch { return; }
+  $('handyBereich').hidden = !z.an;
+  if (!z.an) return;
+  const geraete = z.geraete.map((g) => `<div class="liste-zeile"><span class="symbol" style="width:40px;height:40px;font-size:20px" aria-hidden="true">📱</span><div><b>${esc(g.name)}</b><span class="hinweis">gekoppelt ${new Date(g.seit).toLocaleDateString('de-DE')} · zuletzt ${new Date(g.zuletzt).toLocaleString('de-DE', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' })}</span></div><button type="button" class="leise klein" data-geraet-weg="${g.id}">Entfernen</button></div>`).join('');
+  if (!z.rechner) {
+    $('handyInhalt').innerHTML = `<p class="hinweis">Du bist mit diesem Gerät verbunden. Neue Geräte koppelst du direkt am PC.</p>${geraete}`;
+    return;
+  }
+  if (!z.offen) {
+    $('handyInhalt').innerHTML = `<div class="knoepfe links"><button type="button" id="handyAn">Handy-Zugang einschalten</button></div>${geraete ? `<h3 class="unter-titel">Gekoppelte Geräte</h3>${geraete}` : ''}`;
+    $('handyAn').onclick = async () => { await api('/api/zugang/offen', { method: 'POST', body: JSON.stringify({ an: true }) }); setTimeout(zeigeHandy, 800); };
+    return;
+  }
+  const ts = z.adressen.find((a) => a.art === 'tailscale');
+  $('handyInhalt').innerHTML = `
+    <div class="knoepfe links"><button type="button" id="handyKoppeln">Handy verbinden</button><button type="button" class="leise" id="handyAus">Zugang ausschalten</button></div>
+    <div id="handyCode"></div>
+    ${!ts ? `<p class="hinweis">Für unterwegs: <a href="https://tailscale.com/download" target="_blank" rel="noopener">Tailscale</a> auf diesem Rechner und dem Handy installieren (gleiches Konto) – dann erscheint hier die Adresse für unterwegs.</p>` : ''}
+    ${geraete ? `<h3 class="unter-titel">Gekoppelte Geräte</h3>${geraete}` : '<p class="hinweis">Noch kein Gerät gekoppelt.</p>'}`;
+  $('handyAus').onclick = async () => { if (!confirm('Handy-Zugang ausschalten? Gekoppelte Geräte bleiben gespeichert, kommen aber nicht mehr hinein, bis du ihn wieder einschaltest.')) return; await api('/api/zugang/offen', { method: 'POST', body: JSON.stringify({ an: false }) }); setTimeout(zeigeHandy, 800); };
+  $('handyKoppeln').onclick = async () => {
+    const { code } = await api('/api/zugang/code', { method: 'POST' });
+    const wahl = (a) => `${a.url}/koppeln#code=${code}`;
+    const zeigen = (a) => {
+      const qr = qrcode(0, 'M'); qr.addData(wahl(a)); qr.make();
+      $('handyQr').innerHTML = qr.createSvgTag({ cellSize: 5, margin: 3, scalable: true });
+      $('handyLink').textContent = wahl(a);
+    };
+    $('handyCode').innerHTML = `<div class="flaeche" style="margin-top:14px;text-align:center;box-shadow:none">
+      <div class="umschalter" id="handyNetz">${z.adressen.map((a, i) => `<button type="button" data-i="${i}" aria-pressed="${i === 0}">${a.art === 'tailscale' ? '🌍 Unterwegs' : '🏠 Zu Hause'}</button>`).join('')}</div>
+      <div id="handyQr" style="width:220px;max-width:100%;margin:8px auto;background:#fff;border-radius:12px;padding:6px"></div>
+      <p>Mit der Handy-Kamera scannen – oder am Handy öffnen und Code <b style="font-family:var(--mono);letter-spacing:.1em">${code}</b> eingeben:</p>
+      <p class="hinweis" id="handyLink" style="word-break:break-all"></p>
+      <p class="hinweis">Gilt 10 Minuten, nur einmal.</p></div>`;
+    zeigen(z.adressen[0]);
+    $('handyNetz').onclick = (ev) => { const b = ev.target.closest('[data-i]'); if (!b) return; for (const x of $('handyNetz').children) x.setAttribute('aria-pressed', String(x === b)); zeigen(z.adressen[b.dataset.i]); };
+  };
+}
+document.addEventListener('click', async (ev) => {
+  const b = ev.target.closest('[data-geraet-weg]');
+  if (!b || !confirm('Dieses Gerät entfernen? Es kommt dann nicht mehr hinein.')) return;
+  await api('/api/zugang/entfernen', { method: 'POST', body: JSON.stringify({ id: b.dataset.geraetWeg }) }).catch(() => {});
+  zeigeHandy();
+});
+
 // ---------- Geräte (Hello-World-Helfer) ----------
 async function zeigeGeraete() {
   if (!ich) { $('geraeteListe').innerHTML = '<p class="hinweis">Melde dich an, um deine Geräte zu sehen.</p>'; return; }
@@ -380,6 +428,7 @@ bereich(location.hash.slice(1), false);
   }
   fetch('/api/installieren').then((r) => r.text()).then((t) => { $('installText').textContent = t; });
   if (!STATISCH) { zeigeAuftraege(); setInterval(zeigeAuftraege, 15000); }
+  if (!STATISCH) zeigeHandy();
   const offen = localStorage.getItem('hw-auftrag');
   if (offen && location.hash === '#auftraege') zeigeAuftrag(offen);
   else if (offen) { aktuell = offen; $('bau').hidden = false; auftragVerfolgen(offen, darstellen); }
