@@ -41,96 +41,133 @@ body.app{display:flex;flex-direction:column;height:100vh;height:100dvh;max-width
 .fuellt{flex:1;min-height:0}.scroll{overflow:auto;min-height:0;overscroll-behavior:contain}
 .reiter-inhalt{flex:1;min-height:0;display:flex;flex-direction:column;gap:12px}
 @media (min-width:900px){body.app{padding:20px 28px;max-width:none}.app-inhalt.spalten{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:stretch}}
+
 /* App-spezifisch */
-.werkzeug label{margin:0 0 2px}
-.werkzeug .feld{display:flex;flex-direction:column;gap:2px}
-.farbe-feld input[type=color]{width:56px;height:44px;padding:4px;cursor:pointer}
+.mal-layout{display:flex;flex-direction:column;gap:10px;min-height:0}
+.werkzeugleiste{flex:none;padding:10px;margin:0;max-height:44vh;overflow:auto}
+.wz-ueber{font-size:13px;font-weight:650;color:var(--tx2);margin:0 0 7px}
+.wz-raster{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.wz-raster button{padding:7px 4px;min-height:48px;font-size:12px;flex-direction:column;gap:3px;line-height:1.1;text-align:center}
+.wz-raster button .ic{font-size:18px}
+.steuer{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-top:12px}
+.feld{display:flex;flex-direction:column;gap:3px}
+.feld label{margin:0}
+.farbe-feld input[type=color]{width:54px;height:44px;padding:4px;cursor:pointer;min-height:44px}
 .staerke-feld{flex:1;min-width:150px}
 .staerke-feld input[type=range]{min-height:auto;padding:0;background:none;border:0}
+.staerke-wert{min-width:48px;text-align:right;font-variant-numeric:tabular-nums;font-size:14px}
 .aktiv{background:var(--ak);color:#fff;border-color:var(--ak)}
-.wz-raster{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.wz-raster button{padding:9px 6px}
-#leinwandBox{position:relative;width:100%;background:var(--fl2);border:1px solid var(--li);border-radius:var(--r);overflow:hidden;touch-action:none}
-canvas{display:block;width:100%;height:auto;background:#ffffff;cursor:crosshair;touch-action:none}
-.staerke-wert{min-width:42px;text-align:right;font-variant-numeric:tabular-nums}
 .gefuellt-feld{display:flex;align-items:center;gap:8px;margin-top:12px}
 .gefuellt-feld input[type=checkbox]{width:20px;height:20px;min-height:0;padding:0}
 .gefuellt-feld label{margin:0}
-@media (min-width:900px){.mal-layout{display:grid;grid-template-columns:320px minmax(0,1fr);grid-template-areas:"werkzeug flaeche" "aktionen flaeche";gap:0 16px;align-items:start}.mal-layout .werkzeug{grid-area:werkzeug}.mal-layout .aktionen{grid-area:aktionen}.mal-layout .flaeche{grid-area:flaeche}.mal-layout .aktionen .zeile,.mal-layout .werkzeug>.zeile{flex-direction:column;align-items:stretch}.mal-layout .werkzeug .wz-raster,.mal-layout .werkzeug .farbstaerke{flex-direction:row}}
+#textOptionen label{margin-top:10px}
+
+.flaeche{flex:1;min-height:0;min-width:0;position:relative;display:flex}
+#leinwandWrap{flex:1;min-height:0;min-width:0;overflow:auto;display:flex;background:var(--fl2);border:1px solid var(--li);border-radius:var(--r);padding:12px}
+#leinwandBox{margin:auto}
+canvas{display:block;width:100%;height:auto;background:#fff;box-shadow:var(--schatten);cursor:crosshair;touch-action:none}
+
+.zoomleiste{position:absolute;left:14px;bottom:14px;display:flex;align-items:center;gap:4px;background:var(--fl);border:1px solid var(--li);border-radius:var(--r-klein);padding:4px;box-shadow:var(--schatten)}
+.zoomleiste button{min-height:38px;padding:7px 11px;background:var(--fl2);color:var(--tx);border-color:var(--li);font-size:17px}
+.zoom-wert{min-width:52px;text-align:center;font-size:13px;font-variant-numeric:tabular-nums;color:var(--tx2)}
+.app-fuss .meldung{flex:1;min-width:140px;margin:0}
+.app-fuss button{min-height:44px;padding:10px 14px;font-size:14px}
+
+@media (min-width:900px){
+  .mal-layout{flex-direction:row;align-items:stretch}
+  .werkzeugleiste{width:280px;flex:none;max-height:none;height:100%}
+  .wz-raster{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .wz-raster button{flex-direction:row;font-size:14px}
+  .steuer{flex-direction:column;align-items:stretch}
+  .farbstaerke-zeile{display:flex;gap:10px}
+  .flaeche{flex:1}
+}
 </style>
 </head>
-<body>
-<h1>🎨 Paintboard</h1>
-<p class="unter">Male frei, fülle Flächen, füge Formen oder Text ein, schneide Bereiche aus und wähle die Hintergrundfarbe – dann als PNG speichern. Alles bleibt in deinem Browser.</p>
+<body class="app">
+<header class="app-kopf">
+  <h1>🎨 Paintboard</h1>
+  <p class="unter">Malen, füllen, Formen &amp; Text – alles im Blick, ohne Scrollen.</p>
+</header>
 
-<div class="mal-layout">
-<div class="karte werkzeug">
-  <div class="zeile farbstaerke">
-    <div class="feld farbe-feld">
-      <label for="farbe">Farbe</label>
-      <input type="color" id="farbe" value="#1f8a5b" aria-label="Farbe wählen">
+<main class="app-inhalt mal-layout">
+
+  <aside class="karte werkzeugleiste scroll">
+    <p class="wz-ueber">Werkzeuge</p>
+    <div class="wz-raster">
+      <button type="button" id="wz-pinsel" class="aktiv"><span class="ic">✏️</span>Pinsel</button>
+      <button type="button" id="wz-radierer" class="zweit"><span class="ic">🧽</span>Radierer</button>
+      <button type="button" id="wz-fuellen" class="zweit"><span class="ic">🪣</span>Füllen</button>
+      <button type="button" id="wz-linie" class="zweit"><span class="ic">╱</span>Linie</button>
+      <button type="button" id="wz-rechteck" class="zweit"><span class="ic">▭</span>Rechteck</button>
+      <button type="button" id="wz-kreis" class="zweit"><span class="ic">◯</span>Kreis</button>
+      <button type="button" id="wz-text" class="zweit"><span class="ic">T</span>Text</button>
+      <button type="button" id="wz-ausschneiden" class="zweit"><span class="ic">✂️</span>Ausschnitt</button>
     </div>
-    <div class="feld farbe-feld">
-      <label for="hgFarbe">Hintergrund</label>
-      <input type="color" id="hgFarbe" value="#ffffff" aria-label="Hintergrundfarbe wählen">
-    </div>
-    <div class="feld staerke-feld">
-      <label for="staerke">Pinsel-/Strichstärke</label>
-      <div class="zeile">
-        <input type="range" id="staerke" min="1" max="60" value="8" aria-label="Pinselstärke">
-        <span class="staerke-wert" id="staerkeWert">8&nbsp;px</span>
+
+    <div class="steuer">
+      <div class="farbstaerke-zeile">
+        <div class="feld farbe-feld">
+          <label for="farbe">Farbe</label>
+          <input type="color" id="farbe" value="#1f8a5b" aria-label="Farbe wählen">
+        </div>
+        <div class="feld farbe-feld">
+          <label for="hgFarbe">Hintergrund</label>
+          <input type="color" id="hgFarbe" value="#ffffff" aria-label="Hintergrundfarbe wählen">
+        </div>
+      </div>
+      <div class="feld staerke-feld">
+        <label for="staerke">Pinsel-/Strichstärke</label>
+        <div class="zeile">
+          <input type="range" id="staerke" min="1" max="60" value="8" aria-label="Pinselstärke">
+          <span class="staerke-wert" id="staerkeWert">8&nbsp;px</span>
+        </div>
       </div>
     </div>
-  </div>
 
-  <label style="margin-top:12px">Werkzeug</label>
-  <div class="wz-raster">
-    <button type="button" id="wz-pinsel" class="aktiv">✏️ Pinsel</button>
-    <button type="button" id="wz-radierer" class="zweit">🧽 Radierer</button>
-    <button type="button" id="wz-fuellen" class="zweit">🪣 Füllen</button>
-    <button type="button" id="wz-linie" class="zweit">╱ Linie</button>
-    <button type="button" id="wz-rechteck" class="zweit">▭ Rechteck</button>
-    <button type="button" id="wz-kreis" class="zweit">◯ Kreis</button>
-    <button type="button" id="wz-text" class="zweit">T Text</button>
-    <button type="button" id="wz-ausschneiden" class="zweit">✂️ Ausschneiden</button>
-  </div>
-
-  <div class="gefuellt-feld" id="formOptionen" hidden>
-    <input type="checkbox" id="gefuellt">
-    <label for="gefuellt">Form ausfüllen (sonst nur Umriss)</label>
-  </div>
-
-  <div id="textOptionen" hidden>
-    <label for="textEingabe">Text</label>
-    <input type="text" id="textEingabe" placeholder="Hallo Welt" maxlength="120">
-    <label for="textGroesse">Schriftgröße</label>
-    <div class="zeile">
-      <input type="range" id="textGroesse" min="10" max="200" value="40" aria-label="Schriftgröße">
-      <span class="staerke-wert" id="textGroesseWert">40&nbsp;px</span>
+    <div class="gefuellt-feld" id="formOptionen" hidden>
+      <input type="checkbox" id="gefuellt">
+      <label for="gefuellt">Form ausfüllen (sonst nur Umriss)</label>
     </div>
-    <p class="hinweis" style="margin:8px 0 0">Tippe deinen Text ein und klicke dann auf die Leinwand, um ihn dort zu platzieren.</p>
-  </div>
 
-  <p class="hinweis" id="fuellHinweis" hidden style="margin-top:12px">Klicke auf eine Fläche, um sie mit der aktuellen Farbe zu füllen.</p>
-  <p class="hinweis" id="schneidHinweis" hidden style="margin-top:12px">Ziehe ein Rechteck auf – der Bereich wird entfernt und mit der Hintergrundfarbe gefüllt.</p>
-</div>
+    <div id="textOptionen" hidden>
+      <label for="textEingabe">Text</label>
+      <input type="text" id="textEingabe" placeholder="Hallo Welt" maxlength="120">
+      <label for="textGroesse">Schriftgröße</label>
+      <div class="zeile">
+        <input type="range" id="textGroesse" min="10" max="200" value="40" aria-label="Schriftgröße">
+        <span class="staerke-wert" id="textGroesseWert">40&nbsp;px</span>
+      </div>
+      <p class="hinweis" style="margin:8px 0 0">Text eingeben, dann auf die Leinwand klicken, um ihn zu platzieren.</p>
+    </div>
 
-<div class="karte flaeche">
-  <div id="leinwandBox">
-    <canvas id="leinwand" width="700" height="500" aria-label="Zeichenfläche"></canvas>
-  </div>
-</div>
+    <p class="hinweis" id="fuellHinweis" hidden style="margin-top:12px">Klicke auf eine Fläche, um sie mit der aktuellen Farbe zu füllen.</p>
+    <p class="hinweis" id="schneidHinweis" hidden style="margin-top:12px">Ziehe ein Rechteck auf – der Bereich wird mit der Hintergrundfarbe gefüllt.</p>
+  </aside>
 
-<div class="karte aktionen">
-  <div class="zeile">
-    <button type="button" id="zurueckBtn" class="zweit" disabled>↩️ Zurück</button>
-    <button type="button" id="wiederBtn" class="zweit" disabled>↪️ Wiederholen</button>
-    <button type="button" id="loeschenBtn" class="zweit">🗑️ Alles löschen</button>
-    <button type="button" id="speichernBtn">💾 Als PNG speichern</button>
-  </div>
-  <p class="hinweis" id="meldung" style="margin-top:12px">Tipp: Wähle ein Werkzeug und leg los. Formen ziehst du auf, Text setzt du mit einem Klick.</p>
-</div>
-</div>
+  <section class="flaeche">
+    <div id="leinwandWrap" class="scroll">
+      <div id="leinwandBox">
+        <canvas id="leinwand" width="700" height="500" aria-label="Zeichenfläche"></canvas>
+      </div>
+    </div>
+    <div class="zoomleiste" role="group" aria-label="Zoom">
+      <button type="button" id="zoomRaus" aria-label="Verkleinern">−</button>
+      <span class="zoom-wert" id="zoomWert">100&nbsp;%</span>
+      <button type="button" id="zoomRein" aria-label="Vergrößern">+</button>
+      <button type="button" id="zoomFit" aria-label="Einpassen" title="Einpassen">⤢</button>
+    </div>
+  </section>
+
+</main>
+
+<footer class="app-fuss">
+  <button type="button" id="zurueckBtn" class="zweit" disabled>↩️ Zurück</button>
+  <button type="button" id="wiederBtn" class="zweit" disabled>↪️ Vor</button>
+  <button type="button" id="loeschenBtn" class="zweit">🗑️ Löschen</button>
+  <button type="button" id="speichernBtn">💾 PNG speichern</button>
+  <p class="hinweis meldung" id="meldung">Wähle ein Werkzeug und leg los. Mit dem Zoom unten links kannst du vergrößern.</p>
+</footer>
 
 <script>
 (function(){
@@ -138,6 +175,8 @@ canvas{display:block;width:100%;height:auto;background:#ffffff;cursor:crosshair;
   var FONT = 'ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace';
   var canvas = document.getElementById("leinwand");
   var ctx = canvas.getContext("2d");
+  var leinwandWrap = document.getElementById("leinwandWrap");
+  var leinwandBox = document.getElementById("leinwandBox");
   var farbe = document.getElementById("farbe");
   var hgFarbe = document.getElementById("hgFarbe");
   var staerke = document.getElementById("staerke");
@@ -155,6 +194,10 @@ canvas{display:block;width:100%;height:auto;background:#ffffff;cursor:crosshair;
   var loeschenBtn = document.getElementById("loeschenBtn");
   var speichernBtn = document.getElementById("speichernBtn");
   var meldung = document.getElementById("meldung");
+  var zoomRein = document.getElementById("zoomRein");
+  var zoomRaus = document.getElementById("zoomRaus");
+  var zoomFit = document.getElementById("zoomFit");
+  var zoomWert = document.getElementById("zoomWert");
 
   var werkzeuge = {
     pinsel:      document.getElementById("wz-pinsel"),
@@ -170,24 +213,60 @@ canvas{display:block;width:100%;height:auto;background:#ffffff;cursor:crosshair;
 
   var zeichnet = false;
   var startX = 0, startY = 0, letzteX = 0, letzteY = 0;
-  var schnappschuss = null; // für Form-/Ausschneide-Vorschau
+  var schnappschuss = null;
   var verlauf = [];
   var zukunft = [];
   var MAX = 30;
+  var aktuelleHg = "#ffffff";
 
-  var aktuelleHg = "#ffffff"; // aktuelle Hintergrundfarbe
+  /* ---------- Zoom ---------- */
+  var zoom = 1;        // relativ zur Einpassung
+  var fitWidth = 700;  // Anzeige-Breite bei Einpassung
 
+  function fitBerechnen(){
+    var pad = 24;
+    var cw = leinwandWrap.clientWidth - pad;
+    var ch = leinwandWrap.clientHeight - pad;
+    if(cw < 40) cw = 40;
+    if(ch < 40) ch = 40;
+    var ar = canvas.width / canvas.height;
+    var w = cw, h = cw / ar;
+    if(h > ch){ h = ch; w = ch * ar; }
+    fitWidth = w;
+  }
+
+  function zoomAnwenden(){
+    fitBerechnen();
+    var w = Math.round(fitWidth * zoom);
+    leinwandBox.style.width = w + "px";
+    zoomWert.innerHTML = Math.round(zoom * 100) + "&nbsp;%";
+  }
+
+  function zoomSetzen(z){
+    zoom = Math.min(8, Math.max(0.2, z));
+    zoomAnwenden();
+  }
+
+  zoomRein.addEventListener("click", function(){ zoomSetzen(zoom * 1.25); });
+  zoomRaus.addEventListener("click", function(){ zoomSetzen(zoom / 1.25); });
+  zoomFit.addEventListener("click", function(){ zoom = 1; zoomAnwenden(); sagen("Ansicht eingepasst.", false); });
+
+  leinwandWrap.addEventListener("wheel", function(e){
+    if(!e.ctrlKey) return; // normales Scrollen = Verschieben
+    e.preventDefault();
+    zoomSetzen(zoom * (e.deltaY < 0 ? 1.1 : 0.9));
+  }, {passive:false});
+
+  window.addEventListener("resize", zoomAnwenden);
+
+  /* ---------- Hilfen ---------- */
   function istForm(w){ return w === "linie" || w === "rechteck" || w === "kreis"; }
   function brauchtVorschau(w){ return istForm(w) || w === "ausschneiden"; }
 
   function hexZuRgb(hex){
     hex = String(hex).replace("#","");
     if(hex.length === 3){ hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2]; }
-    return {
-      r: parseInt(hex.substr(0,2),16),
-      g: parseInt(hex.substr(2,2),16),
-      b: parseInt(hex.substr(4,2),16)
-    };
+    return { r: parseInt(hex.substr(0,2),16), g: parseInt(hex.substr(2,2),16), b: parseInt(hex.substr(4,2),16) };
   }
 
   function hintergrund(){
@@ -212,19 +291,15 @@ canvas{display:block;width:100%;height:auto;background:#ffffff;cursor:crosshair;
 
   function sagen(text, fehler){
     meldung.textContent = text;
-    meldung.className = fehler ? "hinweis fehler" : "hinweis";
+    meldung.className = fehler ? "hinweis meldung fehler" : "hinweis meldung";
   }
 
   function pos(ev){
     var rect = canvas.getBoundingClientRect();
     var x, y;
-    if(ev.touches && ev.touches.length){
-      x = ev.touches[0].clientX; y = ev.touches[0].clientY;
-    } else if(ev.changedTouches && ev.changedTouches.length){
-      x = ev.changedTouches[0].clientX; y = ev.changedTouches[0].clientY;
-    } else {
-      x = ev.clientX; y = ev.clientY;
-    }
+    if(ev.touches && ev.touches.length){ x = ev.touches[0].clientX; y = ev.touches[0].clientY; }
+    else if(ev.changedTouches && ev.changedTouches.length){ x = ev.changedTouches[0].clientX; y = ev.changedTouches[0].clientY; }
+    else { x = ev.clientX; y = ev.clientY; }
     return {
       x: (x - rect.left) * (canvas.width / rect.width),
       y: (y - rect.top) * (canvas.height / rect.height)
@@ -240,22 +315,17 @@ canvas{display:block;width:100%;height:auto;background:#ffffff;cursor:crosshair;
     ctx.strokeStyle = farbe.value;
     ctx.fillStyle = farbe.value;
     if(werkzeug === "linie"){
-      ctx.beginPath();
-      ctx.moveTo(x0, y0);
-      ctx.lineTo(x1, y1);
-      ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
     } else if(werkzeug === "rechteck"){
       var x = Math.min(x0, x1), y = Math.min(y0, y1);
       var w = Math.abs(x1 - x0), h = Math.abs(y1 - y0);
-      if(gefuellt.checked) ctx.fillRect(x, y, w, h);
-      else ctx.strokeRect(x, y, w, h);
+      if(gefuellt.checked) ctx.fillRect(x, y, w, h); else ctx.strokeRect(x, y, w, h);
     } else if(werkzeug === "kreis"){
       var cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
       var rx = Math.abs(x1 - x0) / 2, ry = Math.abs(y1 - y0) / 2;
       ctx.beginPath();
       ctx.ellipse(cx, cy, Math.max(rx, 0.1), Math.max(ry, 0.1), 0, 0, Math.PI * 2);
-      if(gefuellt.checked) ctx.fill();
-      else ctx.stroke();
+      if(gefuellt.checked) ctx.fill(); else ctx.stroke();
     }
   }
 
@@ -294,10 +364,8 @@ canvas{display:block;width:100%;height:auto;background:#ffffff;cursor:crosshair;
     var visited = new Uint8Array(w * h);
     var stack = [sy * w + sx];
     function passt(i){
-      return Math.abs(data[i] - tr) <= tol &&
-             Math.abs(data[i+1] - tg) <= tol &&
-             Math.abs(data[i+2] - tb) <= tol &&
-             Math.abs(data[i+3] - ta) <= tol;
+      return Math.abs(data[i] - tr) <= tol && Math.abs(data[i+1] - tg) <= tol &&
+             Math.abs(data[i+2] - tb) <= tol && Math.abs(data[i+3] - ta) <= tol;
     }
     while(stack.length){
       var p = stack.pop();
@@ -318,10 +386,7 @@ canvas{display:block;width:100%;height:auto;background:#ffffff;cursor:crosshair;
 
   function textZeichnen(x, y){
     var txt = textEingabe.value.trim();
-    if(!txt){
-      sagen("Bitte zuerst oben einen Text eingeben.", true);
-      return;
-    }
+    if(!txt){ sagen("Bitte zuerst links einen Text eingeben.", true); return; }
     zustandSichern();
     var g = parseInt(textGroesse.value, 10);
     ctx.fillStyle = farbe.value;
@@ -335,28 +400,20 @@ canvas{display:block;width:100%;height:auto;background:#ffffff;cursor:crosshair;
   function start(ev){
     ev.preventDefault();
     var p = pos(ev);
-
-    if(werkzeug === "text"){
-      textZeichnen(p.x, p.y);
-      return;
-    }
-
+    if(werkzeug === "text"){ textZeichnen(p.x, p.y); return; }
     if(werkzeug === "fuellen"){
       zustandSichern();
       var ok = fuellen(p.x, p.y);
       sagen(ok ? "Fläche gefüllt." : "Diese Fläche hat bereits die gewählte Farbe.", false);
       return;
     }
-
     zustandSichern();
     zeichnet = true;
     startX = letzteX = p.x;
     startY = letzteY = p.y;
-
     if(brauchtVorschau(werkzeug)){
       try{ schnappschuss = ctx.getImageData(0, 0, canvas.width, canvas.height); }catch(e){ schnappschuss = null; }
     } else {
-      // Pinsel / Radierer: einzelner Punkt
       ctx.beginPath();
       ctx.arc(p.x, p.y, strichBreite()/2, 0, Math.PI*2);
       ctx.fillStyle = (werkzeug === "radierer") ? aktuelleHg : farbe.value;
@@ -368,9 +425,7 @@ canvas{display:block;width:100%;height:auto;background:#ffffff;cursor:crosshair;
     if(!zeichnet) return;
     ev.preventDefault();
     var p = pos(ev);
-    letzteX = p.x;
-    letzteY = p.y;
-
+    letzteX = p.x; letzteY = p.y;
     if(brauchtVorschau(werkzeug)){
       if(schnappschuss) ctx.putImageData(schnappschuss, 0, 0);
       if(werkzeug === "ausschneiden") auswahlRahmen(startX, startY, p.x, p.y);
@@ -384,8 +439,7 @@ canvas{display:block;width:100%;height:auto;background:#ffffff;cursor:crosshair;
       ctx.lineWidth = strichBreite();
       ctx.strokeStyle = (werkzeug === "radierer") ? aktuelleHg : farbe.value;
       ctx.stroke();
-      startX = p.x;
-      startY = p.y;
+      startX = p.x; startY = p.y;
     }
   }
 
@@ -408,12 +462,10 @@ canvas{display:block;width:100%;height:auto;background:#ffffff;cursor:crosshair;
     }
   }
 
-  // Maus
   canvas.addEventListener("mousedown", start);
   canvas.addEventListener("mousemove", malen);
   window.addEventListener("mouseup", ende);
   canvas.addEventListener("mouseleave", ende);
-  // Touch
   canvas.addEventListener("touchstart", start, {passive:false});
   canvas.addEventListener("touchmove", malen, {passive:false});
   canvas.addEventListener("touchend", ende);
@@ -422,13 +474,8 @@ canvas{display:block;width:100%;height:auto;background:#ffffff;cursor:crosshair;
   function werkzeugWaehlen(name){
     werkzeug = name;
     for(var key in werkzeuge){
-      if(key === name){
-        werkzeuge[key].classList.add("aktiv");
-        werkzeuge[key].classList.remove("zweit");
-      } else {
-        werkzeuge[key].classList.remove("aktiv");
-        werkzeuge[key].classList.add("zweit");
-      }
+      if(key === name){ werkzeuge[key].classList.add("aktiv"); werkzeuge[key].classList.remove("zweit"); }
+      else { werkzeuge[key].classList.remove("aktiv"); werkzeuge[key].classList.add("zweit"); }
     }
     formOptionen.hidden = !(name === "rechteck" || name === "kreis");
     textOptionen.hidden = (name !== "text");
@@ -438,20 +485,16 @@ canvas{display:block;width:100%;height:auto;background:#ffffff;cursor:crosshair;
     else if(name === "radierer") canvas.style.cursor = "cell";
     else if(name === "fuellen") canvas.style.cursor = "pointer";
     else canvas.style.cursor = "crosshair";
+    zoomAnwenden();
   }
 
   Object.keys(werkzeuge).forEach(function(name){
     werkzeuge[name].addEventListener("click", function(){ werkzeugWaehlen(name); });
   });
 
-  staerke.addEventListener("input", function(){
-    staerkeWert.innerHTML = strichBreite() + "&nbsp;px";
-  });
-  textGroesse.addEventListener("input", function(){
-    textGroesseWert.innerHTML = parseInt(textGroesse.value,10) + "&nbsp;px";
-  });
+  staerke.addEventListener("input", function(){ staerkeWert.innerHTML = strichBreite() + "&nbsp;px"; });
+  textGroesse.addEventListener("input", function(){ textGroesseWert.innerHTML = parseInt(textGroesse.value,10) + "&nbsp;px"; });
 
-  // Hintergrundfarbe wechseln: alte Hintergrundfläche neu einfärben
   hgFarbe.addEventListener("change", function(){
     var neu = hgFarbe.value;
     if(neu === aktuelleHg) return;
@@ -509,18 +552,18 @@ canvas{display:block;width:100%;height:auto;background:#ffffff;cursor:crosshair;
           String(d.getMonth()+1).padStart(2,"0") + "-" +
           String(d.getDate()).padStart(2,"0") + ".png";
         a.href = url; a.download = name;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
         setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
         sagen("Bild als „" + name + "“ gespeichert.", false);
       }, "image/png");
-    }catch(e){
-      sagen("Beim Speichern ist ein Fehler aufgetreten.", true);
-    }
+    }catch(e){ sagen("Beim Speichern ist ein Fehler aufgetreten.", true); }
   });
 
   knoepfeAktualisieren();
+  // Zoom nach dem Layout einmessen
+  zoomAnwenden();
+  requestAnimationFrame(zoomAnwenden);
+  window.addEventListener("load", zoomAnwenden);
 })();
 </script>
 </body>

@@ -29,6 +29,16 @@
       },
       "zeit": "2026-10-11T20:05:02.481Z",
       "aenderung": "Hintergrund auch wählbar und tools wie füllen oder ausschneiden hinzufügen"
+    },
+    {
+      "id": "v4",
+      "eltern": "v3",
+      "autor": {
+        "login": "Mi7z",
+        "name": "Mi7z"
+      },
+      "zeit": "2026-10-12T12:47:47.859Z",
+      "aenderung": "Vollbild-Layout mit fester Zeichenfläche, logisch angeordneten Werkzeugleisten und Zoom ohne Scrollen"
     }
   ]
 }

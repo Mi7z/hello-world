@@ -3,7 +3,7 @@
 // Stand ab – Handy aus, Seite zu, später wiederkommen: egal.
 import fs from 'node:fs';
 import path from 'node:path';
-import { kiFragen, kiJson, htmlAus } from './ki.js';
+import { kiFragen, kiJson, htmlAus, kiRecherche } from './ki.js';
 import { pruefeApp, pruefeDesign, APP_CSP } from './pruefung.js';
 import { FAEHIGKEITEN } from './faehigkeiten.js';
 import { KI_BAU_ZUSATZ } from './appki.js';
@@ -55,7 +55,7 @@ function neu(felder, ki) {
   const id = Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
   const a = {
     id, status: 'laeuft', erstellt: Date.now(),
-    schritte: { pruefen: '', github: '', bauen: '', test: '', fertig: '' }, schrittText: {},
+    schritte: { pruefen: '', github: '', vorbilder: '', bauen: '', test: '', fertig: '' }, schrittText: {},
     meldung: '', meldungArt: '', versuche: 0, probleme: [], ki: { art: ki?.art || 'lokal', ...(ki?.programm ? { programm: ki.programm } : {}) },
     ...felder,
   };
@@ -149,6 +149,7 @@ async function ablaufNeu(a) {
     a.titelAnzeige = `design.${String(p.name || '').toLowerCase().replace(/[^a-z0-9]/g, '')}`;
     schritt(a, 'pruefen', 'ok', 'neues Design');
     schritt(a, 'github', 'ok', 'bei Designs nicht nötig');
+    schritt(a, 'vorbilder', 'ok', 'bei Designs nicht nötig');
     melden(a, `Plan: ${p.plan}`);
     return bauenUndPruefen(a);
   }
@@ -172,7 +173,25 @@ async function ablaufNeu(a) {
   }
   melden(a, `Plan: ${p.plan}`);
   await githubSchritt(a);
+  await vorbilderSchritt(a);
   await bauenUndPruefen(a);
+}
+
+// ---------- Vorbilder: ähnliche Apps und Tools ansehen, davon inspirieren lassen ----------
+async function vorbilderSchritt(a) {
+  if (a.typ === 'design') return schritt(a, 'vorbilder', 'ok', 'bei Designs nicht nötig');
+  schritt(a, 'vorbilder', 'laeuft', 'schaut sich ähnliche Apps und Tools an …');
+  try {
+    const frage = a.zielSlug
+      ? `Bestehende App: ${a.zielKennung}\nGewünschte Änderung: „${a.anfrage}"\nNeue Funktion: ${a.funktion || ''}\nRecherchiere, wie bekannte Apps genau diese Funktion umsetzen und anordnen.`
+      : `Neue App: ${a.titel || a.titelAnzeige}\nWunsch: „${a.anfrage}"\nPlan: ${a.plan || ''}`;
+    a.vorbilder = String(await kiRecherche(kiVon(a), A.VORBILDER_SYSTEM, frage)).trim().slice(0, 6000);
+    const namen = (a.vorbilder.match(/^[-•*]\s*\**([^–:\n*]{2,40})\**\s*[–:-]/gm) || []).slice(0, 3).map((x) => x.replace(/^[-•*]\s*\**|\**\s*[–:-]$/g, '').trim());
+    schritt(a, 'vorbilder', 'ok', namen.length ? `inspiriert von ${namen.join(', ')}` : 'Vorbilder angesehen');
+  } catch (err) {
+    a.vorbilder = '';
+    schritt(a, 'vorbilder', 'ok', 'übersprungen (Recherche nicht möglich)');
+  }
 }
 
 // ---------- Ablauf: vorhandene App verbessern ----------
@@ -191,6 +210,7 @@ async function ablaufVerbessern(a) {
   schritt(a, 'pruefen', 'ok');
   schritt(a, 'github', 'ok', 'bei Verbesserungen übersprungen');
   melden(a, `Plan: ${p.plan}`);
+  await vorbilderSchritt(a);
   await bauenUndPruefen(a);
 }
 
@@ -229,6 +249,7 @@ async function bauenUndPruefen(a, nachbesserung) {
     schritt(a, 'bauen', 'laeuft', a.versuche ? `bessert nach (${a.versuche}/2) …` : ziel ? `baut in ${kennung(ziel)} ein …` : 'programmiert die App für Handy und Desktop …');
     let system = design ? A.DESIGN_SYSTEM : A.BAU_SYSTEM(APP_CSP, basisCss()) + (a.quelle ? A.GITHUB_BAU_ZUSATZ(a.quelle) : '') + (a.faehigkeiten?.length ? A.HELFER_ZUSATZ(a.faehigkeiten) : '') + (a.eigeneKi && !design ? KI_BAU_ZUSATZ : '');
     let frage = `App: ${a.titelAnzeige}\nWunsch des Nutzers: „${a.anfrage}"\nPlan: ${a.plan}`;
+    if (a.vorbilder) frage += `\n\nRecherche zu Vorbildern (zur Inspiration – nichts kopieren, keine fremden Namen/Logos in der App):\n${a.vorbilder}`;
     if (ziel && design) {
       system += '\nDu ENTWICKELST ein bestehendes Design WEITER: übernimm alles, was der Wunsch nicht ändert, und gib das KOMPLETTE neue CSS zurück.';
     } else if (ziel) {

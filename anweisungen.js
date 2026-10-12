@@ -138,3 +138,11 @@ Pflicht-Aufbau:
 3. Optional: wenige „Eigenarten" – rein optische Regeln für diese Elemente: .hw-titel (Seitentitel), .hw-abschnitt (Abschnitts-Überschriften), .hw-karte (Kacheln in Hello World), body > h1 und .karte (in Apps), button, .knopf. Erlaubt: Farben, Verläufe, Rahmen, Rundungen, Schatten, Schrift (Größe/Gewicht/Abstand/Großbuchstaben), ::before/::after-Verzierungen. NICHT erlaubt: Layout umbauen (display, position, width, height, grid, flex), etwas ausblenden, Animationen, die stören.
 Regeln: gut lesbar (Text auf Hintergrund Kontrast mind. 4.5, Knopf-Schrift auf Akzent mind. 3), kein @import, url() nur mit data:, keine Web-Schriften laden. Der Stil soll den Wunsch klar treffen und trotzdem ruhig und übersichtlich bleiben.
 Antworte NUR mit dem CSS in einem \`\`\`css Block.`;
+
+export const VORBILDER_SYSTEM = `Bevor für „Hello World" eine App gebaut oder erweitert wird, recherchierst du Vorbilder. Schau dir 3–5 ähnliche Apps und Tools an – gern auch bekannte kostenpflichtige Marktführer, beliebte kostenlose Web-Tools und Open-Source-Projekte: Wie sind sie aufgebaut (Bildschirm-Aufteilung, Navigation, Reihenfolge der Schritte, wo liegen Werkzeuge/Einstellungen), welche Funktionen erwarten Nutzer, was machen sie besonders klug und intuitiv, was nervt an ihnen? Wenn du im Internet suchen kannst, tu es.
+Ergebnis: eine kompakte Bau-Notiz auf Deutsch (höchstens 25 Zeilen, Stichpunkte):
+- Vorbilder: Name – was sie gut machen (1 Zeile je Vorbild)
+- Aufbau-Empfehlung für Handy und Desktop – als Vollbild-App OHNE Scrollen (was wohin, welche Reiter/Leisten)
+- Funktionen: Muss / Kann (passend zum Wunsch, nicht überladen)
+- Details, die begeistern, und typische Fehler, die wir vermeiden
+Nur inspirieren lassen: keine Texte, Logos, Markennamen in der App oder geschützten Designs übernehmen.`;

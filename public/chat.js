@@ -73,6 +73,22 @@
   });
   griff.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); fensterAuf(true); } });
 
+  // Tastatur auf dem Handy: Fenster genau auf den sichtbaren Bereich setzen,
+  // damit das Eingabefeld über der Tastatur bleibt (auch in Browsern ohne „resizes-content")
+  function anTastaturAnpassen() {
+    const vv = window.visualViewport;
+    const f = $h('hwFenster');
+    if (!vv || !offen) return;
+    const klein = vv.height < window.innerHeight - 80; // Tastatur offen
+    f.style.top = klein ? `${vv.offsetTop}px` : '';
+    f.style.height = klein ? `${vv.height}px` : '';
+    f.style.bottom = klein ? 'auto' : '';
+    if (klein) $h('hwVerlauf').scrollTop = $h('hwVerlauf').scrollHeight;
+  }
+  window.visualViewport?.addEventListener('resize', anTastaturAnpassen);
+  window.visualViewport?.addEventListener('scroll', anTastaturAnpassen);
+  $h('hwText').addEventListener('focus', () => setTimeout(() => { anTastaturAnpassen(); $h('hwText').scrollIntoView({ block: 'nearest' }); }, 300));
+
   function fensterAuf(auf) {
     offen = auf;
     $h('hwFenster').hidden = !auf;
@@ -98,7 +114,7 @@
   function auftragKarte(id, i) {
     const a = auftraegeStand.get(id);
     if (!a) return `<div class="hw-auftrag"><span class="lade">Lade Stand …</span></div>`;
-    const SCHRITTE = [['pruefen', 'Prüfen'], ['github', 'Suchen'], ['bauen', 'Bauen'], ['test', 'Testen'], ['fertig', 'Vorschau']].filter(([k]) => !(k === 'github' && (a.zielSlug || a.typ === 'design')));
+    const SCHRITTE = [['pruefen', 'Prüfen'], ['github', 'Open Source'], ['vorbilder', 'Vorbilder'], ['bauen', 'Bauen'], ['test', 'Testen'], ['fertig', 'Vorschau']].filter(([k]) => !(k === 'github' && (a.zielSlug || a.typ === 'design')) && !(k === 'vorbilder' && (a.typ === 'design' || !('vorbilder' in (a.schritte || {})))));
     const punkte = SCHRITTE.map(([k, t]) => `<span class="hw-schritt ${a.schritte?.[k] || ''}">${t}</span>`).join('');
     const neu = !a.zielSlug;
     let knoepfe = '';
@@ -117,6 +133,8 @@
     const status = { laeuft: 'Der PC arbeitet …', vorschau: neu ? 'Fertig – schau es dir an.' : 'Fertig – die Vorschau läuft in der App.', fertig: '✓ Übernommen', verworfen: 'Verworfen', fehler: 'Hat nicht geklappt', abgebrochen: 'Abgebrochen', abgelehnt: 'Abgelehnt', vorhanden: 'Gibt es schon' }[a.status] || a.status;
     return `<div class="hw-auftrag ${a.status}"><div class="hw-auftrag-kopf"><b>${esc(a.titelAnzeige || 'Auftrag')}</b><span>${status}</span></div>
       <div class="hw-schritte">${punkte}</div>
+      ${a.status === 'laeuft' && a.schrittText ? `<p class="hinweis">${esc(Object.entries(a.schritte || {}).filter(([, v]) => v === 'laeuft').map(([k]) => a.schrittText[k]).filter(Boolean)[0] || '')}</p>` : ''}
+      ${a.schrittText?.vorbilder && /inspiriert/.test(a.schrittText.vorbilder) ? `<p class="hinweis">💡 ${esc(a.schrittText.vorbilder)}</p>` : ''}
       ${a.meldung && a.status !== 'laeuft' ? `<p class="hinweis">${esc(a.meldung)}</p>` : ''}
       ${a.probleme?.length && ['fehler', 'abgebrochen'].includes(a.status) ? `<ul class="hinweis">${a.probleme.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
       ${knoepfe ? `<div class="knoepfe links">${knoepfe}</div>` : ''}</div>`;

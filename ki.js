@@ -59,8 +59,10 @@ function ausfuehren(pfad, args, eingabe, zeitlimit) {
   });
 }
 
-export async function claudeFragen(system, frage, schema = null, zeitlimit = 900e3) {
-  const args = ['-p', '--system-prompt', system, '--tools', '', '--strict-mcp-config', '--setting-sources', '', '--no-session-persistence', '--output-format', 'json'];
+export async function claudeFragen(system, frage, schema = null, zeitlimit = 900e3, { web = false } = {}) {
+  // Nur für die Vorbilder-Recherche: Websuche erlaubt (keine anderen Werkzeuge, kein Dateizugriff)
+  const werkzeuge = web ? ['--tools', 'WebSearch,WebFetch', '--allowedTools', 'WebSearch,WebFetch'] : ['--tools', ''];
+  const args = ['-p', '--system-prompt', system, ...werkzeuge, '--strict-mcp-config', '--setting-sources', '', '--no-session-persistence', '--output-format', 'json'];
   if (schema) args.push('--json-schema', JSON.stringify(schema)); // erzwingt gültiges JSON
   const { aus } = await ausfuehren(programmFinden('claude') || '/usr/bin/claude', args, frage, zeitlimit);
   let r;
@@ -141,4 +143,12 @@ export function htmlAus(text) {
   const html = (block ? block[1] : text).trim();
   const start = html.search(/<!doctype html|<html/i);
   return start >= 0 ? html.slice(start) : html;
+}
+
+// Recherche mit Internet, wo das KI-Programm es kann (Claude Code: Websuche);
+// sonst aus dem Wissen der KI
+export async function kiRecherche(ki, system, frage) {
+  const lokalClaude = (!ki || ki.art === 'lokal') && (ki?.programm ? ki.programm === 'claude' : programmFinden('claude'));
+  if (lokalClaude && programmFinden('claude')) return claudeFragen(system, frage, null, 300e3, { web: true });
+  return kiFragen(ki, system + '\n\n(Du hast hier keinen Internetzugang – nutze dein Wissen über bekannte Apps und Tools.)', frage);
 }
