@@ -156,6 +156,7 @@
     $h('hwVerlauf').innerHTML = v.length ? v.map((n, i) => `<div class="hw-nachricht ${n.wer}">
         ${n.text ? `<div class="hw-blase">${esc(n.text)}</div>` : ''}
         ${n.denkt ? '<div class="hw-blase"><span class="lade">Ich denke nach …</span></div>' : ''}
+        ${n.nochmal ? `<div class="knoepfe links"><button type="button" class="klein" data-hw-nochmal-text="${i}">↻ Nochmal senden</button></div>` : ''}
         ${(n.apps || []).map(karte).join('')}
         ${n.auftrag ? auftragKarte(n.auftrag, i) : ''}
         ${n.pitch ? `<div class="hw-auftrag"><div class="hw-auftrag-kopf"><b>💡 Pitch: ${esc(n.pitch.slice(0, 80))}</b></div><p class="hinweis">Änderungen an Hello World selbst werden als Pitch vorgeschlagen – mit genug Sternen wird es gebaut.</p><div class="knoepfe links"><a class="knopf klein" href="/?pitch=${encodeURIComponent(n.pitch)}#pitches">Pitch erstellen</a></div></div>` : ''}
@@ -191,6 +192,8 @@
     if (vw) { const a = await auftragAktion(vw.dataset.hwVerwerfen, 'verwerfen').catch(() => null); if (a) auftraegeStand.set(a.id, a); S().vorschau?.(null); zeigen(); return; }
     const nb = t.closest('[data-hw-nachbessern]');
     if (nb) { const was = prompt('Was soll noch anders werden?'); if (!was) return; await auftragAktion(nb.dataset.hwNachbessern, 'nachbessern', { was }); verfolgen(nb.dataset.hwNachbessern); return; }
+    const ns = t.closest('[data-hw-nochmal-text]');
+    if (ns) { const n = verlauf()[Number(ns.dataset.hwNochmalText)]; if (n?.nochmal) { aendern(Number(ns.dataset.hwNochmalText), { nochmal: null }); senden(n.nochmal); } return; }
     const nm = t.closest('[data-hw-nochmal]');
     if (nm) {
       const neu = await auftragAktion(nm.dataset.hwNochmal, 'neustart', { ki: kiFuerAuftrag() }).catch((err) => { hinzu({ wer: 'hw', text: err.message }); return null; });
@@ -233,33 +236,51 @@
       if (!STATISCH && !kiEinstellung() && !treffer.length) kiFehltHinweis();
       return;
     }
-    const i = hinzu({ wer: 'hw', denkt: true });
+    const i = hinzu({ wer: 'hw', denkt: true, frage: text, kontext: k ? { slug: k.slug, version: k.version } : null });
     try {
       const { id } = await api('/api/chat', { method: 'POST', body: JSON.stringify({ nachricht: text, kontext: k ? { slug: k.slug, version: k.version } : null, verlauf: bisher, ki: kiFuerAuftrag() }) });
+      aendern(i, { chatId: id, seit: Date.now() }); // überlebt Neuladen der Seite
+      await abwarten(i);
+    } catch (err) { fehlgeschlagen(i, err.message); }
+  }
+  // Antwort abholen – auch nach Neuladen der Seite oder Neustart von Hello World
+  const wartet = new Set();
+  async function abwarten(i) {
+    if (wartet.has(i)) return;
+    wartet.add(i);
+    try {
+      const n0 = verlauf()[i];
+      if (!n0?.chatId) return fehlgeschlagen(i, 'Die Anfrage ist unterwegs verloren gegangen.');
       let st;
-      for (let n = 0; n < 300; n++) {
+      for (let n = 0; n < 240; n++) {
+        try { st = await api(`/api/chat/${n0.chatId}`); } catch { st = null; }
+        if (st && st.status !== 'laeuft') break;
+        if (Date.now() - (n0.seit || Date.now()) > 5 * 60e3) { st = { status: 'fehler', fehler: 'Das dauert ungewöhnlich lange.' }; break; }
         await new Promise((r) => setTimeout(r, n < 5 ? 800 : 1500));
-        try { st = await api(`/api/chat/${id}`); } catch { continue; }
-        if (st.status !== 'laeuft') break;
       }
-      if (st?.status !== 'fertig') throw new Error(st?.fehler || 'Die KI hat nicht geantwortet.');
+      if (st?.status !== 'fertig') return fehlgeschlagen(i, st?.fehler || 'Die KI hat nicht geantwortet.');
       const e = st.ergebnis;
-      aendern(i, { denkt: false, text: e.antwort, apps: ['suchen', 'oeffnen'].includes(e.aktion) ? e.apps : [] });
+      const k = n0.kontext;
+      aendern(i, { denkt: false, chatId: null, text: e.antwort, apps: ['suchen', 'oeffnen'].includes(e.aktion) ? e.apps : [] });
       if (e.aktion === 'oeffnen' && e.apps[0]) { const a = app(e.apps[0]); if (a) S().oeffnen?.(kennung(a)); }
       if (e.aktion === 'verbessern' && k) {
         const a = await auftragStarten({ ziel: k.slug, wunsch: e.wunsch, basis: k.version || null });
         aendern(i, { auftrag: a.id }); verfolgen(a.id);
       }
       if (e.aktion === 'pitch') aendern(i, { pitch: e.wunsch });
-      if (e.aktion === 'neu') {
-        if (STATISCH) return;
+      if (e.aktion === 'neu' && !STATISCH) {
         const a = await auftragStarten({ anfrage: e.wunsch });
         aendern(i, { auftrag: a.id }); verfolgen(a.id);
       }
-    } catch (err) {
-      const treffer = lokalSuchen(text);
-      aendern(i, { denkt: false, text: `${err.message}${treffer.length ? ' – vielleicht passt eins davon:' : ''}`, apps: treffer });
-    }
+    } catch (err) { fehlgeschlagen(i, err.message); }
+    finally { wartet.delete(i); }
+  }
+  function fehlgeschlagen(i, grund) {
+    const v = verlauf();
+    // Ursprüngliche Frage: gespeichert oder die letzte eigene Nachricht davor
+    const frage = v[i]?.frage || v.slice(0, i).reverse().find((x) => x.wer === 'ich')?.text || null;
+    const treffer = frage ? lokalSuchen(frage) : [];
+    aendern(i, { denkt: false, chatId: null, text: `${grund}${treffer.length ? ' Vielleicht passt eins davon:' : ''}`, apps: treffer, nochmal: frage });
   }
   $h('hwEingabe').addEventListener('submit', (ev) => {
     ev.preventDefault();
@@ -278,6 +299,7 @@
   async function katalogLaden() { try { katalog = (await (await fetch('/api/apps', { cache: 'no-store' })).json()).apps || []; zeigen(); } catch { /* später */ } }
   katalogLaden();
   for (const n of verlauf()) if (n.auftrag) verfolgen(n.auftrag);
+  verlauf().forEach((n, i) => { if (n.denkt) abwarten(i); });
   // Von außen nutzbar (z. B. Suche auf der Startseite)
   window.hwChat = { oeffnen: () => fensterAuf(true), schliessen: () => fensterAuf(false), senden: (t) => { fensterAuf(true); senden(t); }, aktualisieren: zeigen, leeren: () => { speichern([]); zeigen(); } };
 })();
