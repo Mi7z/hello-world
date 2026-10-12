@@ -19,6 +19,16 @@
       },
       "zeit": "2026-10-11T17:48:41.419Z",
       "aenderung": "Ich brauche ein Tool, das mehrere Bilder zu einer PDF zusammenfügt"
+    },
+    {
+      "id": "v3",
+      "eltern": "v2",
+      "autor": {
+        "login": "Mi7z",
+        "name": "Mi7z"
+      },
+      "zeit": "2026-10-12T12:26:53.032Z",
+      "aenderung": "Werkzeuge für KIs: PDF → PNG, Bild umwandeln, Bilder → PDF direkt ausführbar"
     }
   ]
 }

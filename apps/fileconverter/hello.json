@@ -6,7 +6,8 @@
     "PDF in PNG-Bilder umwandeln (einzeln oder als ZIP)",
     "Bilder zwischen JPG, PNG und WebP umwandeln",
     "Bilder verkleinern und komprimieren",
-    "Mehrere Bilder (JPG, PNG, WebP) in der gewünschten Reihenfolge zu einer einzigen PDF-Datei zusammenfügen."
+    "Mehrere Bilder (JPG, PNG, WebP) in der gewünschten Reihenfolge zu einer einzigen PDF-Datei zusammenfügen.",
+    "Für KIs direkt ausführbar: PDF → PNG, Bild umwandeln, Bilder → PDF"
   ],
   "tags": [
     "bild",
@@ -38,7 +39,7 @@
   "anfrage": "",
   "ki": "Start-App",
   "erstellt": "2026-10-11T20:00:00.000Z",
-  "version": 2,
+  "version": 3,
   "hinweise": [],
   "verlauf": [
     {
@@ -120,5 +121,19 @@
     "exportieren"
   ],
   "beschreibungStand": "2026-10-11T20:56:17.943Z",
-  "symbol": "🔁"
+  "symbol": "🔁",
+  "werkzeuge": [
+    {
+      "name": "pdf_zu_png",
+      "beschreibung": "Wandelt jede Seite einer PDF-Datei in ein PNG-Bild um (weißer Hintergrund)."
+    },
+    {
+      "name": "bild_umwandeln",
+      "beschreibung": "Wandelt Bilder (JPG, PNG, WebP, GIF, BMP) in PNG, JPG oder WebP um – auf Wunsch verkleinert. Gut zum Komprimieren."
+    },
+    {
+      "name": "bilder_zu_pdf",
+      "beschreibung": "Fügt Bilder (JPG, PNG, WebP) in der mitgegebenen Reihenfolge zu einer PDF-Datei zusammen."
+    }
+  ]
 }

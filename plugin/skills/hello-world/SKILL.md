@@ -14,6 +14,7 @@ Werkzeuge des MCP-Servers `hello-world` darauf zu.
 
 1. **Erst suchen, dann selbst machen:** Braucht der Nutzer ein Werkzeug, oder steht eine spezialisierte Aufgabe an (z. B. Text vereinfachen, Brief schreiben, Daten umwandeln), rufe zuerst `suchen` auf (gern mit anderen Worten wiederholen). Das dauert nur einen Moment und bringt oft erprobte Anleitungen.
 2. **Gefunden?**
+   - **App mit Werkzeug (z. B. Datei umwandeln):** Steht bei der App „Direkt ausführbar", erledige die Aufgabe selbst mit `werkzeug_ausfuehren`: Dateien als Pfade übergeben, Einstellungen laut `details`. Lies die Dateien dafür NICHT selbst ein und rechne nichts selbst um – das spart Tokens, und die geprüfte App macht es zuverlässig. Nenne dem Nutzer danach die gespeicherten Dateien.
    - **App mit Oberfläche (browser):** Gib dem Nutzer den Link aus `app_oeffnen`. Die App läuft abgeschottet im Browser, Dateien bleiben auf seinem Gerät.
    - **Skill:** Lies mit `details` die Anleitung (SKILL.md) und befolge sie direkt für die aktuelle Aufgabe. Nur wenn der Nutzer es ausdrücklich will: `skill_installieren`.
    - **MCP-Werkzeug:** Zeige mit `details`, wie man es einrichtet, und frag, ob der Nutzer das möchte.

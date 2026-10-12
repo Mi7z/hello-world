@@ -10,7 +10,9 @@ import { spawn } from 'node:child_process';
 const KANDIDATEN = [
   process.env.CHROME,
   path.join(os.homedir(), '.cache/ms-playwright/chromium-1234/chrome-linux64/chrome'),
-  '/usr/bin/chromium', '/usr/bin/chromium-browser', '/usr/bin/google-chrome',
+  '/usr/bin/chromium', '/usr/bin/chromium-browser', '/usr/bin/google-chrome', '/usr/bin/google-chrome-stable', '/usr/bin/microsoft-edge', '/snap/bin/chromium',
+  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge', '/Applications/Chromium.app/Contents/MacOS/Chromium',
+  ...['PROGRAMFILES', 'PROGRAMFILES(X86)', 'LOCALAPPDATA'].flatMap((v) => (process.env[v] ? [path.join(process.env[v], 'Google', 'Chrome', 'Application', 'chrome.exe'), path.join(process.env[v], 'Microsoft', 'Edge', 'Application', 'msedge.exe')] : [])),
 ].filter(Boolean);
 export const CHROME = KANDIDATEN.find((p) => fs.existsSync(p)) || null;
 
@@ -57,11 +59,11 @@ export async function testlauf(url) {
 
 // Baustein für Apps: helloworld.faehigkeit(name, parameter) – fragt über Hello World
 // den gekoppelten Helfer an (mit Erlaubnis des Nutzers).
-export const SDK = `<script>(()=>{let n=0;const o={};addEventListener('message',e=>{const d=e.data;if(d&&d.hwAntwort&&o[d.id]){const x=o[d.id];delete o[d.id];d.ok?x.r(d.ergebnis):x.j(new Error(d.fehler||'Abgelehnt'))}});const frag=(d)=>new Promise((r,j)=>{const id=++n;o[id]={r,j};parent.postMessage({...d,id},'*')});window.helloworld={faehigkeit:(name,parameter={})=>frag({hwSdk:'faehigkeit',name,parameter}),ki:(aufgabe,eingabe={})=>frag({hwSdk:'ki',aufgabe,eingabe})};})()<\/script>`;
+export const SDK = `<script>(()=>{let n=0;const o={};addEventListener('message',e=>{const d=e.data;if(d&&d.hwAntwort&&o[d.id]){const x=o[d.id];delete o[d.id];d.ok?x.r(d.ergebnis):x.j(new Error(d.fehler||'Abgelehnt'))}});const frag=(d)=>new Promise((r,j)=>{const id=++n;o[id]={r,j};parent.postMessage({...d,id},'*')});window.helloworld={faehigkeit:(name,parameter={})=>frag({hwSdk:'faehigkeit',name,parameter}),ki:(aufgabe,eingabe={})=>frag({hwSdk:'ki',aufgabe,eingabe}),werkzeug:(n,f)=>{(window.__hwWerkzeuge=window.__hwWerkzeuge||{})[n]=f}};})()<\/script>`;
 // In Vorschau und Testlauf wird nie etwas ausgeführt
 // helloworld.ki: in der Vorschau rechnet die echte KI (über die Vorschau-Seite), im
 // unsichtbaren Testlauf kommt eine Beispiel-Antwort im festgelegten Format.
-export const SDK_PROBE = `<script>(()=>{let n=0;const o={};addEventListener('message',e=>{const d=e.data;if(d&&d.hwAntwort&&o[d.id]){const x=o[d.id];delete o[d.id];d.ok?x.r(d.ergebnis):x.j(new Error(d.fehler||'Abgelehnt'))}});const bsp=s=>!s||typeof s!=='object'?null:s.enum?s.enum[0]:s.type==='object'?Object.fromEntries(Object.entries(s.properties||{}).map(([k,v])=>[k,bsp(v)])):s.type==='array'?[bsp(s.items)]:(s.type==='number'||s.type==='integer')?1:s.type==='boolean'?true:'Beispiel';window.helloworld={faehigkeit:(name,parameter={})=>Promise.resolve({probe:true,faehigkeit:name,parameter,hinweis:'Vorschau – es wurde nichts ausgeführt'}),ki:(aufgabe,eingabe={})=>{if(parent!==window)return new Promise((r,j)=>{const id=++n;o[id]={r,j};parent.postMessage({hwSdk:'ki',id,aufgabe,eingabe},'*')});try{const a=JSON.parse(document.getElementById('hw-ki').textContent).aufgaben[aufgabe];if(!a)throw 0;return new Promise(r=>setTimeout(()=>r(bsp(a.schema)),300))}catch{return Promise.reject(new Error('Unbekannte KI-Aufgabe'))}}};})()<\/script>`;
+export const SDK_PROBE = `<script>(()=>{let n=0;const o={};addEventListener('message',e=>{const d=e.data;if(d&&d.hwAntwort&&o[d.id]){const x=o[d.id];delete o[d.id];d.ok?x.r(d.ergebnis):x.j(new Error(d.fehler||'Abgelehnt'))}});const bsp=s=>!s||typeof s!=='object'?null:s.enum?s.enum[0]:s.type==='object'?Object.fromEntries(Object.entries(s.properties||{}).map(([k,v])=>[k,bsp(v)])):s.type==='array'?[bsp(s.items)]:(s.type==='number'||s.type==='integer')?1:s.type==='boolean'?true:'Beispiel';window.helloworld={werkzeug:(n,f)=>{(window.__hwWerkzeuge=window.__hwWerkzeuge||{})[n]=f},faehigkeit:(name,parameter={})=>Promise.resolve({probe:true,faehigkeit:name,parameter,hinweis:'Vorschau – es wurde nichts ausgeführt'}),ki:(aufgabe,eingabe={})=>{if(parent!==window)return new Promise((r,j)=>{const id=++n;o[id]={r,j};parent.postMessage({hwSdk:'ki',id,aufgabe,eingabe},'*')});try{const a=JSON.parse(document.getElementById('hw-ki').textContent).aufgaben[aufgabe];if(!a)throw 0;return new Promise(r=>setTimeout(()=>r(bsp(a.schema)),300))}catch{return Promise.reject(new Error('Unbekannte KI-Aufgabe'))}}};})()<\/script>`;
 export function einsetzen(html, ...bausteine) {
   const kopf = bausteine.join('');
   return /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, (m) => m + kopf) : kopf + html;

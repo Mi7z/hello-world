@@ -51,6 +51,9 @@ export function pruefeApp(html) {
   for (const [muster, text] of VERBOTEN) if (muster.test(html)) fehler.push(`Nicht erlaubt: ${text}`);
 
   // Nutzt die App die eigene KI des Nutzers? Dann muss sie ihre Aufgaben fest erklären.
+  const wzErkl = werkzeugErklaerungAus(html);
+  fehler.push(...wzErkl.fehler);
+  if (/helloworld\.werkzeug\s*\(/.test(html) && !wzErkl.erklaerung && !wzErkl.fehler.length) fehler.push('Die App meldet Werkzeuge an (helloworld.werkzeug), erklärt sie aber nicht (<script type="application/json" id="hw-werkzeuge">)');
   const kiErkl = kiErklaerungAus(html);
   fehler.push(...kiErkl.fehler);
   if (/helloworld\.ki\s*\(/.test(html) && !kiErkl.erklaerung && !kiErkl.fehler.length) fehler.push('Die App ruft helloworld.ki() auf, erklärt aber keine KI-Aufgaben (<script type="application/json" id="hw-ki">)');
@@ -150,3 +153,23 @@ export function kiErklaerungAus(html) {
   return { erklaerung: fehler.length ? null : { zweck: d.zweck.trim(), aufgaben: Object.fromEntries(aufgaben) }, fehler };
 }
 
+
+// ---------- Werkzeuge für KIs (siehe werkzeuge.js) ----------
+// <script type="application/json" id="hw-werkzeuge">{ "werkzeuge": { "name": { "beschreibung", "eingabe": {JSON-Schema}, "dateien": "keine|eine|mehrere", "ausgabe" } } }</script>
+export function werkzeugErklaerungAus(html) {
+  const m = String(html || '').match(/<script[^>]*\bid=["']hw-werkzeuge["'][^>]*>([\s\S]*?)<\/script>/i);
+  if (!m) return { erklaerung: null, fehler: [] };
+  const fehler = [];
+  let d;
+  try { d = JSON.parse(m[1]); } catch { return { erklaerung: null, fehler: ['hw-werkzeuge: kein gültiges JSON'] }; }
+  const liste = d.werkzeuge && typeof d.werkzeuge === 'object' ? Object.entries(d.werkzeuge) : [];
+  if (!liste.length || liste.length > 15) fehler.push('hw-werkzeuge: 1–15 "werkzeuge" angeben');
+  for (const [name, w] of liste) {
+    if (!/^[a-z][a-z0-9_]{1,30}$/.test(name)) fehler.push(`hw-werkzeuge: Name „${name}" – nur kleine Buchstaben, Ziffern, _`);
+    if (typeof w?.beschreibung !== 'string' || w.beschreibung.trim().length < 10 || w.beschreibung.length > 400) fehler.push(`hw-werkzeuge: ${name}.beschreibung fehlt (10–400 Zeichen: was es tut, wann man es nutzt)`);
+    if (w?.eingabe && (w.eingabe.type !== 'object' || JSON.stringify(w.eingabe).length > 6000)) fehler.push(`hw-werkzeuge: ${name}.eingabe muss ein JSON-Schema mit "type": "object" sein`);
+    if (w?.dateien && !['keine', 'eine', 'mehrere'].includes(w.dateien)) fehler.push(`hw-werkzeuge: ${name}.dateien ist "keine", "eine" oder "mehrere"`);
+  }
+  if (fehler.length) return { erklaerung: null, fehler };
+  return { erklaerung: Object.fromEntries(liste.map(([n, w]) => [n, { beschreibung: w.beschreibung.trim(), eingabe: w.eingabe || { type: 'object', properties: {} }, dateien: w.dateien || 'keine', ausgabe: String(w.ausgabe || '').slice(0, 300) }])), fehler: [] };
+}

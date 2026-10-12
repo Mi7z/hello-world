@@ -277,5 +277,91 @@ $('pdfErstellen').onclick = async () => {
 };
 </script>
 <p class="hinweis quellen-zeile" style="margin-top:24px">nutzt <a href="https://github.com/mozilla/pdf.js" target="_blank" rel="noopener">mozilla/pdf.js</a> (Apache-2.0) · <a href="https://github.com/Stuk/jszip" target="_blank" rel="noopener">Stuk/jszip</a> ((MIT OR GPL-3.0-or-later))</p>
+<script type="application/json" id="hw-werkzeuge">
+{ "werkzeuge": {
+  "pdf_zu_png": {
+    "beschreibung": "Wandelt jede Seite einer PDF-Datei in ein PNG-Bild um (weißer Hintergrund).",
+    "dateien": "eine",
+    "eingabe": { "type": "object", "properties": { "schaerfe": { "type": "number", "description": "1 = normal (ca. 108 dpi), 2 = scharf, 3 = sehr scharf. Standard 2." } } },
+    "ausgabe": "Ein PNG pro Seite, Name <pdfname>-seite-01.png …"
+  },
+  "bild_umwandeln": {
+    "beschreibung": "Wandelt Bilder (JPG, PNG, WebP, GIF, BMP) in PNG, JPG oder WebP um – auf Wunsch verkleinert. Gut zum Komprimieren.",
+    "dateien": "mehrere",
+    "eingabe": { "type": "object", "properties": { "format": { "type": "string", "enum": ["png", "jpg", "webp"] }, "max_breite": { "type": "integer", "description": "Höchstbreite in Pixeln (optional, kleiner = kleinere Datei)" }, "qualitaet": { "type": "integer", "description": "1–100 bei JPG/WebP, Standard 90" } }, "required": ["format"] },
+    "ausgabe": "Je Bild eine Datei im neuen Format"
+  },
+  "bilder_zu_pdf": {
+    "beschreibung": "Fügt Bilder (JPG, PNG, WebP) in der mitgegebenen Reihenfolge zu einer PDF-Datei zusammen.",
+    "dateien": "mehrere",
+    "eingabe": { "type": "object", "properties": { "seite": { "type": "string", "enum": ["auto", "a4"], "description": "auto = jede Seite so groß wie ihr Bild, a4 = Bilder auf A4 eingepasst" }, "ausrichtung": { "type": "string", "enum": ["p", "l"], "description": "nur bei a4: p = Hochformat, l = Querformat" }, "name": { "type": "string", "description": "Dateiname der PDF ohne Endung" } } },
+    "ausgabe": "Eine PDF-Datei"
+  }
+} }
+</script>
+<script>
+// Werkzeuge für KIs: dieselben Umwandlungen ohne Oberfläche (Hello World ruft sie auf)
+if (window.helloworld && helloworld.werkzeug) {
+  const leinwand = (w, h, weiss) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const ctx = c.getContext('2d'); if (weiss) { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h); } return [c, ctx]; };
+  const alsBlob = (c, typ, q) => new Promise((r) => c.toBlob(r, typ, q));
+  helloworld.werkzeug('pdf_zu_png', async (e, [datei]) => {
+    if (!datei) throw new Error('Bitte eine PDF-Datei mitgeben.');
+    const pdf = await pdfjsLib.getDocument({ data: await datei.arrayBuffer() }).promise;
+    const basis = (datei.name || 'dokument').replace(/\.pdf$/i, '');
+    const dateien = [];
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const seite = await pdf.getPage(i);
+      const vp = seite.getViewport({ scale: (Number(e.schaerfe) || 2) * 1.5 });
+      const [c, ctx] = leinwand(vp.width, vp.height, true);
+      await seite.render({ canvasContext: ctx, viewport: vp }).promise;
+      dateien.push(new File([await alsBlob(c, 'image/png')], `${basis}-seite-${String(i).padStart(2, '0')}.png`, { type: 'image/png' }));
+    }
+    return { seiten: pdf.numPages, dateien };
+  });
+  helloworld.werkzeug('bild_umwandeln', async (e, liste) => {
+    if (!liste.length) throw new Error('Bitte mindestens ein Bild mitgeben.');
+    const typ = { png: 'image/png', jpg: 'image/jpeg', webp: 'image/webp' }[e.format] || 'image/png';
+    const endung = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' }[typ];
+    const dateien = [], infos = [];
+    for (const d of liste) {
+      const bild = await createImageBitmap(d);
+      const f = Math.min(1, (Number(e.max_breite) || bild.width) / bild.width);
+      const [c, ctx] = leinwand(Math.round(bild.width * f), Math.round(bild.height * f), typ === 'image/jpeg');
+      ctx.drawImage(bild, 0, 0, c.width, c.height);
+      const blob = await alsBlob(c, typ, (Number(e.qualitaet) || 90) / 100);
+      const name = (d.name || 'bild').replace(/\.[^.]+$/, '') + '.' + endung;
+      dateien.push(new File([blob], name, { type: typ }));
+      infos.push({ name, breite: c.width, hoehe: c.height, vorher_kb: Math.round(d.size / 1024), nachher_kb: Math.round(blob.size / 1024) });
+    }
+    return { bilder: infos, dateien };
+  });
+  helloworld.werkzeug('bilder_zu_pdf', async (e, liste) => {
+    const bilder = liste.filter((d) => /^image\//.test(d.type) || /\.(jpe?g|png|webp)$/i.test(d.name));
+    if (!bilder.length) throw new Error('Bitte JPG-, PNG- oder WebP-Bilder mitgeben.');
+    const { jsPDF } = window.jspdf;
+    let doc = null;
+    for (const d of bilder) {
+      const bild = await createImageBitmap(d);
+      const [c, ctx] = leinwand(bild.width, bild.height, true);
+      ctx.drawImage(bild, 0, 0);
+      const url = c.toDataURL('image/jpeg', 0.92);
+      if (e.seite === 'a4') {
+        const ori = e.ausrichtung === 'l' ? 'l' : 'p';
+        if (!doc) doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: ori }); else doc.addPage('a4', ori);
+        const pw = doc.internal.pageSize.getWidth(), ph = doc.internal.pageSize.getHeight();
+        const f = Math.min((pw - 20) / c.width, (ph - 20) / c.height);
+        doc.addImage(url, 'JPEG', (pw - c.width * f) / 2, (ph - c.height * f) / 2, c.width * f, c.height * f);
+      } else {
+        const o = c.width >= c.height ? 'l' : 'p';
+        if (!doc) doc = new jsPDF({ unit: 'px', format: [c.width, c.height], orientation: o }); else doc.addPage([c.width, c.height], o);
+        doc.addImage(url, 'JPEG', 0, 0, c.width, c.height);
+      }
+    }
+    const name = (e.name || 'bilder').replace(/[^\w\- äöüÄÖÜß]/g, '') || 'bilder';
+    return { seiten: bilder.length, dateien: [new File([doc.output('blob')], `${name}.pdf`, { type: 'application/pdf' })] };
+  });
+}
+</script>
+
 </body>
 </html>

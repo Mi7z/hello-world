@@ -53,6 +53,9 @@ ${basisCss}
 - Verständliche Hinweise, Fehlerfälle abfangen (falsche Datei, leere Eingabe) mit freundlicher Meldung.
 - Oben: <h1> mit Titel (höchstens ein Emoji), darunter <p class="unter"> ein Satz, was die App macht und dass alles im Browser bleibt.
 - Sauberer, lesbarer Code, keine Platzhalter, keine TODOs, keine Fantasie-Funktionen: alles, was angezeigt wird, muss funktionieren.
+- WERKZEUGE FÜR KIs: Biete die Hauptfunktionen, die mit Daten oder Dateien arbeiten (umwandeln, berechnen, erzeugen, auswerten), ZUSÄTZLICH ohne Oberfläche an – dann kann eine KI sie direkt aufrufen. Dazu im <head>: <script type="application/json" id="hw-werkzeuge">{ "werkzeuge": { "name_mit_unterstrich": { "beschreibung": "was es tut", "dateien": "keine|eine|mehrere", "eingabe": { "type": "object", "properties": { … } }, "ausgabe": "was zurückkommt" } } }</script>
+  und am Ende: if (window.helloworld && helloworld.werkzeug) { helloworld.werkzeug('name_mit_unterstrich', async (eingabe, dateien) => { … return { …Daten…, dateien: [new File([blob], 'name.png', { type: 'image/png' })] }; }); }
+  Die Funktion bekommt die Einstellungen und die Dateien als File-Objekte, nutzt denselben Code wie die Oberfläche (aber ohne sie anzufassen) und gibt Daten und/oder Dateien (Blob/File mit Namen) zurück. Fehler mit verständlicher Meldung werfen. Reine Spiele/Malprogramme ohne Datenverarbeitung brauchen keine Werkzeuge.
 Antworte NUR mit der HTML-Datei in einem \`\`\`html Block.`;
 
 export const HELFER_ZUSATZ = (faehigkeiten) => `
@@ -72,6 +75,7 @@ Du ERWEITERST bzw. VERBESSERST eine bestehende App. Pflicht:
 - Neue Funktionen fügen sich sauber ein, z. B. als weiterer Reiter oder Bereich im selben Stil. Gibt es noch keine Reiter, aber jetzt mehrere Funktionen, führe Reiter ein.
 - Passe <title>, <h1> und den Untertitel an, falls die App dadurch breiter wird.
 - Hat die App eine KI-Erklärung (<script type="application/json" id="hw-ki">), bleibt sie mit allen bisherigen Aufgaben erhalten; neue Aufgaben werden ergänzt.
+- Hat die App Werkzeuge für KIs (<script type="application/json" id="hw-werkzeuge"> und helloworld.werkzeug(…)), bleiben alle erhalten und funktionieren weiter; passt die neue Funktion dazu, kommt ein Werkzeug dazu.
 - Gib die KOMPLETTE neue Datei zurück.`;
 
 export const FUNKTIONS_SCHEMA = {

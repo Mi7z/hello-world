@@ -183,6 +183,30 @@ Gemini, OpenRouter (Gratis-Router), Groq, Cerebras und Mistral. Hello World
 probiert sie der Reihe nach und wechselt automatisch, wenn ein Anbieter am
 Limit ist. Schlüssel bleiben beim Nutzer und werden nie gespeichert.
 
+## Werkzeuge für KIs (spart Tokens)
+
+Browser-Apps bieten ihre Hauptfunktionen zusätzlich **ohne Oberfläche** an. Eine KI
+ruft sie über den Connector mit `werkzeug_ausfuehren` auf (Dateien als Pfade) –
+Hello World öffnet die App unsichtbar auf dem eigenen Rechner, führt die Funktion aus
+und speichert die Ergebnisdateien. Die KI muss Dateien weder lesen noch selbst umrechnen.
+
+```html
+<script type="application/json" id="hw-werkzeuge">
+{ "werkzeuge": { "pdf_zu_png": { "beschreibung": "Wandelt jede PDF-Seite in ein PNG um.", "dateien": "eine",
+  "eingabe": { "type": "object", "properties": { "schaerfe": { "type": "number" } } }, "ausgabe": "Ein PNG pro Seite" } } }
+</script>
+<script>
+if (window.helloworld && helloworld.werkzeug) helloworld.werkzeug('pdf_zu_png', async (eingabe, dateien) => {
+  // derselbe Code wie in der Oberfläche, aber ohne sie anzufassen
+  return { seiten: 2, dateien: [new File([blob], 'seite-1.png', { type: 'image/png' })] };
+});
+</script>
+```
+
+Regeln: 1–15 Werkzeuge, Namen aus kleinen Buchstaben/Ziffern/`_`, klare Beschreibung
+(was es tut, wann man es nutzt), `dateien` = `keine`/`eine`/`mehrere`, Eingabe als
+JSON-Schema. Rückgabe: Daten und/oder Dateien (Blob/File mit Namen). Beispiel: `app.fileconverter`.
+
 ## Apps mit eigener KI des Nutzers
 
 Browser-Apps dürfen die **eigene KI des Nutzers** nutzen – z. B. um freie Sätze

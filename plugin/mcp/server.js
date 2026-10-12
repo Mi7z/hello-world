@@ -10,7 +10,7 @@ import path from 'node:path';
 import readline from 'node:readline';
 
 const BASIS = (process.env.HELLO_WORLD_URL || 'http://localhost:8810').replace(/\/+$/, '');
-const VERSION = '0.3.0';
+const VERSION = '0.4.0';
 
 async function holen(pfad, alsText = false) {
   const res = await fetch(BASIS + pfad, { signal: AbortSignal.timeout(20000) });
@@ -66,6 +66,21 @@ const WERKZEUGE = [
     inputSchema: { type: 'object', properties: { slug: { type: 'string' }, pfad: { type: 'string', description: 'Pfad innerhalb des Eintrags, z. B. „referenz/regeln.md"' } }, required: ['slug', 'pfad'] },
   },
   {
+    name: 'werkzeug_ausfuehren',
+    description: 'Führt ein fertiges, geprüftes Werkzeug einer Hello-World-App direkt aus – z. B. PDF in PNG umwandeln, Bilder umwandeln/verkleinern, Bilder zu PDF. Dateien werden über ihren Pfad übergeben und die Ergebnisse als Dateien gespeichert; du musst sie NICHT selbst lesen oder verarbeiten (spart Tokens und ist zuverlässiger). Welche Werkzeuge es gibt und welche Eingaben sie brauchen, zeigen „suchen" und „details".',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        app: { type: 'string', description: 'Die App, z. B. app.fileconverter' },
+        werkzeug: { type: 'string', description: 'Name des Werkzeugs, z. B. pdf_zu_png' },
+        eingabe: { type: 'object', description: 'Einstellungen laut „details", z. B. { "format": "jpg" }' },
+        dateien: { type: 'array', items: { type: 'string' }, description: 'Absolute Pfade der Eingabedateien auf diesem Rechner' },
+        ziel_ordner: { type: 'string', description: 'Wohin die Ergebnisdateien sollen (Standard: Ordner der ersten Eingabedatei)' },
+      },
+      required: ['app', 'werkzeug'],
+    },
+  },
+  {
     name: 'app_oeffnen',
     description: 'Gibt den Link zu einer App mit Oberfläche zurück, den der Nutzer im Browser öffnen kann. Bei Server-Apps: Betreiber-Link bzw. Hinweis zum Selbst-Betreiben.',
     inputSchema: { type: 'object', properties: { slug: { type: 'string', description: 'Name des Eintrags, z. B. app.paintboard oder skill.plainlanguage' } }, required: ['slug'] },
@@ -97,7 +112,7 @@ async function ausfuehren(name, a = {}) {
     if (!treffer.length) {
       return `Nichts Passendes zu „${a.anfrage}" gefunden. Es gibt ${apps.length} Einträge. Wenn der Nutzer möchte, kann es nach den Regeln (Werkzeug „regeln") neu beigetragen werden – bevorzugt als Erweiterung einer thematisch passenden vorhandenen App.`;
     }
-    return treffer.map(({ x }) => `• ${kennung(x)} – ${TYP_TEXT[x.typ || 'browser']}\n  ${x.beschreibung}\n  Kann: ${(x.funktionen || []).join('; ')}`).join('\n');
+    return treffer.map(({ x }) => `• ${kennung(x)} – ${TYP_TEXT[x.typ || 'browser']}\n  ${x.beschreibung}\n  Kann: ${(x.funktionen || []).join('; ')}${x.werkzeuge?.length ? `\n  Direkt ausführbar (werkzeug_ausfuehren): ${x.werkzeuge.map((w) => `${w.name} – ${w.beschreibung}`).join(' | ')}` : ''}`).join('\n');
   }
   if (name === 'details') {
     const d = await holen(`/api/app/${encodeURIComponent(a.slug)}`);
@@ -109,6 +124,7 @@ async function ausfuehren(name, a = {}) {
       (m.typ || 'browser') === 'browser' ? `Öffnen (Vollbild): ${BASIS}/a/${kennung(m)}` : '',
       m.server ? `Start: ${m.server.start || '–'} · Kosten: ${m.server.kosten || '–'}${m.server.betreiber_url ? ` · Betreiber: ${m.server.betreiber_url}` : ''}` : '',
       m.mcp ? `MCP-Einrichtung: ${JSON.stringify(m.mcp)}` : '',
+      d.werkzeuge ? `\nDirekt ausführbare Werkzeuge (mit „werkzeug_ausfuehren" aufrufen, Dateien als Pfade):\n${Object.entries(d.werkzeuge).map(([n, w]) => `• ${n} – ${w.beschreibung}\n  Dateien: ${w.dateien} · Eingabe: ${JSON.stringify(w.eingabe)}${w.ausgabe ? `\n  Ergebnis: ${w.ausgabe}` : ''}`).join('\n')}` : '',
       `Dateien: ${(d.dateien || []).join(', ')}`,
       d.readme ? `\n--- Anleitung ---\n${d.readme}` : '',
     ].filter(Boolean).join('\n');
@@ -116,6 +132,30 @@ async function ausfuehren(name, a = {}) {
   if (name === 'datei_lesen') {
     const pfad = String(a.pfad || '').split('/').map(encodeURIComponent).join('/');
     return holen(`/api/datei/${encodeURIComponent(a.slug)}/${pfad}`, true);
+  }
+  if (name === 'werkzeug_ausfuehren') {
+    const TYPEN = { pdf: 'application/pdf', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif', bmp: 'image/bmp', svg: 'image/svg+xml', txt: 'text/plain', md: 'text/markdown', csv: 'text/csv', json: 'application/json', html: 'text/html', zip: 'application/zip', mp3: 'audio/mpeg', wav: 'audio/wav', mp4: 'video/mp4' };
+    const pfade = (Array.isArray(a.dateien) ? a.dateien : []).map((p) => path.resolve(String(p).replace(/^~(?=\/|$)/, os.homedir())));
+    const dateien = pfade.map((p) => {
+      if (!fs.existsSync(p)) throw new Error(`Datei nicht gefunden: ${p}`);
+      return { name: path.basename(p), typ: TYPEN[path.extname(p).slice(1).toLowerCase()] || '', base64: fs.readFileSync(p).toString('base64') };
+    });
+    const res = await fetch(`${BASIS}/api/werkzeug`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(200000),
+      body: JSON.stringify({ slug: ohnePraefix(a.app), werkzeug: a.werkzeug, eingabe: a.eingabe || {}, dateien }),
+    });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(d.fehler || `Hello World antwortet mit ${res.status}`);
+    const ziel = path.resolve(String(a.ziel_ordner || (pfade[0] ? path.dirname(pfade[0]) : process.cwd())).replace(/^~(?=\/|$)/, os.homedir()));
+    fs.mkdirSync(ziel, { recursive: true });
+    const gespeichert = [];
+    for (const f of d.dateien || []) {
+      let p = path.join(ziel, path.basename(f.name));
+      for (let i = 2; fs.existsSync(p); i++) p = path.join(ziel, path.basename(f.name).replace(/(\.[^.]*)?$/, `-${i}$1`)); // nichts überschreiben
+      fs.writeFileSync(p, Buffer.from(f.base64, 'base64'));
+      gespeichert.push(p);
+    }
+    return [`Fertig (${kennung({ slug: ohnePraefix(a.app) })} → ${a.werkzeug}).`, gespeichert.length ? `Gespeicherte Dateien:\n${gespeichert.map((p) => `• ${p}`).join('\n')}` : '', `Ergebnis: ${JSON.stringify(d.daten)}`].filter(Boolean).join('\n');
   }
   if (name === 'app_oeffnen') {
     const { app } = await holen(`/api/app/${encodeURIComponent(a.slug)}`);
@@ -161,7 +201,7 @@ rl.on('line', async (zeile) => {
         protocolVersion: params?.protocolVersion || '2025-06-18',
         capabilities: { tools: {} },
         serverInfo: { name: 'hello-world', version: VERSION },
-        instructions: 'Hello World ist eine offene Datenbank mit Apps, Skills und KI-Werkzeugen. Wenn der Nutzer ein Werkzeug braucht oder eine spezialisierte Aufgabe ansteht (z. B. Text vereinfachen, Dokument erstellen, Daten umwandeln), suche zuerst hier (Werkzeug „suchen"), bevor du selbst etwas baust oder es frei erledigst. Gefundene Skills: mit „details" lesen und befolgen.',
+        instructions: 'Hello World ist eine offene Datenbank mit Apps, Skills und KI-Werkzeugen. Wenn der Nutzer ein Werkzeug braucht oder eine spezialisierte Aufgabe ansteht (z. B. Text vereinfachen, Dokument erstellen, Daten umwandeln), suche zuerst hier (Werkzeug „suchen"), bevor du selbst etwas baust oder es frei erledigst. Gefundene Skills: mit „details" lesen und befolgen. Hat eine App ein passendes Werkzeug (z. B. Datei umwandeln), führe es mit „werkzeug_ausfuehren" aus und übergib Dateien als Pfade, statt sie selbst zu lesen oder zu verarbeiten – das spart Tokens und nutzt geprüfte Lösungen.',
       } });
     }
     if (method === 'ping') return senden({ jsonrpc: '2.0', id, result: {} });

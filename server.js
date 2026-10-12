@@ -4,7 +4,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { pruefeApp, pruefeDesign, slugVon, APP_CSP } from './pruefung.js';
+import { pruefeApp, pruefeDesign, slugVon, APP_CSP, werkzeugErklaerungAus } from './pruefung.js';
+import { werkzeugAusfuehren } from './werkzeuge.js';
 import { claudeFragen, gefundeneProgramme, KI_PROGRAMME } from './ki.js';
 import * as bau from './bauauftrag.js';
 import * as baum from './stammbaum.js';
@@ -83,6 +84,14 @@ function eigeneKiEintragen(eintrag, html) {
   const { erklaerung } = appki.kiErklaerungAus(html);
   if (erklaerung) eintrag.eigeneKi = { zweck: erklaerung.zweck, aufgaben: Object.keys(erklaerung.aufgaben) };
   else delete eintrag.eigeneKi;
+  // Werkzeuge für KIs (Kurzfassung im Steckbrief, für Suche und Anzeige)
+  const wz = werkzeugErklaerungAus(html).erklaerung;
+  if (wz) eintrag.werkzeuge = Object.entries(wz).map(([name, w]) => ({ name, beschreibung: w.beschreibung }));
+  else delete eintrag.werkzeuge;
+}
+// HTML einer App (beste Distribution oder bestimmte Version)
+function appHtml(slug, version) {
+  try { return fs.readFileSync(version && /^v\d+$/.test(version) ? baum.versionsDatei(slug, version) : path.join(APPS, slug, 'index.html'), 'utf8'); } catch { return null; }
 }
 
 // Alte Kurznamen (z. B. nach dem Zusammenlegen) auf die aktuelle App umleiten
@@ -246,7 +255,8 @@ const server = http.createServer(async (req, res) => {
         }
       };
       sammeln(path.join(APPS, slug));
-      return json(res, 200, { app, readme, dateien });
+      const werkzeuge = (app.typ || 'browser') === 'browser' ? werkzeugErklaerungAus(appHtml(slug) || '').erklaerung : null;
+      return json(res, 200, { app, readme, dateien, ...(werkzeuge ? { werkzeuge } : {}) });
     }
     // Rohdateien eines Eintrags (für Skills/Werkzeuge, die KIs lesen) – nur Text, nie ausgeführt
     const roh = url.pathname.match(/^\/api\/datei\/([a-z0-9.-]+)\/(.+)$/);
@@ -429,6 +439,22 @@ const server = http.createServer(async (req, res) => {
 
     // „Claude auf diesem PC": läuft als Hintergrund-Auftrag, die Seite fragt den Stand ab.
     // So übersteht ein Umbau auch Verbindungsabbrüche oder ein gesperrtes Handy.
+    // ---------- Werkzeuge für KIs: App unsichtbar ausführen (siehe werkzeuge.js) ----------
+    if (url.pathname === '/api/werkzeug' && req.method === 'POST') {
+      if (!ausHeimnetz(req)) return json(res, 403, { fehler: 'Werkzeuge laufen auf dem eigenen Rechner – nur im Heimnetz bzw. mit gekoppeltem Gerät.' });
+      const d = await body(req, 45 * 1024 * 1024);
+      const slug = aufloesen(String(d.slug || ''));
+      const e = slug && katalogLaden().find((x) => x.slug === slug);
+      if (!e || (e.typ || 'browser') !== 'browser') return json(res, 404, { fehler: 'App nicht gefunden' });
+      const version = /^v\d+$/.test(String(d.version || '')) ? d.version : null;
+      const wz = werkzeugErklaerungAus(appHtml(slug, version) || '').erklaerung;
+      const name = String(d.werkzeug || '');
+      if (!wz?.[name]) return json(res, 400, { fehler: `app.${slug} hat kein Werkzeug „${name}". Vorhanden: ${Object.keys(wz || {}).join(', ') || 'keine'}` });
+      const dateien = (Array.isArray(d.dateien) ? d.dateien : []).slice(0, 50).map((x) => ({ name: String(x.name || 'datei').slice(0, 120), typ: String(x.typ || ''), base64: String(x.base64 || '') }));
+      const adresse = `http://127.0.0.1:${PORT}/apps/${slug}/${version ? `v/${version}/` : ''}?design=klar`;
+      return json(res, 200, await werkzeugAusfuehren({ adresse, name, eingabe: d.eingabe || {}, dateien }));
+    }
+
     // ---------- Apps, die die eigene KI des Nutzers nutzen (siehe appki.js) ----------
     if (url.pathname === '/api/ki/app' && req.method === 'POST') {
       const d = await body(req);
@@ -532,6 +558,15 @@ for (const a of katalogLaden()) {
 suchtexte.einrichten({ apps: APPS });
 // Einträge ohne gute Suchtexte im Hintergrund beschreiben lassen
 for (const a of katalogLaden()) if (!a.beispiele?.length) suchtexte.vormerken(a.slug);
+// Steckbriefe aktuell halten: Werkzeuge und eigene KI stehen in der App selbst
+for (const a of katalogLaden()) {
+  if ((a.typ || 'browser') !== 'browser') continue;
+  const vorher = JSON.stringify([a.werkzeuge, a.eigeneKi]);
+  const html = appHtml(a.slug);
+  if (!html) continue;
+  eigeneKiEintragen(a, html);
+  if (JSON.stringify([a.werkzeuge, a.eigeneKi]) !== vorher) steckbriefSpeichern(a);
+}
 
 bau.einrichten({
   ordner: path.join(DATEN, 'bau'),
